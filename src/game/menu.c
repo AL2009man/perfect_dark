@@ -3609,7 +3609,7 @@ void func0f0f820c(struct menudialogdef *dialogdef, s32 root)
 	g_MpPlayerNum = prevplayernum;
 
 	g_MenuData.prevmenuroot = root;
-	g_MenuData.unk00c = dialogdef;
+	g_MenuData.prevmenudialog = dialogdef;
 }
 
 void menuSetBackground(s32 bg)
@@ -4005,7 +4005,7 @@ void menuReset(void)
 	}
 
 	g_MenuData.unk668 = -1;
-	g_MenuData.unk00c = 0;
+	g_MenuData.prevmenudialog = 0;
 	g_MenuData.prevmenuroot = -1;
 	g_MenuData.count = 0;
 	g_MenuData.root = 0;
