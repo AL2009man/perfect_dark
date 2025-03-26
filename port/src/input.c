@@ -343,6 +343,11 @@ static inline void inputInitController(const s32 cidx, const s32 jidx)
 		SDL_JoystickGetGUIDString(guid, guidStr, sizeof(guidStr));
 		sysLogPrintf(LOG_NOTE, "input: GUID for controller %d: %s", jidx, guidStr);
 	}
+
+	// Enable the gyroscope sensor if available
+	if (SDL_GameControllerHasSensor(pads[cidx], SDL_SENSOR_GYRO)) {
+			SDL_GameControllerSetSensorEnabled(pads[cidx], SDL_SENSOR_GYRO, SDL_TRUE);
+	}
 }
 
 static inline void inputCloseController(const s32 cidx)
@@ -490,8 +495,18 @@ static int inputEventFilter(void *data, SDL_Event *event)
 
 		case SDL_JOYDEVICEADDED:
 		case SDL_JOYDEVICEREMOVED:
-			numJoysticks = SDL_NumJoysticks(); // joystick count has changed
-			break;
+				numJoysticks = SDL_NumJoysticks();
+				break;
+
+		case SDL_CONTROLLERSENSORUPDATE:
+				if (event->csensor.sensor == SDL_SENSOR_GYRO) {
+						float gyroData[3];
+						SDL_GameController* controller = SDL_GameControllerFromInstanceID(event->cdevice.which);
+						if (controller && SDL_GameControllerGetSensorData(controller, SDL_SENSOR_GYRO, gyroData, 3) == 0) {
+								// Gyro data handling code can be added here
+						}
+				}
+				break;
 
 		case SDL_MOUSEWHEEL:
 			mouseWheel = event->wheel.y;
