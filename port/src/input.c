@@ -347,6 +347,8 @@ static inline void inputInitController(const s32 cidx, const s32 jidx)
 	// Enable the gyroscope sensor if available
 	if (SDL_GameControllerHasSensor(pads[cidx], SDL_SENSOR_GYRO)) {
 			SDL_GameControllerSetSensorEnabled(pads[cidx], SDL_SENSOR_GYRO, SDL_TRUE);
+			float rate = SDL_GameControllerGetSensorDataRate(pads[cidx], SDL_SENSOR_GYRO);
+			sysLogPrintf(LOG_NOTE, "input: Gyroscope sensor data rate for controller %d: %f", jidx, rate);
 	}
 }
 
