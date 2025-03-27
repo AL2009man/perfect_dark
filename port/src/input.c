@@ -31,6 +31,16 @@
 #define CURSOR_HIDE_THRESHOLD 1
 #define CURSOR_HIDE_TIME 3000000 // us
 
+// Define gyro activation modes
+#define GYRO_ALWAYS_ON 0
+#define GYRO_TOGGLE 1
+#define GYRO_HOLD 2
+#define GYRO_HOLD_INVERTED 3
+
+#define GYRO_AIM_CAMERA 0
+#define GYRO_AIM_CROSSHAIR 1
+#define GYRO_AIM_BOTH 2 // Default mode
+
 static SDL_GameController *pads[INPUT_MAX_CONTROLLERS];
 
 #define CONTROLLERCFG_DEFAULT { \
@@ -94,7 +104,6 @@ static s32 gyroDX, gyroDY;
 static f32 accelX = 0.0f;
 static f32 accelY = 0.0f;
 static f32 accelZ = 0.0f;
-
 
 static f32 gyroSensX = 2.50f;
 static f32 gyroSensY = 2.50f;
@@ -1052,20 +1061,62 @@ static void inputUpdateGyro(void)
 		gyroData[0] = fabs(gyroData[0]) < gyroMinThreshold ? 0 : gyroData[0];
 		gyroData[1] = fabs(gyroData[1]) < gyroMinThreshold ? 0 : gyroData[1];
 
-		// Handle gyro aiming modes and axis modes
-		switch (g_GyroAxisMode) {
-		case 0: // Yaw mode
-				updateCameraControl(gyroData[1] * gyroSensX, gyroData[0] * gyroSensY, 0);
+		// Handle gyro activation modes
+		s32 gyroActive = 0;
+		switch (g_GyroActivationMode) {
+		case GYRO_ALWAYS_ON:
+				gyroActive = 1;
 				break;
-		case 1: // Roll mode
-				updateCameraControl(-gyroData[2] * gyroSensX, gyroData[0] * gyroSensY, gyroData[2] * gyroSensX);
+		case GYRO_TOGGLE:
+				if (inputKeyJustPressed(VK_JOY1_LTRIG)) { // Example: toggle with left trigger
+						g_GyroToggleState = !g_GyroToggleState;
+				}
+				gyroActive = g_GyroToggleState;
+				break;
+		case GYRO_HOLD:
+				gyroActive = inputKeyPressed(VK_JOY1_LTRIG); // Example: hold left trigger to activate
+				break;
+		case GYRO_HOLD_INVERTED:
+				gyroActive = !inputKeyPressed(VK_JOY1_LTRIG); // Example: hold left trigger to deactivate
 				break;
 		}
 
-		float crosshairX = gyroData[0] * gyroCrosshairSpeedX;
-		float crosshairY = gyroData[1] * gyroCrosshairSpeedY;
+		if (gyroActive) {
+				// Relative movement logic to mirror mouse behavior
+				s32 mdx = gyroData[0] - gyroX;
+				s32 mdy = gyroData[1] - gyroY;
 
-		updateCrosshairPosition(crosshairX, crosshairY);
+				gyroDX = mdx;
+				gyroDY = mdy;
+
+				gyroX = gyroData[0];
+				gyroY = gyroData[1];
+
+				// Handle gyro aiming modes and axis modes
+				switch (g_GyroAxisMode) {
+				case 0: // Yaw mode
+						updateCameraControl(gyroDX * gyroSensX, gyroDY * gyroSensY, 0);
+						break;
+				case 1: // Roll mode
+						updateCameraControl(-gyroData[2] * gyroSensX, gyroDY * gyroSensY, gyroData[2] * gyroSensX);
+						break;
+				}
+
+				// Update crosshair position
+				float crosshairX = gyroDX * gyroCrosshairSpeedX;
+				float crosshairY = gyroDY * gyroCrosshairSpeedY;
+				updateCrosshairPosition(crosshairX, crosshairY);
+
+				// Cursor behavior logic (simplified, no `mouseLocked`)
+				if (mouseLockMode == MLOCK_AUTO) {
+						if (abs(gyroDX) > CURSOR_HIDE_THRESHOLD || abs(gyroDY) > CURSOR_HIDE_THRESHOLD) {
+								inputMouseShowCursor(1); // Show cursor if there's significant movement
+						}
+						else if (sysGetMicroseconds() > mouseCursorTime) {
+								inputMouseShowCursor(0); // Hide cursor if idle
+						}
+				}
+		}
 }
 
 s32 inputControllerConnected(s32 idx)
