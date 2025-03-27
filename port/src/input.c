@@ -93,8 +93,8 @@ static s32 gyroEnabled = 1; // Enable gyro aiming by default
 static f32 gyroX, gyroY;
 static s32 gyroDX, gyroDY;
 
-static f32 gyroSensX = 1.5f;
-static f32 gyroSensY = 1.5f;
+static f32 gyroSensX = 2.50f;
+static f32 gyroSensY = 2.50f;
 static f32 gyroMinThreshold = 0.1f;
 
 static s32 g_GyroAxisMode = 0;
@@ -1492,7 +1492,6 @@ f32 inputGetGyroMinThreshold(void) {
 void inputSetGyroMinThreshold(f32 threshold) {
     gyroMinThreshold = threshold;
 }
-
 
 s32 inputGyroIsEnabled(void)
 {
