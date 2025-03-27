@@ -100,10 +100,6 @@ static f32 gyroMinThreshold = 0.1f;
 static s32 g_GyroAxisMode = 0;
 
 // Gyro camera control variables
-static f32 gyro_calibration_x = 0.0f;
-static f32 gyro_calibration_y = 0.0f;
-static f32 gyro_calibration_z = 0.0f;
-
 static f32 gyroCameraYaw = 0.0f;
 static f32 gyroCameraPitch = 0.0f;
 static f32 gyroCameraRoll = 0.0f;
@@ -332,52 +328,48 @@ static inline SDL_JoystickID inputControllerGetId(SDL_GameController *ctrl)
 static inline void inputInitController(const s32 cidx, const s32 jidx)
 {
 #if SDL_VERSION_ATLEAST(2, 0, 18)
-	// SDL_GameControllerHasRumble() appeared in 2.0.18 even though SDL_GameControllerRumble() is in 2.0.9
-	padsCfg[cidx].rumbleOn = SDL_GameControllerHasRumble(pads[cidx]);
+    padsCfg[cidx].rumbleOn = SDL_GameControllerHasRumble(pads[cidx]);
 #else
-	// assume that all joysticks with haptic feedback support will support rumble
-	padsCfg[cidx].rumbleOn = SDL_JoystickIsHaptic(SDL_GameControllerGetJoystick(pads[cidx]));
-	if (!padsCfg[cidx].rumbleOn) {
-		// at least on Windows some controllers will report no haptics, but rumble will still function
-		// just assume it's supported if the controller is of known type
-		const SDL_GameControllerType ctype = SDL_GameControllerGetType(pads[cidx]);
-		padsCfg[cidx].rumbleOn = ctype && (ctype != SDL_CONTROLLER_TYPE_VIRTUAL);
-	}
+    padsCfg[cidx].rumbleOn = SDL_JoystickIsHaptic(SDL_GameControllerGetJoystick(pads[cidx]));
+    if (!padsCfg[cidx].rumbleOn) {
+        const SDL_GameControllerType ctype = SDL_GameControllerGetType(pads[cidx]);
+        padsCfg[cidx].rumbleOn = ctype && (ctype != SDL_CONTROLLER_TYPE_VIRTUAL);
+    }
 #endif
+    if (!padsCfg[cidx].rumbleOn) {
+        sysLogPrintf(LOG_WARNING, "input: Rumble not supported for controller %d", jidx);
+    }
 
-	// make the LEDs on the controller indicate which player it's for
-	SDL_GameControllerSetPlayerIndex(pads[cidx], cidx);
+    SDL_GameControllerSetPlayerIndex(pads[cidx], cidx);
+    padsCfg[cidx].deviceIndex = jidx;
+    connectedMask |= (1 << cidx);
 
-	// remember the joystick index
-	padsCfg[cidx].deviceIndex = jidx;
+    sysLogPrintf(LOG_NOTE, "input: Assigned controller '%d: (%s)' (ID %d) to player %d",
+                 jidx, SDL_GameControllerName(pads[cidx]), inputControllerGetId(pads[cidx]), cidx);
 
-	connectedMask |= (1 << cidx);
+    SDL_Joystick* joy = SDL_GameControllerGetJoystick(pads[cidx]);
+    if (joy) {
+        char guidStr[1024] = "";
+        SDL_JoystickGUID guid = SDL_JoystickGetGUID(joy);
+        SDL_JoystickGetGUIDString(guid, guidStr, sizeof(guidStr));
+        sysLogPrintf(LOG_NOTE, "input: GUID for controller %d: %s", jidx, guidStr);
+    }
 
-	sysLogPrintf(LOG_NOTE, "input: assigned controller '%d: (%s)' (id %d) to player %d",
-		jidx, SDL_GameControllerName(pads[cidx]), inputControllerGetId(pads[cidx]), cidx);
-
-	SDL_Joystick* joy = SDL_GameControllerGetJoystick(pads[cidx]);
-	if (joy) {
-		char guidStr[1024] = "";
-		SDL_JoystickGUID guid = SDL_JoystickGetGUID(joy);
-		SDL_JoystickGetGUIDString(guid, guidStr, sizeof(guidStr));
-		sysLogPrintf(LOG_NOTE, "input: GUID for controller %d: %s", jidx, guidStr);
-	}
-
-	// Enable the gyroscope sensor if available
-	if (SDL_GameControllerHasSensor(pads[cidx], SDL_SENSOR_GYRO)) {
-			sysLogPrintf(LOG_NOTE, "input: Gyroscope sensor available for controller %d", jidx);
-			if (SDL_GameControllerSetSensorEnabled(pads[cidx], SDL_SENSOR_GYRO, SDL_TRUE) == 0) {
-					float rate = SDL_GameControllerGetSensorDataRate(pads[cidx], SDL_SENSOR_GYRO);
-					sysLogPrintf(LOG_NOTE, "input: Gyroscope sensor enabled for controller %d with data rate %f", jidx, rate);
-			}
-			else {
-					sysLogPrintf(LOG_WARNING, "input: Failed to enable gyroscope sensor for controller %d", jidx);
-			}
-	}
-	else {
-			sysLogPrintf(LOG_WARNING, "input: Gyroscope sensor not available for controller %d", jidx);
-	}
+    if (SDL_GameControllerHasSensor(pads[cidx], SDL_SENSOR_GYRO)) {
+        sysLogPrintf(LOG_NOTE, "input: Gyroscope sensor available for controller %d", jidx);
+        if (SDL_GameControllerSetSensorEnabled(pads[cidx], SDL_SENSOR_GYRO, SDL_TRUE) == 0) {
+            float rate = SDL_GameControllerGetSensorDataRate(pads[cidx], SDL_SENSOR_GYRO);
+            if (rate >= 60.0f) {
+                sysLogPrintf(LOG_NOTE, "input: Gyroscope sensor enabled for controller %d with data rate %f Hz", jidx, rate);
+            } else {
+                sysLogPrintf(LOG_WARNING, "input: Gyroscope data rate may be insufficient for controller %d: %f Hz", jidx, rate);
+            }
+        } else {
+            sysLogPrintf(LOG_WARNING, "input: Failed to enable gyroscope sensor for controller %d", jidx);
+        }
+    } else {
+        sysLogPrintf(LOG_WARNING, "input: Gyroscope sensor not available for controller %d", jidx);
+    }
 }
 
 static inline void inputCloseController(const s32 cidx)
@@ -955,59 +947,52 @@ static void updateCameraControl(f32 dx, f32 dy, f32 dz)
 
 static void inputUpdateGyro(void)
 {
-		SDL_GameController* controller = pads[0]; // Assuming player 0 for simplicity
+		SDL_GameController* controller = pads[0]; 
 		if (controller && SDL_GameControllerHasSensor(controller, SDL_SENSOR_GYRO)) {
 				float gyroData[3];
 				if (SDL_GameControllerGetSensorData(controller, SDL_SENSOR_GYRO, gyroData, 3) == 0) {
-						sysLogPrintf(LOG_NOTE, "input: Gyroscope sensor data: X=%f, Y=%f, Z=%f", gyroData[0], gyroData[1], gyroData[2]);
+						sysLogPrintf(LOG_NOTE, "Gyro Data: X=%f, Y=%f, Z=%f", gyroData[0], gyroData[1], gyroData[2]);
 
-						// Apply the minimum threshold
-						if (fabs(gyroData[0]) < gyroMinThreshold) gyroData[0] = 0;
-						if (fabs(gyroData[1]) < gyroMinThreshold) gyroData[1] = 0;
-						if (fabs(gyroData[2]) < gyroMinThreshold) gyroData[2] = 0;
+						// Apply threshold
+						gyroData[0] = fabs(gyroData[0]) < gyroMinThreshold ? 0 : gyroData[0];
+						gyroData[1] = fabs(gyroData[1]) < gyroMinThreshold ? 0 : gyroData[1];
+						gyroData[2] = fabs(gyroData[2]) < gyroMinThreshold ? 0 : gyroData[2];
 
-						// Handle different gyro axis modes
+						// Handle gyro modes
+						s32 gyroDX = 0, gyroDY = 0, gyroDZ = 0;
 						switch (g_GyroAxisMode) {
-						case 0: // Yaw mode
-								gyroDX = (s32)((gyroData[1] - gyro_calibration_y) * gyroSensX);
-								gyroDY = (s32)((gyroData[0] - gyro_calibration_x) * gyroSensY);
-								updateCameraControl(gyroDX, 0, 0);
+						case 0: // Yaw
+								gyroDX = (s32)(gyroData[1] * gyroSensX);
+								gyroDY = (s32)(gyroData[0] * gyroSensY);
+								updateCameraControl(gyroDX, gyroDY, 0);
 								break;
-						case 1: // Roll mode
-								gyroDX = (s32)(-(gyroData[2] - gyro_calibration_z) * gyroSensX);
-								gyroDY = (s32)((gyroData[0] - gyro_calibration_x) * gyroSensY);
-								updateCameraControl(0, 0, gyroDX);
+						case 1: // Roll
+								gyroDX = (s32)(-gyroData[2] * gyroSensX);
+								gyroDY = (s32)(gyroData[0] * gyroSensY);
+								updateCameraControl(gyroDX, 0, gyroDY);
 								break;
 						case 2: // Local Space
-								gyroDX = (s32)((gyroData[0] - gyro_calibration_x) * gyroSensX);
-								gyroDY = (s32)((gyroData[1] - gyro_calibration_y) * gyroSensY);
-								s32 gyroDZ = (s32)((gyroData[2] - gyro_calibration_z) * gyroSensX);
-								updateCameraControl(gyroDX, gyroDY, gyroDZ);
+								// Implement local-specific transformation
+								// Placeholder for integration
 								break;
 						case 3: // Player Space
-								// Implement player space transformation here
-								gyroDX = (s32)((gyroData[0] - gyro_calibration_x) * gyroSensX);
-								gyroDY = (s32)((gyroData[1] - gyro_calibration_y) * gyroSensY);
-								gyroDZ = (s32)((gyroData[2] - gyro_calibration_z) * gyroSensX);
-								updateCameraControl(gyroDX, gyroDY, gyroDZ);
+								// Implement player-specific transformation
+								// Placeholder for integration
 								break;
 						case 4: // World Space
-								// Implement world space transformation here
-								gyroDX = (s32)((gyroData[0] - gyro_calibration_x) * gyroSensX);
-								gyroDY = (s32)((gyroData[1] - gyro_calibration_y) * gyroSensY);
-								gyroDZ = (s32)((gyroData[2] - gyro_calibration_z) * gyroSensX);
-								updateCameraControl(gyroDX, gyroDY, gyroDZ);
+								// Implement world coordinate transformation
+								// Placeholder for integration
 								break;
 						default:
 								break;
 						}
 				}
 				else {
-						sysLogPrintf(LOG_WARNING, "input: Failed to get gyroscope sensor data");
+						sysLogPrintf(LOG_WARNING, "Failed to read gyroscope data");
 				}
 		}
 		else {
-				sysLogPrintf(LOG_WARNING, "input: Gyroscope sensor not available or not enabled");
+				sysLogPrintf(LOG_WARNING, "Gyroscope not available or enabled");
 		}
 }
 
