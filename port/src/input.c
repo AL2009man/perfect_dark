@@ -88,11 +88,17 @@ static s32 mouseShowCursor = 1;
 static f32 mouseSensX = 1.5f;
 static f32 mouseSensY = 1.5f;
 
-static s32 gyroEnabled = 1;
+// Gyro aim variables
+static s32 gyroEnabled = 1; // Enable gyro aiming by default
 static f32 gyroX, gyroY;
 static s32 gyroDX, gyroDY;
 static f32 gyroSensX = 1.5f;
 static f32 gyroSensY = 1.5f;
+
+// Gyro camera control variables
+static f32 gyroCameraYaw = 0.0f;
+static f32 gyroCameraPitch = 0.0f;
+static f32 gyroCameraRoll = 0.0f;
 
 static s32 lastKey = 0;
 static char lastChar = 0;
@@ -892,7 +898,6 @@ static inline void inputUpdateMouse(void)
 	}
 }
 
-
 static inline void inputUpdateGyro(void)
 {
 		SDL_GameController* controller = pads[0]; // Assuming player 0 for simplicity
@@ -901,13 +906,15 @@ static inline void inputUpdateGyro(void)
 				if (SDL_GameControllerGetSensorData(controller, SDL_SENSOR_GYRO, gyroData, 3) == 0) {
 						gyroDX = (s32)(gyroData[0] * gyroSensX);
 						gyroDY = (s32)(gyroData[1] * gyroSensY);
+						s32 gyroDZ = (s32)(gyroData[2] * gyroSensX); // Assuming same sensitivity for roll
+
+						// Update camera control with gyro data
+						gyroCameraYaw += gyroDX * gyroSensX;
+						gyroCameraPitch += gyroDY * gyroSensY;
+						gyroCameraRoll += gyroDZ * gyroSensX;
 				}
 		}
 }
-
-
-
-
 
 void inputUpdate(void)
 {
@@ -1577,7 +1584,7 @@ PD_CONSTRUCTOR static void inputConfigInit(void)
 	configRegisterInt("Input.MouseLockMode", &mouseLockMode, MLOCK_OFF, MLOCK_AUTO);
 	configRegisterFloat("Input.MouseSpeedX", &mouseSensX, -10.f, 10.f);
 	configRegisterFloat("Input.MouseSpeedY", &mouseSensY, -10.f, 10.f);
-	configRegisterInt("Input.GyroEnabled", &gyroEnabled, 0, 1); 
+	configRegisterInt("Input.GyroEnabled", &gyroEnabled, 0, 1);
 	configRegisterFloat("Input.GyroSpeedX", &gyroSensX, -10.f, 10.f);
 	configRegisterFloat("Input.GyroSpeedY", &gyroSensY, -10.f, 10.f);
 	configRegisterInt("Input.FakeGamepads", &fakeControllers, 0, 4);
