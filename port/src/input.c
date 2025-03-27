@@ -678,6 +678,19 @@ s32 inputInit(void)
 		SDL_InitSubSystem(SDL_INIT_GAMECONTROLLER | SDL_INIT_HAPTIC);
 	}
 
+	// Set SDL hints before loading controller mappings
+	SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_PS3, "1");
+	SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_PS4, "1");
+	SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_PS5, "1");
+	SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_SWITCH, "1");
+	SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_PS4_RUMBLE, "1"); // This hint will enable PlayStation's more advanced feature sets when using Bluetooth connecivity, this includes Motion Sensors.
+	SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_PS5_RUMBLE, "1"); // same case as PS4_Rumble hint.
+	SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_JOY_CONS, "1");
+	SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_COMBINE_JOY_CONS, "1");
+	SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_GAMECUBE, "1");
+	SDL_SetHint(SDL_HINT_JOYSTICK_RAWINPUT, "1");
+	SDL_SetHint(SDL_HINT_JOYSTICK_RAWINPUT_CORRELATE_XINPUT, "1");
+
 	// try to load controller db from an external file in the save folder
 	if (fsFileSize("$S/" CONTROLLERDB_FNAME)) {
 		const char *dbpath = fsFullPath("$S/" CONTROLLERDB_FNAME);
