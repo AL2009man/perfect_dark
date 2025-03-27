@@ -887,22 +887,6 @@ static void updateCameraControl(f32 dx, f32 dy, f32 dz)
 		sysLogPrintf(LOG_NOTE, "input: Updated camera control - Yaw=%f, Pitch=%f, Roll=%f", gyroCameraYaw, gyroCameraPitch, gyroCameraRoll);
 }
 
-static inline void inputUpdateMouse(void);
-static inline void inputUpdateGyro(void);
-
-void inputUpdate(void)
-{
-		SDL_GameControllerUpdate();
-
-		if (mouseEnabled) {
-				inputUpdateMouse();
-		}
-
-		if (gyroEnabled) {
-				inputUpdateGyro();
-		}
-}
-
 static inline void inputUpdateMouse(void)
 {
 		s32 mx, my;
@@ -1006,6 +990,19 @@ static inline void inputUpdateGyro(void)
 		}
 		else {
 				sysLogPrintf(LOG_WARNING, "input: Gyroscope sensor not available or not enabled");
+		}
+}
+
+void inputUpdate(void)
+{
+		SDL_GameControllerUpdate();
+
+		if (mouseEnabled) {
+				inputUpdateMouse();
+		}
+
+		if (gyroEnabled) {
+				inputUpdateGyro();
 		}
 }
 
