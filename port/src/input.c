@@ -914,7 +914,7 @@ void inputUpdate(void)
 
 static void updateCameraControl(f32 dx, f32 dy, f32 dz)
 {
-		// Update camera control with gyro input data
+		// Update camera control with gyro and mouse input data
 		gyroCameraYaw += dx;
 		gyroCameraPitch += dy;
 		gyroCameraRoll += dz;
@@ -973,61 +973,60 @@ static void inputUpdateMouse(void)
 
 static void inputUpdateGyro(void)
 {
-		SDL_GameController* controller = pads[0]; // Assuming player 0 for simplicity
+		SDL_GameController* controller = pads[0]; // Assuming player 0
 		if (controller && SDL_GameControllerHasSensor(controller, SDL_SENSOR_GYRO)) {
 				float gyroData[3];
 				if (SDL_GameControllerGetSensorData(controller, SDL_SENSOR_GYRO, gyroData, 3) == 0) {
-						sysLogPrintf(LOG_NOTE, "input: Gyroscope sensor data: X=%f, Y=%f, Z=%f", gyroData[0], gyroData[1], gyroData[2]);
+						sysLogPrintf(LOG_NOTE, "Gyro Data: X=%f, Y=%f, Z=%f", gyroData[0], gyroData[1], gyroData[2]);
 
-						// Apply the minimum threshold
-						if (fabs(gyroData[0]) < gyroMinThreshold) gyroData[0] = 0;
-						if (fabs(gyroData[1]) < gyroMinThreshold) gyroData[1] = 0;
-						if (fabs(gyroData[2]) < gyroMinThreshold) gyroData[2] = 0;
+						// Apply thresholds to filter out noise
+						gyroData[0] = fabs(gyroData[0]) < gyroMinThreshold ? 0 : gyroData[0];
+						gyroData[1] = fabs(gyroData[1]) < gyroMinThreshold ? 0 : gyroData[1];
+						gyroData[2] = fabs(gyroData[2]) < gyroMinThreshold ? 0 : gyroData[2];
 
-						s32 gyroDZ = 0; // Declare gyroDZ once
+						// Define gyro deltas
+						s32 gyroDX = 0, gyroDY = 0, gyroDZ = 0;
 
-						// Handle different gyro axis modes
+						// Handle gyro axis modes
 						switch (g_GyroAxisMode) {
-						case 0: // Yaw mode
-								gyroDX = (s32)((gyroData[1] - gyro_calibration_y) * gyroSensX);
-								gyroDY = (s32)((gyroData[0] - gyro_calibration_x) * gyroSensY);
-								updateCameraControl(gyroDX, 0, 0);
+						case 0: // Yaw Mode
+								gyroDX = (s32)(gyroData[1] * gyroSensX); // Yaw
+								gyroDY = (s32)(gyroData[0] * gyroSensY); // Pitch
+								updateCameraControl(gyroDX, gyroDY, 0);
 								break;
-						case 1: // Roll mode
-								gyroDX = (s32)(-(gyroData[2] - gyro_calibration_z) * gyroSensX);
-								gyroDY = (s32)((gyroData[0] - gyro_calibration_x) * gyroSensY);
-								updateCameraControl(0, 0, gyroDX);
+
+						case 1: // Roll Mode
+								gyroDX = (s32)(-gyroData[2] * gyroSensX); // Roll
+								gyroDY = (s32)(gyroData[0] * gyroSensY);  // Pitch
+								updateCameraControl(gyroDX, 0, gyroDY);
 								break;
-						case 2: // Local Space
-								gyroDX = (s32)((gyroData[0] - gyro_calibration_x) * gyroSensX);
-								gyroDY = (s32)((gyroData[1] - gyro_calibration_y) * gyroSensY);
-								gyroDZ = (s32)((gyroData[2] - gyro_calibration_z) * gyroSensX);
-								updateCameraControl(gyroDX, gyroDY, gyroDZ);
+
+						case 2: // Local Space (Placeholder)
+								sysLogPrintf(LOG_WARNING, "Local Space transformation not implemented");
+								// Placeholder logic can go here
 								break;
-						case 3: // Player Space
-								// Implement player space transformation here
-								gyroDX = (s32)((gyroData[0] - gyro_calibration_x) * gyroSensX);
-								gyroDY = (s32)((gyroData[1] - gyro_calibration_y) * gyroSensY);
-								gyroDZ = (s32)((gyroData[2] - gyro_calibration_z) * gyroSensX);
-								updateCameraControl(gyroDX, gyroDY, gyroDZ);
+
+						case 3: // Player Space (Placeholder)
+								sysLogPrintf(LOG_WARNING, "Player Space transformation not implemented");
+								// Placeholder logic can go here
 								break;
-						case 4: // World Space
-								// Implement world space transformation here
-								gyroDX = (s32)((gyroData[0] - gyro_calibration_x) * gyroSensX);
-								gyroDY = (s32)((gyroData[1] - gyro_calibration_y) * gyroSensY);
-								gyroDZ = (s32)((gyroData[2] - gyro_calibration_z) * gyroSensX);
-								updateCameraControl(gyroDX, gyroDY, gyroDZ);
+
+						case 4: // World Space (Placeholder)
+								sysLogPrintf(LOG_WARNING, "World Space transformation not implemented");
+								// Placeholder logic can go here
 								break;
+
 						default:
+								sysLogPrintf(LOG_WARNING, "Unknown Gyro axis mode %d", g_GyroAxisMode);
 								break;
 						}
 				}
 				else {
-						sysLogPrintf(LOG_WARNING, "input: Failed to get gyroscope sensor data");
+						sysLogPrintf(LOG_WARNING, "Failed to read gyroscope data");
 				}
 		}
 		else {
-				sysLogPrintf(LOG_WARNING, "input: Gyroscope sensor not available or not enabled");
+				sysLogPrintf(LOG_WARNING, "Gyroscope not available or enabled");
 		}
 }
 
