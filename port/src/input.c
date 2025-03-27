@@ -99,6 +99,11 @@ static f32 gyroMinThreshold = 0.1f;
 
 static s32 g_GyroAxisMode = 0;
 
+// Gyro calibration variables
+static f32 gyro_calibration_x = 0.0f;
+static f32 gyro_calibration_y = 0.0f;
+static f32 gyro_calibration_z = 0.0f;
+
 // Gyro camera control variables
 static f32 gyroCameraYaw = 0.0f;
 static f32 gyroCameraPitch = 0.0f;
@@ -320,74 +325,91 @@ static inline s32 inputDeviceIndexFromId(const SDL_JoystickID id) {
 	return -1;
 }
 
-static inline SDL_JoystickID inputControllerGetId(SDL_GameController *ctrl)
+static inline SDL_JoystickID inputControllerGetId(SDL_GameController* ctrl)
 {
-	return SDL_JoystickInstanceID(SDL_GameControllerGetJoystick(ctrl));
+		return SDL_JoystickInstanceID(SDL_GameControllerGetJoystick(ctrl));
 }
+
+// Forward Declaration
+static void inputInitSensor(SDL_GameController* controller, s32 jidx, SDL_SensorType sensorType, const char* sensorName);
 
 static inline void inputInitController(const s32 cidx, const s32 jidx)
 {
 #if SDL_VERSION_ATLEAST(2, 0, 18)
-    padsCfg[cidx].rumbleOn = SDL_GameControllerHasRumble(pads[cidx]);
+		// SDL_GameControllerHasRumble() appeared in 2.0.18 even though SDL_GameControllerRumble() is in 2.0.9
+		padsCfg[cidx].rumbleOn = SDL_GameControllerHasRumble(pads[cidx]);
 #else
-    padsCfg[cidx].rumbleOn = SDL_JoystickIsHaptic(SDL_GameControllerGetJoystick(pads[cidx]));
-    if (!padsCfg[cidx].rumbleOn) {
-        const SDL_GameControllerType ctype = SDL_GameControllerGetType(pads[cidx]);
-        padsCfg[cidx].rumbleOn = ctype && (ctype != SDL_CONTROLLER_TYPE_VIRTUAL);
-    }
+		// Assume that all joysticks with haptic feedback support will support rumble
+		padsCfg[cidx].rumbleOn = SDL_JoystickIsHaptic(SDL_GameControllerGetJoystick(pads[cidx]));
+		if (!padsCfg[cidx].rumbleOn) {
+				// At least on Windows, some controllers will report no haptics, but rumble will still function
+				// Just assume it's supported if the controller is of a known type
+				const SDL_GameControllerType ctype = SDL_GameControllerGetType(pads[cidx]);
+				padsCfg[cidx].rumbleOn = ctype && (ctype != SDL_CONTROLLER_TYPE_VIRTUAL);
+		}
 #endif
-    if (!padsCfg[cidx].rumbleOn) {
-        sysLogPrintf(LOG_WARNING, "input: Rumble not supported for controller %d", jidx);
-    }
 
-    SDL_GameControllerSetPlayerIndex(pads[cidx], cidx);
-    padsCfg[cidx].deviceIndex = jidx;
-    connectedMask |= (1 << cidx);
+		// Set LEDs to indicate player index
+		SDL_GameControllerSetPlayerIndex(pads[cidx], cidx);
 
-    sysLogPrintf(LOG_NOTE, "input: Assigned controller '%d: (%s)' (ID %d) to player %d",
-                 jidx, SDL_GameControllerName(pads[cidx]), inputControllerGetId(pads[cidx]), cidx);
+		// Remember the joystick index
+		padsCfg[cidx].deviceIndex = jidx;
 
-    SDL_Joystick* joy = SDL_GameControllerGetJoystick(pads[cidx]);
-    if (joy) {
-        char guidStr[1024] = "";
-        SDL_JoystickGUID guid = SDL_JoystickGetGUID(joy);
-        SDL_JoystickGetGUIDString(guid, guidStr, sizeof(guidStr));
-        sysLogPrintf(LOG_NOTE, "input: GUID for controller %d: %s", jidx, guidStr);
-    }
+		connectedMask |= (1 << cidx);
 
-    if (SDL_GameControllerHasSensor(pads[cidx], SDL_SENSOR_GYRO)) {
-        sysLogPrintf(LOG_NOTE, "input: Gyroscope sensor available for controller %d", jidx);
-        if (SDL_GameControllerSetSensorEnabled(pads[cidx], SDL_SENSOR_GYRO, SDL_TRUE) == 0) {
-            float rate = SDL_GameControllerGetSensorDataRate(pads[cidx], SDL_SENSOR_GYRO);
-            if (rate >= 60.0f) {
-                sysLogPrintf(LOG_NOTE, "input: Gyroscope sensor enabled for controller %d with data rate %f Hz", jidx, rate);
-            } else {
-                sysLogPrintf(LOG_WARNING, "input: Gyroscope data rate may be insufficient for controller %d: %f Hz", jidx, rate);
-            }
-        } else {
-            sysLogPrintf(LOG_WARNING, "input: Failed to enable gyroscope sensor for controller %d", jidx);
-        }
-    } else {
-        sysLogPrintf(LOG_WARNING, "input: Gyroscope sensor not available for controller %d", jidx);
-    }
+		sysLogPrintf(LOG_NOTE, "input: Assigned controller '%d: (%s)' (ID %d) to player %d",
+				jidx, SDL_GameControllerName(pads[cidx]), inputControllerGetId(pads[cidx]), cidx);
+
+		SDL_Joystick* joy = SDL_GameControllerGetJoystick(pads[cidx]);
+		if (joy) {
+				char guidStr[1024] = "";
+				SDL_JoystickGUID guid = SDL_JoystickGetGUID(joy);
+				SDL_JoystickGetGUIDString(guid, guidStr, sizeof(guidStr));
+				sysLogPrintf(LOG_NOTE, "input: GUID for controller %d: %s", jidx, guidStr);
+		}
+
+		// Initialize sensors
+		inputInitSensor(pads[cidx], jidx, SDL_SENSOR_GYRO, "Gyroscope");
+		inputInitSensor(pads[cidx], jidx, SDL_SENSOR_ACCEL, "Accelerometer");
+}
+
+static void inputInitSensor(SDL_GameController* controller, s32 jidx, SDL_SensorType sensorType, const char* sensorName) {
+		if (SDL_GameControllerHasSensor(controller, sensorType)) {
+				sysLogPrintf(LOG_NOTE, "input: %s sensor available for controller %d", sensorName, jidx);
+				if (SDL_GameControllerSetSensorEnabled(controller, sensorType, SDL_TRUE) == 0) {
+						float rate = SDL_GameControllerGetSensorDataRate(controller, sensorType);
+						if (rate >= 60.0f) {
+								sysLogPrintf(LOG_NOTE, "input: %s sensor enabled for controller %d with data rate %f Hz", sensorName, jidx, rate);
+						}
+						else {
+								sysLogPrintf(LOG_WARNING, "input: %s data rate may be insufficient for controller %d: %f Hz", sensorName, jidx, rate);
+						}
+				}
+				else {
+						sysLogPrintf(LOG_WARNING, "input: Failed to enable %s sensor for controller %d", sensorName, jidx);
+				}
+		}
+		else {
+				sysLogPrintf(LOG_WARNING, "input: %s sensor not available for controller %d", sensorName, jidx);
+		}
 }
 
 static inline void inputCloseController(const s32 cidx)
 {
-	sysLogPrintf(LOG_NOTE, "input: removed controller '%d: (%s)' (id %d) from player %d",
-		padsCfg[cidx].deviceIndex, SDL_GameControllerName(pads[cidx]), inputControllerGetId(pads[cidx]), cidx);
+		sysLogPrintf(LOG_NOTE, "input: removed controller '%d: (%s)' (id %d) from player %d",
+				padsCfg[cidx].deviceIndex, SDL_GameControllerName(pads[cidx]), inputControllerGetId(pads[cidx]), cidx);
 
-	// reset player LEDs
-	SDL_GameControllerSetPlayerIndex(pads[cidx], -1);
+		// reset player LEDs
+		SDL_GameControllerSetPlayerIndex(pads[cidx], -1);
 
-	SDL_GameControllerClose(pads[cidx]);
+		SDL_GameControllerClose(pads[cidx]);
 
-	pads[cidx] = NULL;
-	padsCfg[cidx].rumbleOn = 0;
+		pads[cidx] = NULL;
+		padsCfg[cidx].rumbleOn = 0;
 
-	if (cidx) {
-		connectedMask &= ~(1 << cidx);
-	}
+		if (cidx) {
+				connectedMask &= ~(1 << cidx);
+		}
 }
 
 static inline s32 inputControllerGetIndex(SDL_GameController *ctrl)
@@ -490,29 +512,29 @@ static inline void inputInitAllControllers(void)
 	}
 }
 
-static int inputEventFilter(void *data, SDL_Event *event)
+static int inputEventFilter(void* data, SDL_Event* event)
 {
-	switch (event->type) {
+		switch (event->type) {
 		case SDL_CONTROLLERDEVICEADDED:
-			for (s32 i = firstController; i < INPUT_MAX_CONTROLLERS; ++i) {
-				if (!pads[i]) {
-					pads[i] = SDL_GameControllerOpen(event->cdevice.which);
-					if (pads[i]) {
-						inputInitController(i, event->cdevice.which);
-					}
-					break;
+				for (s32 i = firstController; i < INPUT_MAX_CONTROLLERS; ++i) {
+						if (!pads[i]) {
+								pads[i] = SDL_GameControllerOpen(event->cdevice.which);
+								if (pads[i]) {
+										inputInitController(i, event->cdevice.which);
+								}
+								break;
+						}
 				}
-			}
-			break;
+				break;
 
 		case SDL_CONTROLLERDEVICEREMOVED: {
-			SDL_GameController *ctrl = SDL_GameControllerFromInstanceID(event->cdevice.which);
-			const s32 idx = inputControllerGetIndex(ctrl);
-			if (idx >= 0) {
-				inputCloseController(idx);
-				padsCfg[idx].deviceIndex = -1;
-			}
-			break;
+				SDL_GameController* ctrl = SDL_GameControllerFromInstanceID(event->cdevice.which);
+				const s32 idx = inputControllerGetIndex(ctrl);
+				if (idx >= 0) {
+						inputCloseController(idx);
+						padsCfg[idx].deviceIndex = -1;
+				}
+				break;
 		}
 
 		case SDL_JOYDEVICEADDED:
@@ -521,73 +543,77 @@ static int inputEventFilter(void *data, SDL_Event *event)
 				break;
 
 		case SDL_CONTROLLERSENSORUPDATE:
-				if (event->csensor.sensor == SDL_SENSOR_GYRO) {
-						float gyroData[3];
+				if (event->csensor.sensor == SDL_SENSOR_GYRO || event->csensor.sensor == SDL_SENSOR_ACCEL) {
+						float sensorData[3];
 						SDL_GameController* controller = SDL_GameControllerFromInstanceID(event->cdevice.which);
-						if (controller && SDL_GameControllerGetSensorData(controller, SDL_SENSOR_GYRO, gyroData, 3) == 0) {
-								sysLogPrintf(LOG_NOTE, "input: Gyroscope sensor data for controller %d: X=%f, Y=%f, Z=%f", event->cdevice.which, gyroData[0], gyroData[1], gyroData[2]);
-								// Gyro data handling code can be added here
+						if (controller && SDL_GameControllerGetSensorData(controller, event->csensor.sensor, sensorData, 3) == 0) {
+								sysLogPrintf(LOG_NOTE, "input: %s sensor data for controller %d: X=%f, Y=%f, Z=%f",
+										(event->csensor.sensor == SDL_SENSOR_GYRO ? "Gyroscope" : "Accelerometer"),
+										event->cdevice.which, sensorData[0], sensorData[1], sensorData[2]);
+								// Sensor-specific data handling code can be added here
 						}
 						else {
-								sysLogPrintf(LOG_WARNING, "input: Failed to get gyroscope sensor data for controller %d", event->cdevice.which);
+								sysLogPrintf(LOG_WARNING, "input: Failed to get %s sensor data for controller %d",
+										(event->csensor.sensor == SDL_SENSOR_GYRO ? "Gyroscope" : "Accelerometer"),
+										event->cdevice.which);
 						}
 				}
 				break;
 
 		case SDL_MOUSEWHEEL:
-			mouseWheel = event->wheel.y;
-			if (!lastKey && mouseWheel) {
-				lastKey = (mouseWheel < 0) + VK_MOUSE_WHEEL_UP;
-			}
-			break;
+				mouseWheel = event->wheel.y;
+				if (!lastKey && mouseWheel) {
+						lastKey = (mouseWheel < 0) + VK_MOUSE_WHEEL_UP;
+				}
+				break;
 
 		case SDL_MOUSEBUTTONDOWN:
-			if (!lastKey) {
-				lastKey = VK_MOUSE_BEGIN - 1 + event->button.button;
-			}
-			break;
+				if (!lastKey) {
+						lastKey = VK_MOUSE_BEGIN - 1 + event->button.button;
+				}
+				break;
 
 		case SDL_KEYDOWN:
-			if (!lastKey) {
-				lastKey = VK_KEYBOARD_BEGIN + event->key.keysym.scancode;
-			}
-			break;
+				if (!lastKey) {
+						lastKey = VK_KEYBOARD_BEGIN + event->key.keysym.scancode;
+				}
+				break;
 
 		case SDL_CONTROLLERBUTTONDOWN:
-			if (!lastKey) {
-				lastKey = VK_JOY1_BEGIN + event->cbutton.button;
-				SDL_GameController *ctrl = SDL_GameControllerFromInstanceID(event->cdevice.which);
-				const s32 idx = inputControllerGetIndex(ctrl);
-				if (idx >= 0) {
-					lastKey += idx * INPUT_MAX_CONTROLLER_BUTTONS;
+				if (!lastKey) {
+						lastKey = VK_JOY1_BEGIN + event->cbutton.button;
+						SDL_GameController* ctrl = SDL_GameControllerFromInstanceID(event->cdevice.which);
+						const s32 idx = inputControllerGetIndex(ctrl);
+						if (idx >= 0) {
+								lastKey += idx * INPUT_MAX_CONTROLLER_BUTTONS;
+						}
 				}
-			}
-			break;
+				break;
 
 		case SDL_CONTROLLERAXISMOTION:
-			if (!lastKey) {
-				if (event->caxis.axis >= SDL_CONTROLLER_AXIS_TRIGGERLEFT && event->caxis.value > TRIG_THRESHOLD) {
-					lastKey = VK_JOY1_LTRIG + (event->caxis.axis - SDL_CONTROLLER_AXIS_TRIGGERLEFT);
-					SDL_GameController *ctrl = SDL_GameControllerFromInstanceID(event->cdevice.which);
-					const s32 idx = inputControllerGetIndex(ctrl);
-					if (idx >= 0) {
-						lastKey += idx * INPUT_MAX_CONTROLLER_BUTTONS;
-					}
+				if (!lastKey) {
+						if (event->caxis.axis >= SDL_CONTROLLER_AXIS_TRIGGERLEFT && event->caxis.value > TRIG_THRESHOLD) {
+								lastKey = VK_JOY1_LTRIG + (event->caxis.axis - SDL_CONTROLLER_AXIS_TRIGGERLEFT);
+								SDL_GameController* ctrl = SDL_GameControllerFromInstanceID(event->cdevice.which);
+								const s32 idx = inputControllerGetIndex(ctrl);
+								if (idx >= 0) {
+										lastKey += idx * INPUT_MAX_CONTROLLER_BUTTONS;
+								}
+						}
 				}
-			}
-			break;
+				break;
 
 		case SDL_TEXTINPUT:
-			if (!lastChar && event->text.text[0] && (u8)event->text.text[0] < 0x80) {
-				lastChar = event->text.text[0];
-			}
-			break;
+				if (!lastChar && event->text.text[0] && (u8)event->text.text[0] < 0x80) {
+						lastChar = event->text.text[0];
+				}
+				break;
 
 		default:
-			break;
-	}
+				break;
+		}
 
-	return 0;
+		return 0;
 }
 
 static inline void inputGetScancodeName(const SDL_Scancode sc, char *out, size_t len)
@@ -886,6 +912,17 @@ void inputUpdate(void)
 		}
 }
 
+static void updateCameraControl(f32 dx, f32 dy, f32 dz)
+{
+		// Update camera control with gyro input data
+		gyroCameraYaw += dx;
+		gyroCameraPitch += dy;
+		gyroCameraRoll += dz;
+
+		// Log the updated camera control values
+		sysLogPrintf(LOG_NOTE, "input: Updated camera control - Yaw=%f, Pitch=%f, Roll=%f", gyroCameraYaw, gyroCameraPitch, gyroCameraRoll);
+}
+
 static void inputUpdateMouse(void)
 {
 		s32 mx, my;
@@ -934,65 +971,63 @@ static void inputUpdateMouse(void)
 		updateCameraControl(mouseDX * mouseSensX, mouseDY * mouseSensY, 0);
 }
 
-static void updateCameraControl(f32 dx, f32 dy, f32 dz)
-{
-		// Update camera control with gyro input data
-		gyroCameraYaw += dx;
-		gyroCameraPitch += dy;
-		gyroCameraRoll += dz;
-
-		// Log the updated camera control values
-		sysLogPrintf(LOG_NOTE, "input: Updated camera control - Yaw=%f, Pitch=%f, Roll=%f", gyroCameraYaw, gyroCameraPitch, gyroCameraRoll);
-}
-
 static void inputUpdateGyro(void)
 {
-		SDL_GameController* controller = pads[0]; 
+		SDL_GameController* controller = pads[0]; // Assuming player 0 for simplicity
 		if (controller && SDL_GameControllerHasSensor(controller, SDL_SENSOR_GYRO)) {
 				float gyroData[3];
 				if (SDL_GameControllerGetSensorData(controller, SDL_SENSOR_GYRO, gyroData, 3) == 0) {
-						sysLogPrintf(LOG_NOTE, "Gyro Data: X=%f, Y=%f, Z=%f", gyroData[0], gyroData[1], gyroData[2]);
+						sysLogPrintf(LOG_NOTE, "input: Gyroscope sensor data: X=%f, Y=%f, Z=%f", gyroData[0], gyroData[1], gyroData[2]);
 
-						// Apply threshold
-						gyroData[0] = fabs(gyroData[0]) < gyroMinThreshold ? 0 : gyroData[0];
-						gyroData[1] = fabs(gyroData[1]) < gyroMinThreshold ? 0 : gyroData[1];
-						gyroData[2] = fabs(gyroData[2]) < gyroMinThreshold ? 0 : gyroData[2];
+						// Apply the minimum threshold
+						if (fabs(gyroData[0]) < gyroMinThreshold) gyroData[0] = 0;
+						if (fabs(gyroData[1]) < gyroMinThreshold) gyroData[1] = 0;
+						if (fabs(gyroData[2]) < gyroMinThreshold) gyroData[2] = 0;
 
-						// Handle gyro modes
-						s32 gyroDX = 0, gyroDY = 0, gyroDZ = 0;
+						s32 gyroDZ = 0; // Declare gyroDZ once
+
+						// Handle different gyro axis modes
 						switch (g_GyroAxisMode) {
-						case 0: // Yaw
-								gyroDX = (s32)(gyroData[1] * gyroSensX);
-								gyroDY = (s32)(gyroData[0] * gyroSensY);
-								updateCameraControl(gyroDX, gyroDY, 0);
+						case 0: // Yaw mode
+								gyroDX = (s32)((gyroData[1] - gyro_calibration_y) * gyroSensX);
+								gyroDY = (s32)((gyroData[0] - gyro_calibration_x) * gyroSensY);
+								updateCameraControl(gyroDX, 0, 0);
 								break;
-						case 1: // Roll
-								gyroDX = (s32)(-gyroData[2] * gyroSensX);
-								gyroDY = (s32)(gyroData[0] * gyroSensY);
-								updateCameraControl(gyroDX, 0, gyroDY);
+						case 1: // Roll mode
+								gyroDX = (s32)(-(gyroData[2] - gyro_calibration_z) * gyroSensX);
+								gyroDY = (s32)((gyroData[0] - gyro_calibration_x) * gyroSensY);
+								updateCameraControl(0, 0, gyroDX);
 								break;
 						case 2: // Local Space
-								// Implement local-specific transformation
-								// Placeholder for integration
+								gyroDX = (s32)((gyroData[0] - gyro_calibration_x) * gyroSensX);
+								gyroDY = (s32)((gyroData[1] - gyro_calibration_y) * gyroSensY);
+								gyroDZ = (s32)((gyroData[2] - gyro_calibration_z) * gyroSensX);
+								updateCameraControl(gyroDX, gyroDY, gyroDZ);
 								break;
 						case 3: // Player Space
-								// Implement player-specific transformation
-								// Placeholder for integration
+								// Implement player space transformation here
+								gyroDX = (s32)((gyroData[0] - gyro_calibration_x) * gyroSensX);
+								gyroDY = (s32)((gyroData[1] - gyro_calibration_y) * gyroSensY);
+								gyroDZ = (s32)((gyroData[2] - gyro_calibration_z) * gyroSensX);
+								updateCameraControl(gyroDX, gyroDY, gyroDZ);
 								break;
 						case 4: // World Space
-								// Implement world coordinate transformation
-								// Placeholder for integration
+								// Implement world space transformation here
+								gyroDX = (s32)((gyroData[0] - gyro_calibration_x) * gyroSensX);
+								gyroDY = (s32)((gyroData[1] - gyro_calibration_y) * gyroSensY);
+								gyroDZ = (s32)((gyroData[2] - gyro_calibration_z) * gyroSensX);
+								updateCameraControl(gyroDX, gyroDY, gyroDZ);
 								break;
 						default:
 								break;
 						}
 				}
 				else {
-						sysLogPrintf(LOG_WARNING, "Failed to read gyroscope data");
+						sysLogPrintf(LOG_WARNING, "input: Failed to get gyroscope sensor data");
 				}
 		}
 		else {
-				sysLogPrintf(LOG_WARNING, "Gyroscope not available or enabled");
+				sysLogPrintf(LOG_WARNING, "input: Gyroscope sensor not available or not enabled");
 		}
 }
 
