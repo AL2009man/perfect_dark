@@ -669,39 +669,7 @@ static MenuItemHandlerResult menuhandlerGyroSensitivityY(s32 operation, struct m
 		return 0;
 }
 
-// Function to set gyro crosshair speed for X axis
-static MenuItemHandlerResult menuhandlerGyroCrosshairSpeedX(s32 operation, struct menuitem* item, union handlerdata* data)
-{
-		switch (operation) {
-		case MENUOP_GETSLIDER:
-				data->slider.value = inputGyroGetCrosshairSpeedX() * 100.f + 0.5f;
-				break;
-		case MENUOP_SET:
-				inputGyroSetCrosshairSpeedX((f32)data->slider.value / 100.f);
-				break;
-		case MENUOP_GETSLIDERLABEL:
-				sprintf(data->slider.label, "%.2f", (f32)data->slider.value / 100.f);
-		}
-		return 0;
-}
-
-// Function to set gyro crosshair speed for Y axis
-static MenuItemHandlerResult menuhandlerGyroCrosshairSpeedY(s32 operation, struct menuitem* item, union handlerdata* data)
-{
-		switch (operation) {
-		case MENUOP_GETSLIDER:
-				data->slider.value = inputGyroGetCrosshairSpeedY() * 100.f + 0.5f;
-				break;
-		case MENUOP_SET:
-				inputGyroSetCrosshairSpeedY((f32)data->slider.value / 100.f);
-				break;
-		case MENUOP_GETSLIDERLABEL:
-				sprintf(data->slider.label, "%.2f", (f32)data->slider.value / 100.f);
-		}
-		return 0;
-}
-
-// Function to set gyro axis mode
+// Function to handle gyro axis mode
 static MenuItemHandlerResult menuhandlerGyroAxisMode(s32 operation, struct menuitem* item, union handlerdata* data)
 {
 		static const char* opts[] = {
@@ -728,6 +696,7 @@ static MenuItemHandlerResult menuhandlerGyroAxisMode(s32 operation, struct menui
 		return 0;
 }
 
+// Function to handle gyro movement threshold
 static MenuItemHandlerResult menuhandlerGyroMinThreshold(s32 operation, struct menuitem* item, union handlerdata* data)
 {
 		switch (operation) {

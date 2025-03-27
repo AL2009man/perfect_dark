@@ -913,7 +913,7 @@ s32 inputReadController(s32 idx, OSContPad *npad)
 	return 0;
 }
 
-// Function declarations
+// Updates to function declarations
 static void updateCameraControl(f32 dx, f32 dy, f32 dz);
 static void inputUpdateMouse(void);
 static void inputUpdateGyro(void);
@@ -933,12 +933,12 @@ void inputUpdate(void)
 
 static void updateCameraControl(f32 dx, f32 dy, f32 dz)
 {
-		// Update camera control with gyro and mouse input data
+		// Update camera control using gyro and mouse inputs
 		gyroCameraYaw += dx;
 		gyroCameraPitch += dy;
 		gyroCameraRoll += dz;
 
-		// Log the updated camera control values
+		// Log updated camera control values
 		sysLogPrintf(LOG_NOTE, "input: Updated camera control - Yaw=%f, Pitch=%f, Roll=%f", gyroCameraYaw, gyroCameraPitch, gyroCameraRoll);
 }
 
@@ -971,100 +971,58 @@ static void inputUpdateMouse(void)
 		mouseX = mx;
 		mouseY = my;
 
-		// if MLOCK_AUTO is enabled, disable cursor if mouse is unlocked
-		// and we haven't moved it for a few seconds
 		if (mouseLockMode == MLOCK_AUTO && !mouseLocked) {
 				if (abs(mouseDX) > CURSOR_HIDE_THRESHOLD || abs(mouseDY) > CURSOR_HIDE_THRESHOLD) {
-						if (!mouseShowCursor) {
-								inputMouseShowCursor(1);
-						}
+						inputMouseShowCursor(1);
 				}
 				else if (sysGetMicroseconds() > mouseCursorTime) {
-						if (mouseShowCursor) {
-								inputMouseShowCursor(0);
-						}
+						inputMouseShowCursor(0);
 				}
 		}
 
-		// Update camera control with mouse data
 		updateCameraControl(mouseDX * mouseSensX, mouseDY * mouseSensY, 0);
 }
 
 static void inputUpdateGyro(void)
 {
-		SDL_GameController* controller = pads[0]; // Assuming player 0
+		SDL_GameController* controller = pads[0];
 		if (controller && SDL_GameControllerHasSensor(controller, SDL_SENSOR_GYRO)) {
 				float gyroData[3];
 				if (SDL_GameControllerGetSensorData(controller, SDL_SENSOR_GYRO, gyroData, 3) == 0) {
 						sysLogPrintf(LOG_NOTE, "Gyro Data: X=%f, Y=%f, Z=%f", gyroData[0], gyroData[1], gyroData[2]);
 
-						// Apply thresholds to filter out noise
 						gyroData[0] = fabs(gyroData[0]) < gyroMinThreshold ? 0 : gyroData[0];
 						gyroData[1] = fabs(gyroData[1]) < gyroMinThreshold ? 0 : gyroData[1];
 						gyroData[2] = fabs(gyroData[2]) < gyroMinThreshold ? 0 : gyroData[2];
 
-						// Define gyro deltas
-						s32 gyroDX = 0, gyroDY = 0, gyroDZ = 0;
-
-						// Handle gyro activation modes
 						switch (g_GyroActivationMode) {
 						case GYRO_ALWAYS_ON:
-								// Gyro is always active
 								break;
 						case GYRO_TOGGLE:
 								if (inputKeyJustPressed(VK_JOY1_LTRIG)) {
 										g_GyroToggleState = !g_GyroToggleState;
 								}
-								if (!g_GyroToggleState) {
-										return;
-								}
+								if (!g_GyroToggleState) return;
 								break;
 						case GYRO_HOLD:
-								if (!inputKeyPressed(VK_JOY1_LTRIG)) {
-										return;
-								}
+								if (!inputKeyPressed(VK_JOY1_LTRIG)) return;
 								break;
 						case GYRO_HOLD_INVERTED:
-								if (inputKeyPressed(VK_JOY1_LTRIG)) {
-										return;
-								}
+								if (inputKeyPressed(VK_JOY1_LTRIG)) return;
 								break;
 						default:
 								sysLogPrintf(LOG_WARNING, "Unknown Gyro activation mode %d", g_GyroActivationMode);
 								return;
 						}
 
-						// Handle gyro aim modes
 						if (g_GyroAimMode == GYRO_AIM_CAMERA || g_GyroAimMode == GYRO_AIM_BOTH) {
-								// Handle gyro axis modes for camera
 								switch (g_GyroAxisMode) {
-								case 0: // Yaw Mode
-										gyroDX = (s32)(gyroData[1] * gyroSensX); // Yaw
-										gyroDY = (s32)(gyroData[0] * gyroSensY); // Pitch
-										updateCameraControl(gyroDX, gyroDY, 0);
+								case 0:
+										updateCameraControl(gyroData[1] * gyroSensX, gyroData[0] * gyroSensY, 0);
 										break;
-
-								case 1: // Roll Mode
-										gyroDX = (s32)(-gyroData[2] * gyroSensX); // Roll
-										gyroDY = (s32)(gyroData[0] * gyroSensY);  // Pitch
-										updateCameraControl(gyroDX, 0, gyroDY);
+								case 1:
+										updateCameraControl(-gyroData[2] * gyroSensX, gyroData[0] * gyroSensY, gyroData[2] * gyroSensX);
 										break;
-
-								case 2: // Local Space (Placeholder)
-										sysLogPrintf(LOG_WARNING, "Local Space transformation not implemented");
-										// Placeholder logic can go here
-										break;
-
-								case 3: // Player Space (Placeholder)
-										sysLogPrintf(LOG_WARNING, "Player Space transformation not implemented");
-										// Placeholder logic can go here
-										break;
-
-								case 4: // World Space (Placeholder)
-										sysLogPrintf(LOG_WARNING, "World Space transformation not implemented");
-										// Placeholder logic can go here
-										break;
-
 								default:
 										sysLogPrintf(LOG_WARNING, "Unknown Gyro axis mode %d", g_GyroAxisMode);
 										break;
@@ -1072,12 +1030,7 @@ static void inputUpdateGyro(void)
 						}
 
 						if (g_GyroAimMode == GYRO_AIM_CROSSHAIR || g_GyroAimMode == GYRO_AIM_BOTH) {
-								// Handle gyro crosshair movement
-								s32 crosshairDX = (s32)(gyroData[1] * gyroCrosshairSpeedX);
-								s32 crosshairDY = (s32)(gyroData[0] * gyroCrosshairSpeedY);
-								// Update crosshair position with crosshairDX and crosshairDY
-								// Placeholder logic for updating crosshair position
-								sysLogPrintf(LOG_NOTE, "input: Updated crosshair position - DX=%d, DY=%d", crosshairDX, crosshairDY);
+								sysLogPrintf(LOG_NOTE, "input: Updated crosshair position");
 						}
 				}
 				else {
@@ -1516,26 +1469,26 @@ void inputGyroGetRawDelta(s32* dx, s32* dy)
 
 void inputGyroGetScaledDelta(f32* dx, f32* dy)
 {
-		f32 gdx, gdy;
-		gdx = gyroSensX * (f32)gyroDX / 100.0f;
-		gdy = gyroSensY * (f32)gyroDY / 100.0f;
-		if (dx) *dx = gdx;
-		if (dy) *dy = gdy;
+		if (dx && dy) {
+				*dx = gyroSensX * (f32)gyroDX / 100.0f;
+				*dy = gyroSensY * (f32)gyroDY / 100.0f;
+		}
 }
 
 void inputGyroGetAbsScaledDelta(f32* dx, f32* dy)
 {
-		f32 gdx, gdy;
-		gdx = fabsf(gyroSensX) * (f32)gyroDX / 100.0f;
-		gdy = fabsf(gyroSensY) * (f32)gyroDY / 100.0f;
-		if (dx) *dx = gdx;
-		if (dy) *dy = gdy;
+		if (dx && dy) {
+				*dx = fabsf(gyroSensX) * (f32)gyroDX / 100.0f;
+				*dy = fabsf(gyroSensY) * (f32)gyroDY / 100.0f;
+		}
 }
 
 void inputGyroGetSpeed(f32* x, f32* y)
 {
-		*x = gyroSensX;
-		*y = gyroSensY;
+		if (x && y) {
+				*x = gyroSensX;
+				*y = gyroSensY;
+		}
 }
 
 void inputGyroSetSpeed(f32 x, f32 y)
@@ -1544,35 +1497,43 @@ void inputGyroSetSpeed(f32 x, f32 y)
 		gyroSensY = y;
 }
 
-f32 inputGyroGetSpeedX(void) {
+f32 inputGyroGetSpeedX(void)
+{
 		return gyroSensX;
 }
 
-void inputGyroSetSpeedX(f32 speed) {
+void inputGyroSetSpeedX(f32 speed)
+{
 		gyroSensX = speed;
 }
 
-f32 inputGyroGetSpeedY(void) {
+f32 inputGyroGetSpeedY(void)
+{
 		return gyroSensY;
 }
 
-void inputGyroSetSpeedY(f32 speed) {
+void inputGyroSetSpeedY(f32 speed)
+{
 		gyroSensY = speed;
 }
 
-s32 inputGetGyroAxisMode(void) {
+s32 inputGetGyroAxisMode(void)
+{
 		return g_GyroAxisMode;
 }
 
-void inputSetGyroAxisMode(s32 mode) {
+void inputSetGyroAxisMode(s32 mode)
+{
 		g_GyroAxisMode = mode;
 }
 
-f32 inputGetGyroMinThreshold(void) {
+f32 inputGetGyroMinThreshold(void)
+{
 		return gyroMinThreshold;
 }
 
-void inputSetGyroMinThreshold(f32 threshold) {
+void inputSetGyroMinThreshold(f32 threshold)
+{
 		gyroMinThreshold = threshold;
 }
 
@@ -1586,35 +1547,43 @@ void inputGyroEnable(s32 enabled)
 		gyroEnabled = !!enabled;
 }
 
-s32 inputGetGyroActivationMode(void) {
+s32 inputGetGyroActivationMode(void)
+{
 		return g_GyroActivationMode;
 }
 
-void inputSetGyroActivationMode(s32 mode) {
+void inputSetGyroActivationMode(s32 mode)
+{
 		g_GyroActivationMode = mode;
 }
 
-s32 inputGetGyroAimMode(void) {
+s32 inputGetGyroAimMode(void)
+{
 		return g_GyroAimMode;
 }
 
-void inputSetGyroAimMode(s32 mode) {
+void inputSetGyroAimMode(s32 mode)
+{
 		g_GyroAimMode = mode;
 }
 
-f32 inputGyroGetCrosshairSpeedX(void) {
+f32 inputGyroGetCrosshairSpeedX(void)
+{
 		return gyroCrosshairSpeedX;
 }
 
-void inputGyroSetCrosshairSpeedX(f32 speed) {
+void inputGyroSetCrosshairSpeedX(f32 speed)
+{
 		gyroCrosshairSpeedX = speed;
 }
 
-f32 inputGyroGetCrosshairSpeedY(void) {
+f32 inputGyroGetCrosshairSpeedY(void)
+{
 		return gyroCrosshairSpeedY;
 }
 
-void inputGyroSetCrosshairSpeedY(f32 speed) {
+void inputGyroSetCrosshairSpeedY(f32 speed)
+{
 		gyroCrosshairSpeedY = speed;
 }
 
