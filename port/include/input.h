@@ -245,7 +245,7 @@ void inputGyroGetScaledDelta(f32* dx, f32* dy);
 void inputGyroGetAbsScaledDelta(f32* dx, f32* dy);
 
 void inputGyroGetSpeed(f32* x, f32* y);
-void inputGyroSetSpeed(f32 x, f32 y);		
+void inputGyroSetSpeed(f32 x, f32 y);
 
 s32 inputGyroIsEnabled(void);
 void inputGyroEnable(s32 enabled);

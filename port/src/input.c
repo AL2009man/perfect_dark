@@ -1334,6 +1334,36 @@ void inputSetMouseLockMode(s32 lockmode)
 	}
 }
 
+s32 inputGyroGetPosition(s32* x, s32* y)
+{
+		if (x) *x = gyroX * videoGetNativeWidth() / videoGetWidth();
+		if (y) *y = gyroY * videoGetNativeHeight() / videoGetHeight();
+		return (gyroDX != 0 || gyroDY != 0);
+}
+
+void inputGyroGetRawDelta(s32* dx, s32* dy)
+{
+		if (dx) *dx = gyroDX;
+		if (dy) *dy = gyroDY;
+}
+
+void inputGyroGetScaledDelta(f32* dx, f32* dy)
+{
+		f32 gdx, gdy;
+		gdx = gyroSensX * (f32)gyroDX / 100.0f;
+		gdy = gyroSensY * (f32)gyroDY / 100.0f;
+		if (dx) *dx = gdx;
+		if (dy) *dy = gdy;
+}
+
+void inputGyroGetAbsScaledDelta(f32* dx, f32* dy)
+{
+		f32 gdx, gdy;
+		gdx = fabsf(gyroSensX) * (f32)gyroDX / 100.0f;
+		gdy = fabsf(gyroSensY) * (f32)gyroDY / 100.0f;
+		if (dx) *dx = gdx;
+		if (dy) *dy = gdy;
+}
 
 void inputGyroGetSpeed(f32* x, f32* y)
 {
@@ -1356,7 +1386,6 @@ void inputGyroEnable(s32 enabled)
 {
 		gyroEnabled = !!enabled;
 }
-
 
 const char *inputGetContKeyName(u32 ck)
 {
