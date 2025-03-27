@@ -244,11 +244,41 @@ void inputGyroGetScaledDelta(f32* dx, f32* dy);
 // returns 0, 0 when the gyro is not enabled
 void inputGyroGetAbsScaledDelta(f32* dx, f32* dy);
 
+// gets the current gyro sensitivity for X and Y axes
 void inputGyroGetSpeed(f32* x, f32* y);
+
+// sets the gyro sensitivity for X and Y axes
 void inputGyroSetSpeed(f32 x, f32 y);
 
+// returns 1 if the gyro is enabled, 0 otherwise
 s32 inputGyroIsEnabled(void);
+
+// enables or disables the gyro
 void inputGyroEnable(s32 enabled);
+
+// gets the current gyro sensitivity for the X axis
+f32 inputGyroGetSpeedX(void);
+
+// sets the gyro sensitivity for the X axis
+void inputGyroSetSpeedX(f32 speed);
+
+// gets the current gyro sensitivity for the Y axis
+f32 inputGyroGetSpeedY(void);
+
+// sets the gyro sensitivity for the Y axis
+void inputGyroSetSpeedY(f32 speed);
+
+// gets the current gyro axis mode
+s32 inputGetGyroAxisMode(void);
+
+// sets the gyro axis mode
+void inputSetGyroAxisMode(s32 mode);
+
+// gets the current gyro minimum movement threshold
+f32 inputGetGyroMinThreshold(void);
+
+// sets the gyro minimum movement threshold
+void inputSetGyroMinThreshold(f32 threshold);
 
 // call this every frame
 void inputUpdate(void);

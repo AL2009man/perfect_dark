@@ -573,6 +573,165 @@ static MenuItemHandlerResult menuhandlerSwapSticks(s32 operation, struct menuite
 	return 0;
 }
 
+// Function to toggle gyro aiming
+static MenuItemHandlerResult menuhandlerGyroEnabled(s32 operation, struct menuitem* item, union handlerdata* data)
+{
+		switch (operation) {
+		case MENUOP_GET:
+				return inputGyroIsEnabled();
+		case MENUOP_SET:
+				inputGyroEnable(data->checkbox.value);
+				break;
+		}
+		return 0;
+}
+
+// Function to set gyro sensitivity for X axis
+static MenuItemHandlerResult menuhandlerGyroSensitivityX(s32 operation, struct menuitem* item, union handlerdata* data)
+{
+		switch (operation) {
+		case MENUOP_GETSLIDER:
+				data->slider.value = inputGyroGetSpeedX() * 100.f + 0.5f;
+				break;
+		case MENUOP_SET:
+				inputGyroSetSpeedX((f32)data->slider.value / 100.f);
+				break;
+		case MENUOP_GETSLIDERLABEL:
+				sprintf(data->slider.label, "%.2f", (f32)data->slider.value / 100.f);
+		}
+		return 0;
+}
+
+// Function to set gyro sensitivity for Y axis
+static MenuItemHandlerResult menuhandlerGyroSensitivityY(s32 operation, struct menuitem* item, union handlerdata* data)
+{
+		switch (operation) {
+		case MENUOP_GETSLIDER:
+				data->slider.value = inputGyroGetSpeedY() * 100.f + 0.5f;
+				break;
+		case MENUOP_SET:
+				inputGyroSetSpeedY((f32)data->slider.value / 100.f);
+				break;
+		case MENUOP_GETSLIDERLABEL:
+				sprintf(data->slider.label, "%.2f", (f32)data->slider.value / 100.f);
+		}
+		return 0;
+}
+
+// Function to set gyro axis mode
+static MenuItemHandlerResult menuhandlerGyroAxisMode(s32 operation, struct menuitem* item, union handlerdata* data)
+{
+		static const char* opts[] = {
+				"Yaw",
+				"Roll",
+				"Local Space",
+				"Player Space",
+				"World Space"
+		};
+
+		switch (operation) {
+		case MENUOP_GETOPTIONCOUNT:
+				data->dropdown.value = ARRAYCOUNT(opts);
+				break;
+		case MENUOP_GETOPTIONTEXT:
+				return (intptr_t)opts[data->dropdown.value];
+		case MENUOP_SET:
+				inputSetGyroAxisMode(data->dropdown.value);
+				break;
+		case MENUOP_GETSELECTEDINDEX:
+				data->dropdown.value = inputGetGyroAxisMode();
+		}
+
+		return 0;
+}
+
+static MenuItemHandlerResult menuhandlerGyroMinThreshold(s32 operation, struct menuitem* item, union handlerdata* data)
+{
+		switch (operation) {
+		case MENUOP_GETSLIDER:
+				data->slider.value = inputGetGyroMinThreshold() * 100.0f;
+				break;
+		case MENUOP_SET:
+				inputSetGyroMinThreshold(data->slider.value / 100.0f);
+				break;
+		case MENUOP_GETSLIDERLABEL:
+				sprintf(data->slider.label, "%.2f", inputGetGyroMinThreshold());
+				break;
+		}
+
+		return 0;
+}
+
+struct menuitem g_ExtendedGyroMenuItems[] = {
+		{
+				MENUITEMTYPE_CHECKBOX,
+				0,
+				MENUITEMFLAG_LITERAL_TEXT,
+				(uintptr_t)"Enable Gyro Aim",
+				0,
+				menuhandlerGyroEnabled,
+		},
+		{
+				MENUITEMTYPE_SLIDER,
+				0,
+				MENUITEMFLAG_LITERAL_TEXT | MENUITEMFLAG_SLIDER_WIDE,
+				(uintptr_t)"Gyro Sensitivity X",
+				1000,
+				menuhandlerGyroSensitivityX,
+		},
+		{
+				MENUITEMTYPE_SLIDER,
+				0,
+				MENUITEMFLAG_LITERAL_TEXT | MENUITEMFLAG_SLIDER_WIDE,
+				(uintptr_t)"Gyro Sensitivity Y",
+				1000,
+				menuhandlerGyroSensitivityY,
+		},
+		{
+				MENUITEMTYPE_DROPDOWN,
+				0,
+				MENUITEMFLAG_LITERAL_TEXT,
+				(uintptr_t)"Gyro Axis Mode",
+				0,
+				menuhandlerGyroAxisMode,
+		},
+		{
+				MENUITEMTYPE_SLIDER,
+				0,
+				MENUITEMFLAG_LITERAL_TEXT | MENUITEMFLAG_SLIDER_WIDE,
+				(uintptr_t)"Gyro Movement Threshold",
+				100,
+				menuhandlerGyroMinThreshold,
+		},
+		{
+				MENUITEMTYPE_SEPARATOR,
+				0,
+				0,
+				0,
+				0,
+				NULL,
+		},
+		{
+				MENUITEMTYPE_SELECTABLE,
+				0,
+				MENUITEMFLAG_SELECTABLE_CLOSESDIALOG,
+				L_OPTIONS_213, // "Back"
+				0,
+				NULL,
+		},
+		{ MENUITEMTYPE_END },
+};
+
+
+struct menudialogdef g_ExtendedGyroMenuDialog = {
+		MENUDIALOGTYPE_DEFAULT,
+		(uintptr_t)"Gyro Settings",
+		g_ExtendedGyroMenuItems,
+		NULL,
+		MENUDIALOGFLAG_LITERAL_TEXT,
+		NULL,
+};
+
 static MenuItemHandlerResult menuhandlerController(s32 operation, struct menuitem *item, union handlerdata *data)
 {
 	static char ctrlname[35];
@@ -647,6 +806,14 @@ struct menuitem g_ExtendedControllerMenuItems[] = {
 		(uintptr_t)"Stick Settings...\n",
 		0,
 		(void *)&g_ExtendedStickMenuDialog,
+	},
+	{
+		MENUITEMTYPE_SELECTABLE,
+		0,
+		MENUITEMFLAG_SELECTABLE_OPENSDIALOG | MENUITEMFLAG_LITERAL_TEXT,
+		(uintptr_t)"Gyro Settings...\n",
+		0,
+		(void*)&g_ExtendedGyroMenuDialog,
 	},
 	{
 		MENUITEMTYPE_SLIDER,
