@@ -876,18 +876,25 @@ s32 inputReadController(s32 idx, OSContPad *npad)
 	return 0;
 }
 
-static void updateCameraControl(f32 dx, f32 dy, f32 dz)
-{
-		// Update camera control with gyro input data
-		gyroCameraYaw += dx;
-		gyroCameraPitch += dy;
-		gyroCameraRoll += dz;
+// Function declarations
+static void updateCameraControl(f32 dx, f32 dy, f32 dz);
+static void inputUpdateMouse(void);
+static void inputUpdateGyro(void);
 
-		// Log the updated camera control values
-		sysLogPrintf(LOG_NOTE, "input: Updated camera control - Yaw=%f, Pitch=%f, Roll=%f", gyroCameraYaw, gyroCameraPitch, gyroCameraRoll);
+void inputUpdate(void)
+{
+		SDL_GameControllerUpdate();
+
+		if (mouseEnabled) {
+				inputUpdateMouse();
+		}
+
+		if (gyroEnabled) {
+				inputUpdateGyro();
+		}
 }
 
-static inline void inputUpdateMouse(void)
+static void inputUpdateMouse(void)
 {
 		s32 mx, my;
 		mouseButtons = SDL_GetMouseState(&mx, &my);
@@ -935,7 +942,18 @@ static inline void inputUpdateMouse(void)
 		updateCameraControl(mouseDX * mouseSensX, mouseDY * mouseSensY, 0);
 }
 
-static inline void inputUpdateGyro(void)
+static void updateCameraControl(f32 dx, f32 dy, f32 dz)
+{
+		// Update camera control with gyro input data
+		gyroCameraYaw += dx;
+		gyroCameraPitch += dy;
+		gyroCameraRoll += dz;
+
+		// Log the updated camera control values
+		sysLogPrintf(LOG_NOTE, "input: Updated camera control - Yaw=%f, Pitch=%f, Roll=%f", gyroCameraYaw, gyroCameraPitch, gyroCameraRoll);
+}
+
+static void inputUpdateGyro(void)
 {
 		SDL_GameController* controller = pads[0]; // Assuming player 0 for simplicity
 		if (controller && SDL_GameControllerHasSensor(controller, SDL_SENSOR_GYRO)) {
@@ -990,19 +1008,6 @@ static inline void inputUpdateGyro(void)
 		}
 		else {
 				sysLogPrintf(LOG_WARNING, "input: Gyroscope sensor not available or not enabled");
-		}
-}
-
-void inputUpdate(void)
-{
-		SDL_GameControllerUpdate();
-
-		if (mouseEnabled) {
-				inputUpdateMouse();
-		}
-
-		if (gyroEnabled) {
-				inputUpdateGyro();
 		}
 }
 
