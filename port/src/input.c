@@ -92,6 +92,7 @@ static f32 mouseSensY = 1.5f;
 static s32 gyroEnabled = 1; // Enable gyro aiming by default
 static f32 gyroX, gyroY;
 static s32 gyroDX, gyroDY;
+
 static f32 gyroSensX = 1.5f;
 static f32 gyroSensY = 1.5f;
 
@@ -358,9 +359,17 @@ static inline void inputInitController(const s32 cidx, const s32 jidx)
 
 	// Enable the gyroscope sensor if available
 	if (SDL_GameControllerHasSensor(pads[cidx], SDL_SENSOR_GYRO)) {
-			SDL_GameControllerSetSensorEnabled(pads[cidx], SDL_SENSOR_GYRO, SDL_TRUE);
-			float rate = SDL_GameControllerGetSensorDataRate(pads[cidx], SDL_SENSOR_GYRO);
-			sysLogPrintf(LOG_NOTE, "input: Gyroscope sensor data rate for controller %d: %f", jidx, rate);
+			sysLogPrintf(LOG_NOTE, "input: Gyroscope sensor available for controller %d", jidx);
+			if (SDL_GameControllerSetSensorEnabled(pads[cidx], SDL_SENSOR_GYRO, SDL_TRUE) == 0) {
+					float rate = SDL_GameControllerGetSensorDataRate(pads[cidx], SDL_SENSOR_GYRO);
+					sysLogPrintf(LOG_NOTE, "input: Gyroscope sensor enabled for controller %d with data rate %f", jidx, rate);
+			}
+			else {
+					sysLogPrintf(LOG_WARNING, "input: Failed to enable gyroscope sensor for controller %d", jidx);
+			}
+	}
+	else {
+			sysLogPrintf(LOG_WARNING, "input: Gyroscope sensor not available for controller %d", jidx);
 	}
 }
 
@@ -517,7 +526,11 @@ static int inputEventFilter(void *data, SDL_Event *event)
 						float gyroData[3];
 						SDL_GameController* controller = SDL_GameControllerFromInstanceID(event->cdevice.which);
 						if (controller && SDL_GameControllerGetSensorData(controller, SDL_SENSOR_GYRO, gyroData, 3) == 0) {
+								sysLogPrintf(LOG_NOTE, "input: Gyroscope sensor data for controller %d: X=%f, Y=%f, Z=%f", event->cdevice.which, gyroData[0], gyroData[1], gyroData[2]);
 								// Gyro data handling code can be added here
+						}
+						else {
+								sysLogPrintf(LOG_WARNING, "input: Failed to get gyroscope sensor data for controller %d", event->cdevice.which);
 						}
 				}
 				break;
@@ -856,46 +869,63 @@ s32 inputReadController(s32 idx, OSContPad *npad)
 	return 0;
 }
 
+static void updateCameraControl(f32 dx, f32 dy, f32 dz)
+{
+		// Update camera control with gyro input data
+		gyroCameraYaw += dx;
+		gyroCameraPitch += dy;
+		gyroCameraRoll += dz;
+
+		// Log the updated camera control values
+		sysLogPrintf(LOG_NOTE, "input: Updated camera control - Yaw=%f, Pitch=%f, Roll=%f", gyroCameraYaw, gyroCameraPitch, gyroCameraRoll);
+}
+
 static inline void inputUpdateMouse(void)
 {
-	s32 mx, my;
-	mouseButtons = SDL_GetMouseState(&mx, &my);
+		s32 mx, my;
+		mouseButtons = SDL_GetMouseState(&mx, &my);
 
-	if (mouseWheel > 0) {
-		mouseButtons |= WHEEL_UP_MASK;
-	} else if (mouseWheel < 0) {
-		mouseButtons |= WHEEL_DN_MASK;
-	}
-
-	mouseWheel = 0;
-
-	s32 mdx = 0;
-	s32 mdy = 0;
-	SDL_GetRelativeMouseState(&mdx, &mdy);
-	if (mouseLocked) {
-		mouseDX = mdx;
-		mouseDY = mdy;
-	} else {
-		mouseDX = mx - mouseX;
-		mouseDY = my - mouseY;
-	}
-
-	mouseX = mx;
-	mouseY = my;
-
-	// if MLOCK_AUTO is enabled, disable cursor if mouse is unlocked
-	// and we haven't moved it for a few seconds
-	if (mouseLockMode == MLOCK_AUTO && !mouseLocked) {
-		if (abs(mouseDX) > CURSOR_HIDE_THRESHOLD || abs(mouseDY) > CURSOR_HIDE_THRESHOLD) {
-			if (!mouseShowCursor) {
-				inputMouseShowCursor(1);
-			}
-		} else if (sysGetMicroseconds() > mouseCursorTime) {
-			if (mouseShowCursor) {
-				inputMouseShowCursor(0);
-			}
+		if (mouseWheel > 0) {
+				mouseButtons |= WHEEL_UP_MASK;
 		}
-	}
+		else if (mouseWheel < 0) {
+				mouseButtons |= WHEEL_DN_MASK;
+		}
+
+		mouseWheel = 0;
+
+		s32 mdx = 0;
+		s32 mdy = 0;
+		SDL_GetRelativeMouseState(&mdx, &mdy);
+		if (mouseLocked) {
+				mouseDX = mdx;
+				mouseDY = mdy;
+		}
+		else {
+				mouseDX = mx - mouseX;
+				mouseDY = my - mouseY;
+		}
+
+		mouseX = mx;
+		mouseY = my;
+
+		// if MLOCK_AUTO is enabled, disable cursor if mouse is unlocked
+		// and we haven't moved it for a few seconds
+		if (mouseLockMode == MLOCK_AUTO && !mouseLocked) {
+				if (abs(mouseDX) > CURSOR_HIDE_THRESHOLD || abs(mouseDY) > CURSOR_HIDE_THRESHOLD) {
+						if (!mouseShowCursor) {
+								inputMouseShowCursor(1);
+						}
+				}
+				else if (sysGetMicroseconds() > mouseCursorTime) {
+						if (mouseShowCursor) {
+								inputMouseShowCursor(0);
+						}
+				}
+		}
+
+		// Update camera control with mouse data
+		updateCameraControl(mouseDX * mouseSensX, mouseDY * mouseSensY, 0);
 }
 
 static inline void inputUpdateGyro(void)
@@ -904,17 +934,23 @@ static inline void inputUpdateGyro(void)
 		if (controller && SDL_GameControllerHasSensor(controller, SDL_SENSOR_GYRO)) {
 				float gyroData[3];
 				if (SDL_GameControllerGetSensorData(controller, SDL_SENSOR_GYRO, gyroData, 3) == 0) {
+						sysLogPrintf(LOG_NOTE, "input: Gyroscope sensor data: X=%f, Y=%f, Z=%f", gyroData[0], gyroData[1], gyroData[2]);
 						gyroDX = (s32)(gyroData[0] * gyroSensX);
 						gyroDY = (s32)(gyroData[1] * gyroSensY);
 						s32 gyroDZ = (s32)(gyroData[2] * gyroSensX); // Assuming same sensitivity for roll
 
 						// Update camera control with gyro data
-						gyroCameraYaw += gyroDX * gyroSensX;
-						gyroCameraPitch += gyroDY * gyroSensY;
-						gyroCameraRoll += gyroDZ * gyroSensX;
+						updateCameraControl(gyroDX * gyroSensX, gyroDY * gyroSensY, gyroDZ * gyroSensX);
+				}
+				else {
+						sysLogPrintf(LOG_WARNING, "input: Failed to get gyroscope sensor data");
 				}
 		}
+		else {
+				sysLogPrintf(LOG_WARNING, "input: Gyroscope sensor not available or not enabled");
+		}
 }
+
 
 void inputUpdate(void)
 {
@@ -926,6 +962,11 @@ void inputUpdate(void)
 
 		if (gyroEnabled) {
 				inputUpdateGyro();
+		}
+
+		// Check for the toggle key press
+		if (inputKeyJustPressed(SDL_SCANCODE_G)) { // Example key: 'G'
+				toggleGyroAiming();
 		}
 }
 
