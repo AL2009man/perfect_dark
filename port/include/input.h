@@ -229,6 +229,27 @@ void inputMouseSetSpeed(f32 x, f32 y);
 s32 inputMouseIsEnabled(void);
 void inputMouseEnable(s32 enabled);
 
+// sets x, y to gyro position in native viewport coordinates (ie, 320x240 most of the time)
+// returns true if gyro has changed this input frame
+s32 inputGyroGetPosition(s32* x, s32* y);
+
+// returns changes in gyro position since last frame, in window coordinates
+void inputGyroGetRawDelta(s32* dx, s32* dy);
+
+// returns changes in gyro position since last frame, scaled by sensitivity
+// returns 0, 0 when the gyro is not enabled
+void inputGyroGetScaledDelta(f32* dx, f32* dy);
+
+// returns changes in gyro position since last frame, scaled by absolute sensitivity
+// returns 0, 0 when the gyro is not enabled
+void inputGyroGetAbsScaledDelta(f32* dx, f32* dy);
+
+void inputGyroGetSpeed(f32* x, f32* y);
+void inputGyroSetSpeed(f32 x, f32 y);		
+
+s32 inputGyroIsEnabled(void);
+void inputGyroEnable(s32 enabled);
+
 // call this every frame
 void inputUpdate(void);
 

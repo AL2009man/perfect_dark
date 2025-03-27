@@ -88,6 +88,12 @@ static s32 mouseShowCursor = 1;
 static f32 mouseSensX = 1.5f;
 static f32 mouseSensY = 1.5f;
 
+static s32 gyroEnabled = 1;
+static f32 gyroX, gyroY;
+static s32 gyroDX, gyroDY;
+static f32 gyroSensX = 1.5f;
+static f32 gyroSensY = 1.5f;
+
 static s32 lastKey = 0;
 static char lastChar = 0;
 static s32 textInput = 0;
@@ -886,13 +892,34 @@ static inline void inputUpdateMouse(void)
 	}
 }
 
+
+static inline void inputUpdateGyro(void)
+{
+		SDL_GameController* controller = pads[0]; // Assuming player 0 for simplicity
+		if (controller && SDL_GameControllerHasSensor(controller, SDL_SENSOR_GYRO)) {
+				float gyroData[3];
+				if (SDL_GameControllerGetSensorData(controller, SDL_SENSOR_GYRO, gyroData, 3) == 0) {
+						gyroDX = (s32)(gyroData[0] * gyroSensX);
+						gyroDY = (s32)(gyroData[1] * gyroSensY);
+				}
+		}
+}
+
+
+
+
+
 void inputUpdate(void)
 {
-	SDL_GameControllerUpdate();
+		SDL_GameControllerUpdate();
 
-	if (mouseEnabled) {
-		inputUpdateMouse();
-	}
+		if (mouseEnabled) {
+				inputUpdateMouse();
+		}
+
+		if (gyroEnabled) {
+				inputUpdateGyro();
+		}
 }
 
 s32 inputControllerConnected(s32 idx)
@@ -1307,6 +1334,30 @@ void inputSetMouseLockMode(s32 lockmode)
 	}
 }
 
+
+void inputGyroGetSpeed(f32* x, f32* y)
+{
+		*x = gyroSensX;
+		*y = gyroSensY;
+}
+
+void inputGyroSetSpeed(f32 x, f32 y)
+{
+		gyroSensX = x;
+		gyroSensY = y;
+}
+
+s32 inputGyroIsEnabled(void)
+{
+		return gyroEnabled;
+}
+
+void inputGyroEnable(s32 enabled)
+{
+		gyroEnabled = !!enabled;
+}
+
+
 const char *inputGetContKeyName(u32 ck)
 {
 	if (ck >= CK_TOTAL_COUNT) {
@@ -1497,6 +1548,9 @@ PD_CONSTRUCTOR static void inputConfigInit(void)
 	configRegisterInt("Input.MouseLockMode", &mouseLockMode, MLOCK_OFF, MLOCK_AUTO);
 	configRegisterFloat("Input.MouseSpeedX", &mouseSensX, -10.f, 10.f);
 	configRegisterFloat("Input.MouseSpeedY", &mouseSensY, -10.f, 10.f);
+	configRegisterInt("Input.GyroEnabled", &gyroEnabled, 0, 1); 
+	configRegisterFloat("Input.GyroSpeedX", &gyroSensX, -10.f, 10.f);
+	configRegisterFloat("Input.GyroSpeedY", &gyroSensY, -10.f, 10.f);
 	configRegisterInt("Input.FakeGamepads", &fakeControllers, 0, 4);
 	configRegisterInt("Input.FirstGamepadNum", &firstController, 0, 3);
 
