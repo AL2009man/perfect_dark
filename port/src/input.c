@@ -683,7 +683,7 @@ s32 inputInit(void)
 	SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_PS4, "1");
 	SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_PS5, "1");
 	SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_SWITCH, "1");
-	SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_PS4_RUMBLE, "1"); // This hint will enable PlayStation's more advanced feature sets when using Bluetooth connecivity, this includes Motion Sensors.
+	SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_PS4_RUMBLE, "1"); // Enables Rumble and Motion Sensor functionality when under Bluetooth connectivity.
 	SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_PS5_RUMBLE, "1"); // same case as PS4_Rumble hint.
 	SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_JOY_CONS, "1");
 	SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_COMBINE_JOY_CONS, "1");
