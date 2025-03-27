@@ -963,11 +963,6 @@ void inputUpdate(void)
 		if (gyroEnabled) {
 				inputUpdateGyro();
 		}
-
-		// Check for the toggle key press
-		if (inputKeyJustPressed(SDL_SCANCODE_G)) { // Example key: 'G'
-				toggleGyroAiming();
-		}
 }
 
 s32 inputControllerConnected(s32 idx)
