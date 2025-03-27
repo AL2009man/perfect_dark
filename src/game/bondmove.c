@@ -773,18 +773,20 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 
 #ifndef PLATFORM_N64
 	if (allowmlook) {
-		inputMouseGetScaledDelta(&movedata.freelookdx, &movedata.freelookdy);
-		allowmcross = (PLAYER_EXTCFG().mouseaimmode == MOUSEAIM_CLASSIC) &&
-			(movedata.freelookdx || movedata.freelookdy || g_Vars.currentplayer->swivelpos[0] || g_Vars.currentplayer->swivelpos[1]);
-		if (movedata.invertpitch) {
-			movedata.freelookdy = -movedata.freelookdy;
-		}
+			inputMouseGetScaledDelta(&movedata.freelookdx, &movedata.freelookdy);
+			inputGyroGetScaledDelta(&movedata.gyrolookdx, &movedata.gyrolookdy);
+			allowmcross = (PLAYER_EXTCFG().mouseaimmode == MOUSEAIM_CLASSIC) &&
+					(movedata.freelookdx || movedata.freelookdy || g_Vars.currentplayer->swivelpos[0] || g_Vars.currentplayer->swivelpos[1]);
+			if (movedata.invertpitch) {
+					movedata.freelookdy = -movedata.freelookdy;
+					movedata.gyrolookdy = -movedata.gyrolookdy;
+			}
 	}
 	// always pause with ESC
 	if (allowc1buttons && g_Vars.currentplayer->isdead == false && g_Vars.currentplayer->pausemode == PAUSEMODE_UNPAUSED) {
-		if (inputKeyJustPressed(VK_ESCAPE)) {
-			c1buttonsthisframe |= START_BUTTON;
-		}
+			if (inputKeyJustPressed(VK_ESCAPE)) {
+					c1buttonsthisframe |= START_BUTTON;
+			}
 	}
 #endif
 
@@ -1412,35 +1414,49 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 					}
 
 #ifndef PLATFORM_N64
-					// Handle turning and looking up/down via mouselook when aiming
-					if (g_Vars.currentplayer->insightaimmode && allowmcross && bgunGetWeaponNum(HAND_RIGHT) != WEAPON_HORIZONSCANNER) {
-						if (g_Vars.currentplayer->swivelpos[0] > 0.9f) {
-							movedata.aimturnrightspeed = (g_Vars.currentplayer->swivelpos[0] - 0.9f) / 0.1f;
-							movedata.aimturnleftspeed = 0.f;
-						} else if (g_Vars.currentplayer->swivelpos[0] < -0.9f) {
-							movedata.aimturnleftspeed = (g_Vars.currentplayer->swivelpos[0] - -0.9f) / -0.1f;
-							movedata.aimturnrightspeed = 0.f;
-						}
-						f32 vertaup = 0.f, vertadown = 0.f;
-						if (g_Vars.currentplayer->swivelpos[1] > 0.9f) {
-							vertaup = (g_Vars.currentplayer->swivelpos[1] - 0.9f) / 0.1f;
-						} else if (g_Vars.currentplayer->swivelpos[1] < -0.9f) {
-							vertadown = (g_Vars.currentplayer->swivelpos[1] - -0.9f) / -0.1f;
-						}
-						// Uninvert pitch if needed
-						if (movedata.invertpitch) {
-							movedata.speedvertaup = vertadown;
-							movedata.speedvertadown = vertaup;
-						} else {
-							movedata.speedvertaup = vertaup;
-							movedata.speedvertadown = vertadown;
-						}
-					} else {
-						// Reset mouse aim position when not mouse aiming
-						g_Vars.currentplayer->swivelpos[0] = 0.f;
-						g_Vars.currentplayer->swivelpos[1] = 0.f;
-					}
+// Handle turning and looking up/down via mouselook and gyro when aiming
+if (g_Vars.currentplayer->insightaimmode && allowmcross && bgunGetWeaponNum(HAND_RIGHT) != WEAPON_HORIZONSCANNER) {
+    if (g_Vars.currentplayer->swivelpos[0] > 0.9f) {
+        movedata.aimturnrightspeed = (g_Vars.currentplayer->swivelpos[0] - 0.9f) / 0.1f;
+        movedata.aimturnleftspeed = 0.f;
+    } else if (g_Vars.currentplayer->swivelpos[0] < -0.9f) {
+        movedata.aimturnleftspeed = (g_Vars.currentplayer->swivelpos[0] - -0.9f) / -0.1f;
+        movedata.aimturnrightspeed = 0.f;
+    }
+    f32 vertaup = 0.f, vertadown = 0.f;
+    if (g_Vars.currentplayer->swivelpos[1] > 0.9f) {
+        vertaup = (g_Vars.currentplayer->swivelpos[1] - 0.9f) / 0.1f;
+    } else if (g_Vars.currentplayer->swivelpos[1] < -0.9f) {
+        vertadown = (g_Vars.currentplayer->swivelpos[1] - -0.9f) / -0.1f;
+    }
+    // Uninvert pitch if needed
+    if (movedata.invertpitch) {
+        movedata.speedvertaup = vertadown;
+        movedata.speedvertadown = vertaup;
+    } else {
+        movedata.speedvertaup = vertaup;
+        movedata.speedvertadown = vertadown;
+    }
+} else {
+    // Reset mouse aim position when not mouse aiming
+    g_Vars.currentplayer->swivelpos[0] = 0.f;
+    g_Vars.currentplayer->swivelpos[1] = 0.f;
+}
+
+// Handle turning and looking up/down via gyro when aiming
+if (g_Vars.currentplayer->insightaimmode && (movedata.gyrolookdx != 0.f || movedata.gyrolookdy != 0.f)) {
+    movedata.aimturnrightspeed += movedata.gyrolookdx;
+    movedata.aimturnleftspeed -= movedata.gyrolookdx;
+    if (movedata.invertpitch) {
+        movedata.speedvertaup -= movedata.gyrolookdy;
+        movedata.speedvertadown += movedata.gyrolookdy;
+    } else {
+        movedata.speedvertaup += movedata.gyrolookdy;
+        movedata.speedvertadown -= movedata.gyrolookdy;
+    }
+}
 #endif
+
 
 					// Handle A button
 					if (allowc1buttons) {
@@ -2205,19 +2221,19 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 		bgunSetAimType(0);
 #ifndef PLATFORM_N64
 		if (allowmcross) {
-			// joystick is inactive, move crosshair using the mouse
-			const f32 xcoeff = 320.f / 1080.f;
-			const f32 ycoeff = 240.f / 1080.f;
-			const f32 xscale = (PLAYER_EXTCFG().mouseaimspeedx * xcoeff) / g_Vars.currentplayer->aspect;
-			const f32 yscale = PLAYER_EXTCFG().mouseaimspeedy * ycoeff;
-			f32 x = g_Vars.currentplayer->swivelpos[0] + movedata.freelookdx * xscale;
-			f32 y = g_Vars.currentplayer->swivelpos[1] + movedata.freelookdy * yscale;
-			x = (x < -1.f) ? -1.f : ((x > 1.f) ? 1.f : x);
-			y = (y < -1.f) ? -1.f : ((y > 1.f) ? 1.f : y);
-			g_Vars.currentplayer->swivelpos[0] = x;
-			g_Vars.currentplayer->swivelpos[1] = y;
-			bgunSwivelWithDamp(x, y, 0.01f);
-			return;
+				// joystick is inactive, move crosshair using the mouse and gyro
+				const f32 xcoeff = 320.f / 1080.f;
+				const f32 ycoeff = 240.f / 1080.f;
+				const f32 xscale = (PLAYER_EXTCFG().mouseaimspeedx * xcoeff) / g_Vars.currentplayer->aspect;
+				const f32 yscale = PLAYER_EXTCFG().mouseaimspeedy * ycoeff;
+				f32 x = g_Vars.currentplayer->swivelpos[0] + movedata.freelookdx * xscale + movedata.gyrolookdx * xscale;
+				f32 y = g_Vars.currentplayer->swivelpos[1] + movedata.freelookdy * yscale + movedata.gyrolookdy * yscale;
+				x = (x < -1.f) ? -1.f : ((x > 1.f) ? 1.f : x);
+				y = (y < -1.f) ? -1.f : ((y > 1.f) ? 1.f : y);
+				g_Vars.currentplayer->swivelpos[0] = x;
+				g_Vars.currentplayer->swivelpos[1] = y;
+				bgunSwivelWithDamp(x, y, 0.01f);
+				return;
 		}
 #endif
 		bgunSwivelWithoutDamp((movedata.c1stickxraw * 0.65f) / 80.0f, (movedata.c1stickyraw * 0.65f) / 80.0f);
