@@ -91,6 +91,10 @@ static f32 mouseSensY = 1.5f;
 static s32 gyroEnabled = 1; // Enable gyro aiming by default
 static f32 gyroX, gyroY;
 static s32 gyroDX, gyroDY;
+static f32 accelX = 0.0f;
+static f32 accelY = 0.0f;
+static f32 accelZ = 0.0f;
+
 
 static f32 gyroSensX = 2.50f;
 static f32 gyroSensY = 2.50f;
@@ -336,8 +340,13 @@ static inline SDL_JoystickID inputControllerGetId(SDL_GameController* ctrl)
 		return SDL_JoystickInstanceID(SDL_GameControllerGetJoystick(ctrl));
 }
 
-// Forward Declaration
+// Forward Declarations
 static void inputInitSensor(SDL_GameController* controller, s32 jidx, SDL_SensorType sensorType, const char* sensorName);
+static void inputUpdateMouse(void);
+static void inputUpdateGyro(void);
+static void handleSensorUpdate(SDL_Event* event);
+static void updateCameraControl(f32 dx, f32 dy, f32 dz);
+static void updateCrosshairPosition(float x, float y);
 
 static inline void inputInitController(const s32 cidx, const s32 jidx)
 {
@@ -380,15 +389,25 @@ static inline void inputInitController(const s32 cidx, const s32 jidx)
 }
 
 static void inputInitSensor(SDL_GameController* controller, s32 jidx, SDL_SensorType sensorType, const char* sensorName) {
+		if (!controller) {
+				sysLogPrintf(LOG_WARNING, "input: Invalid controller passed for sensor initialization.");
+				return;
+		}
+
+		// Check if the sensor is available
 		if (SDL_GameControllerHasSensor(controller, sensorType)) {
 				sysLogPrintf(LOG_NOTE, "input: %s sensor available for controller %d", sensorName, jidx);
+
+				// Attempt to enable the sensor
 				if (SDL_GameControllerSetSensorEnabled(controller, sensorType, SDL_TRUE) == 0) {
 						float rate = SDL_GameControllerGetSensorDataRate(controller, sensorType);
+
+						// Check if the data rate is sufficient
 						if (rate >= 60.0f) {
-								sysLogPrintf(LOG_NOTE, "input: %s sensor enabled for controller %d with data rate %f Hz", sensorName, jidx, rate);
+								sysLogPrintf(LOG_NOTE, "input: %s sensor enabled for controller %d with data rate %.2f Hz", sensorName, jidx, rate);
 						}
 						else {
-								sysLogPrintf(LOG_WARNING, "input: %s data rate may be insufficient for controller %d: %f Hz", sensorName, jidx, rate);
+								sysLogPrintf(LOG_WARNING, "input: %s data rate may be insufficient for controller %d (%.2f Hz)", sensorName, jidx, rate);
 						}
 				}
 				else {
@@ -397,6 +416,47 @@ static void inputInitSensor(SDL_GameController* controller, s32 jidx, SDL_Sensor
 		}
 		else {
 				sysLogPrintf(LOG_WARNING, "input: %s sensor not available for controller %d", sensorName, jidx);
+		}
+}
+
+static void handleSensorUpdate(SDL_Event* event)
+{
+		if (event->csensor.sensor == SDL_SENSOR_GYRO || event->csensor.sensor == SDL_SENSOR_ACCEL) {
+				float sensorData[3] = { 0 }; // Initialize sensor data array
+				SDL_GameController* controller = SDL_GameControllerFromInstanceID(event->cdevice.which);
+
+				if (!controller) {
+						sysLogPrintf(LOG_WARNING, "input: Controller %d not found for sensor data retrieval", event->cdevice.which);
+						return;
+				}
+
+				if (SDL_GameControllerGetSensorData(controller, event->csensor.sensor, sensorData, 3) == 0) {
+						sysLogPrintf(LOG_NOTE, "input: %s sensor data for controller %d: X=%f, Y=%f, Z=%f",
+								(event->csensor.sensor == SDL_SENSOR_GYRO ? "Gyroscope" : "Accelerometer"),
+								event->cdevice.which, sensorData[0], sensorData[1], sensorData[2]);
+
+						if (event->csensor.sensor == SDL_SENSOR_GYRO) {
+								gyroDX = sensorData[0] * gyroSensX;
+								gyroDY = sensorData[1] * gyroSensY;
+
+								gyroDX = fabs(gyroDX) < gyroMinThreshold ? 0 : gyroDX;
+								gyroDY = fabs(gyroDY) < gyroMinThreshold ? 0 : gyroDY;
+
+								updateCameraControl(gyroDX, gyroDY, 0);
+						}
+						else if (event->csensor.sensor == SDL_SENSOR_ACCEL) {
+								accelX = sensorData[0];
+								accelY = sensorData[1];
+								accelZ = sensorData[2];
+
+								sysLogPrintf(LOG_NOTE, "Accelerometer data processed (placeholder logic)");
+						}
+				}
+				else {
+						sysLogPrintf(LOG_WARNING, "input: Failed to retrieve %s sensor data for controller %d",
+								(event->csensor.sensor == SDL_SENSOR_GYRO ? "Gyroscope" : "Accelerometer"),
+								event->cdevice.which);
+				}
 		}
 }
 
@@ -549,21 +609,7 @@ static int inputEventFilter(void* data, SDL_Event* event)
 				break;
 
 		case SDL_CONTROLLERSENSORUPDATE:
-				if (event->csensor.sensor == SDL_SENSOR_GYRO || event->csensor.sensor == SDL_SENSOR_ACCEL) {
-						float sensorData[3];
-						SDL_GameController* controller = SDL_GameControllerFromInstanceID(event->cdevice.which);
-						if (controller && SDL_GameControllerGetSensorData(controller, event->csensor.sensor, sensorData, 3) == 0) {
-								sysLogPrintf(LOG_NOTE, "input: %s sensor data for controller %d: X=%f, Y=%f, Z=%f",
-										(event->csensor.sensor == SDL_SENSOR_GYRO ? "Gyroscope" : "Accelerometer"),
-										event->cdevice.which, sensorData[0], sensorData[1], sensorData[2]);
-								// Sensor-specific data handling code can be added here
-						}
-						else {
-								sysLogPrintf(LOG_WARNING, "input: Failed to get %s sensor data for controller %d",
-										(event->csensor.sensor == SDL_SENSOR_GYRO ? "Gyroscope" : "Accelerometer"),
-										event->cdevice.which);
-						}
-				}
+				handleSensorUpdate(event); 
 				break;
 
 		case SDL_MOUSEWHEEL:
@@ -913,11 +959,6 @@ s32 inputReadController(s32 idx, OSContPad *npad)
 	return 0;
 }
 
-// Updates to function declarations
-static void updateCameraControl(f32 dx, f32 dy, f32 dz);
-static void inputUpdateMouse(void);
-static void inputUpdateGyro(void);
-
 void inputUpdate(void)
 {
 		SDL_GameControllerUpdate();
@@ -933,13 +974,22 @@ void inputUpdate(void)
 
 static void updateCameraControl(f32 dx, f32 dy, f32 dz)
 {
-		// Update camera control using gyro and mouse inputs
+		// Update camera control logic using gyro inputs
 		gyroCameraYaw += dx;
 		gyroCameraPitch += dy;
 		gyroCameraRoll += dz;
 
 		// Log updated camera control values
-		sysLogPrintf(LOG_NOTE, "input: Updated camera control - Yaw=%f, Pitch=%f, Roll=%f", gyroCameraYaw, gyroCameraPitch, gyroCameraRoll);
+		sysLogPrintf(LOG_NOTE, "input: Updated camera control - Yaw=%f, Pitch=%f, Roll=%f",
+				gyroCameraYaw, gyroCameraPitch, gyroCameraRoll);
+}
+
+static void updateCrosshairPosition(float x, float y)
+{
+		gyroX = x;
+		gyroY = y;
+
+		sysLogPrintf(LOG_NOTE, "input: Updated crosshair position - X=%f, Y=%f", x, y);
 }
 
 static void inputUpdateMouse(void)
@@ -956,8 +1006,7 @@ static void inputUpdateMouse(void)
 
 		mouseWheel = 0;
 
-		s32 mdx = 0;
-		s32 mdy = 0;
+		s32 mdx = 0, mdy = 0;
 		SDL_GetRelativeMouseState(&mdx, &mdy);
 		if (mouseLocked) {
 				mouseDX = mdx;
@@ -985,61 +1034,38 @@ static void inputUpdateMouse(void)
 
 static void inputUpdateGyro(void)
 {
-		SDL_GameController* controller = pads[0];
-		if (controller && SDL_GameControllerHasSensor(controller, SDL_SENSOR_GYRO)) {
-				float gyroData[3];
-				if (SDL_GameControllerGetSensorData(controller, SDL_SENSOR_GYRO, gyroData, 3) == 0) {
-						sysLogPrintf(LOG_NOTE, "Gyro Data: X=%f, Y=%f, Z=%f", gyroData[0], gyroData[1], gyroData[2]);
-
-						gyroData[0] = fabs(gyroData[0]) < gyroMinThreshold ? 0 : gyroData[0];
-						gyroData[1] = fabs(gyroData[1]) < gyroMinThreshold ? 0 : gyroData[1];
-						gyroData[2] = fabs(gyroData[2]) < gyroMinThreshold ? 0 : gyroData[2];
-
-						switch (g_GyroActivationMode) {
-						case GYRO_ALWAYS_ON:
-								break;
-						case GYRO_TOGGLE:
-								if (inputKeyJustPressed(VK_JOY1_LTRIG)) {
-										g_GyroToggleState = !g_GyroToggleState;
-								}
-								if (!g_GyroToggleState) return;
-								break;
-						case GYRO_HOLD:
-								if (!inputKeyPressed(VK_JOY1_LTRIG)) return;
-								break;
-						case GYRO_HOLD_INVERTED:
-								if (inputKeyPressed(VK_JOY1_LTRIG)) return;
-								break;
-						default:
-								sysLogPrintf(LOG_WARNING, "Unknown Gyro activation mode %d", g_GyroActivationMode);
-								return;
-						}
-
-						if (g_GyroAimMode == GYRO_AIM_CAMERA || g_GyroAimMode == GYRO_AIM_BOTH) {
-								switch (g_GyroAxisMode) {
-								case 0:
-										updateCameraControl(gyroData[1] * gyroSensX, gyroData[0] * gyroSensY, 0);
-										break;
-								case 1:
-										updateCameraControl(-gyroData[2] * gyroSensX, gyroData[0] * gyroSensY, gyroData[2] * gyroSensX);
-										break;
-								default:
-										sysLogPrintf(LOG_WARNING, "Unknown Gyro axis mode %d", g_GyroAxisMode);
-										break;
-								}
-						}
-
-						if (g_GyroAimMode == GYRO_AIM_CROSSHAIR || g_GyroAimMode == GYRO_AIM_BOTH) {
-								sysLogPrintf(LOG_NOTE, "input: Updated crosshair position");
-						}
-				}
-				else {
-						sysLogPrintf(LOG_WARNING, "Failed to read gyroscope data");
-				}
-		}
-		else {
+		SDL_GameController* controller = pads[0]; // Assuming pads[0] is the primary controller
+		if (!controller || !SDL_GameControllerHasSensor(controller, SDL_SENSOR_GYRO)) {
 				sysLogPrintf(LOG_WARNING, "Gyroscope not available or enabled");
+				return;
 		}
+
+		float gyroData[3] = { 0 }; // Initialize gyro data
+		if (SDL_GameControllerGetSensorData(controller, SDL_SENSOR_GYRO, gyroData, 3) != 0) {
+				sysLogPrintf(LOG_WARNING, "Failed to read gyroscope data");
+				return;
+		}
+
+		sysLogPrintf(LOG_NOTE, "Gyro Data: X=%f, Y=%f, Z=%f", gyroData[0], gyroData[1], gyroData[2]);
+
+		// Apply noise filtering
+		gyroData[0] = fabs(gyroData[0]) < gyroMinThreshold ? 0 : gyroData[0];
+		gyroData[1] = fabs(gyroData[1]) < gyroMinThreshold ? 0 : gyroData[1];
+
+		// Handle gyro aiming modes and axis modes
+		switch (g_GyroAxisMode) {
+		case 0: // Yaw mode
+				updateCameraControl(gyroData[1] * gyroSensX, gyroData[0] * gyroSensY, 0);
+				break;
+		case 1: // Roll mode
+				updateCameraControl(-gyroData[2] * gyroSensX, gyroData[0] * gyroSensY, gyroData[2] * gyroSensX);
+				break;
+		}
+
+		float crosshairX = gyroData[0] * gyroCrosshairSpeedX;
+		float crosshairY = gyroData[1] * gyroCrosshairSpeedY;
+
+		updateCrosshairPosition(crosshairX, crosshairY);
 }
 
 s32 inputControllerConnected(s32 idx)
