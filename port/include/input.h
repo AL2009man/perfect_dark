@@ -118,6 +118,19 @@ enum mouselockmode {
 	MLOCK_AUTO = 2
 };
 
+enum gyroactivation {
+		GYRO_ALWAYS_ON = 0,
+		GYRO_TOGGLE = 1,
+		GYRO_HOLD = 2,
+		GYRO_HOLD_INVERTED = 3
+};
+
+enum gyroaimmode {
+		GYRO_AIM_CAMERA = 0,
+		GYRO_AIM_CROSSHAIR = 1,
+		GYRO_AIM_BOTH = 2
+};
+
 // returns bitmask of connected controllers or -1 if failed
 s32 inputInit(void);
 
@@ -256,6 +269,12 @@ s32 inputGyroIsEnabled(void);
 // enables or disables the gyro
 void inputGyroEnable(s32 enabled);
 
+// gets the current gyro aim mode
+s32 inputGetGyroAimMode(void);
+
+// sets the gyro aim mode
+void inputSetGyroAimMode(s32 mode);
+
 // gets the current gyro sensitivity for the X axis
 f32 inputGyroGetSpeedX(void);
 
@@ -267,6 +286,24 @@ f32 inputGyroGetSpeedY(void);
 
 // sets the gyro sensitivity for the Y axis
 void inputGyroSetSpeedY(f32 speed);
+
+// gets the current gyro crosshair speed for the X axis
+f32 inputGyroGetCrosshairSpeedX(void);
+
+// sets the gyro crosshair speed for the X axis
+void inputGyroSetCrosshairSpeedX(f32 speed);
+
+// gets the current gyro crosshair speed for the Y axis
+f32 inputGyroGetCrosshairSpeedY(void);
+
+// sets the gyro crosshair speed for the Y axis
+void inputGyroSetCrosshairSpeedY(f32 speed);
+
+// gets the current gyro activation mode
+s32 inputGetGyroActivationMode(void);
+
+// sets the gyro activation mode
+void inputSetGyroActivationMode(s32 mode);
 
 // gets the current gyro axis mode
 s32 inputGetGyroAxisMode(void);

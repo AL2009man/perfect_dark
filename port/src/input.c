@@ -88,16 +88,22 @@ static s32 mouseShowCursor = 1;
 static f32 mouseSensX = 1.5f;
 static f32 mouseSensY = 1.5f;
 
-// Gyro aim variables
 static s32 gyroEnabled = 1; // Enable gyro aiming by default
 static f32 gyroX, gyroY;
 static s32 gyroDX, gyroDY;
 
 static f32 gyroSensX = 2.50f;
 static f32 gyroSensY = 2.50f;
+static f32 gyroCrosshairSpeedX = 1.0f;
+static f32 gyroCrosshairSpeedY = 1.0f;
 static f32 gyroMinThreshold = 0.1f;
 
+static s32 g_GyroActivationMode = GYRO_ALWAYS_ON;
+static s32 g_GyroToggleState = 0;
+static s32 g_GyroHoldState = 0;
+
 static s32 g_GyroAxisMode = 0;
+static s32 g_GyroAimMode = GYRO_AIM_BOTH;
 
 // Gyro calibration variables
 static f32 gyro_calibration_x = 0.0f;
@@ -1000,38 +1006,78 @@ static void inputUpdateGyro(void)
 						// Define gyro deltas
 						s32 gyroDX = 0, gyroDY = 0, gyroDZ = 0;
 
-						// Handle gyro axis modes
-						switch (g_GyroAxisMode) {
-						case 0: // Yaw Mode
-								gyroDX = (s32)(gyroData[1] * gyroSensX); // Yaw
-								gyroDY = (s32)(gyroData[0] * gyroSensY); // Pitch
-								updateCameraControl(gyroDX, gyroDY, 0);
+						// Handle gyro activation modes
+						switch (g_GyroActivationMode) {
+						case GYRO_ALWAYS_ON:
+								// Gyro is always active
 								break;
-
-						case 1: // Roll Mode
-								gyroDX = (s32)(-gyroData[2] * gyroSensX); // Roll
-								gyroDY = (s32)(gyroData[0] * gyroSensY);  // Pitch
-								updateCameraControl(gyroDX, 0, gyroDY);
+						case GYRO_TOGGLE:
+								if (inputKeyJustPressed(VK_JOY1_LTRIG)) {
+										g_GyroToggleState = !g_GyroToggleState;
+								}
+								if (!g_GyroToggleState) {
+										return;
+								}
 								break;
-
-						case 2: // Local Space (Placeholder)
-								sysLogPrintf(LOG_WARNING, "Local Space transformation not implemented");
-								// Placeholder logic can go here
+						case GYRO_HOLD:
+								if (!inputKeyPressed(VK_JOY1_LTRIG)) {
+										return;
+								}
 								break;
-
-						case 3: // Player Space (Placeholder)
-								sysLogPrintf(LOG_WARNING, "Player Space transformation not implemented");
-								// Placeholder logic can go here
+						case GYRO_HOLD_INVERTED:
+								if (inputKeyPressed(VK_JOY1_LTRIG)) {
+										return;
+								}
 								break;
-
-						case 4: // World Space (Placeholder)
-								sysLogPrintf(LOG_WARNING, "World Space transformation not implemented");
-								// Placeholder logic can go here
-								break;
-
 						default:
-								sysLogPrintf(LOG_WARNING, "Unknown Gyro axis mode %d", g_GyroAxisMode);
-								break;
+								sysLogPrintf(LOG_WARNING, "Unknown Gyro activation mode %d", g_GyroActivationMode);
+								return;
+						}
+
+						// Handle gyro aim modes
+						if (g_GyroAimMode == GYRO_AIM_CAMERA || g_GyroAimMode == GYRO_AIM_BOTH) {
+								// Handle gyro axis modes for camera
+								switch (g_GyroAxisMode) {
+								case 0: // Yaw Mode
+										gyroDX = (s32)(gyroData[1] * gyroSensX); // Yaw
+										gyroDY = (s32)(gyroData[0] * gyroSensY); // Pitch
+										updateCameraControl(gyroDX, gyroDY, 0);
+										break;
+
+								case 1: // Roll Mode
+										gyroDX = (s32)(-gyroData[2] * gyroSensX); // Roll
+										gyroDY = (s32)(gyroData[0] * gyroSensY);  // Pitch
+										updateCameraControl(gyroDX, 0, gyroDY);
+										break;
+
+								case 2: // Local Space (Placeholder)
+										sysLogPrintf(LOG_WARNING, "Local Space transformation not implemented");
+										// Placeholder logic can go here
+										break;
+
+								case 3: // Player Space (Placeholder)
+										sysLogPrintf(LOG_WARNING, "Player Space transformation not implemented");
+										// Placeholder logic can go here
+										break;
+
+								case 4: // World Space (Placeholder)
+										sysLogPrintf(LOG_WARNING, "World Space transformation not implemented");
+										// Placeholder logic can go here
+										break;
+
+								default:
+										sysLogPrintf(LOG_WARNING, "Unknown Gyro axis mode %d", g_GyroAxisMode);
+										break;
+								}
+						}
+
+						if (g_GyroAimMode == GYRO_AIM_CROSSHAIR || g_GyroAimMode == GYRO_AIM_BOTH) {
+								// Handle gyro crosshair movement
+								s32 crosshairDX = (s32)(gyroData[1] * gyroCrosshairSpeedX);
+								s32 crosshairDY = (s32)(gyroData[0] * gyroCrosshairSpeedY);
+								// Update crosshair position with crosshairDX and crosshairDY
+								// Placeholder logic for updating crosshair position
+								sysLogPrintf(LOG_NOTE, "input: Updated crosshair position - DX=%d, DY=%d", crosshairDX, crosshairDY);
 						}
 				}
 				else {
@@ -1523,11 +1569,11 @@ void inputSetGyroAxisMode(s32 mode) {
 }
 
 f32 inputGetGyroMinThreshold(void) {
-    return gyroMinThreshold;
+		return gyroMinThreshold;
 }
 
 void inputSetGyroMinThreshold(f32 threshold) {
-    gyroMinThreshold = threshold;
+		gyroMinThreshold = threshold;
 }
 
 s32 inputGyroIsEnabled(void)
@@ -1538,6 +1584,38 @@ s32 inputGyroIsEnabled(void)
 void inputGyroEnable(s32 enabled)
 {
 		gyroEnabled = !!enabled;
+}
+
+s32 inputGetGyroActivationMode(void) {
+		return g_GyroActivationMode;
+}
+
+void inputSetGyroActivationMode(s32 mode) {
+		g_GyroActivationMode = mode;
+}
+
+s32 inputGetGyroAimMode(void) {
+		return g_GyroAimMode;
+}
+
+void inputSetGyroAimMode(s32 mode) {
+		g_GyroAimMode = mode;
+}
+
+f32 inputGyroGetCrosshairSpeedX(void) {
+		return gyroCrosshairSpeedX;
+}
+
+void inputGyroSetCrosshairSpeedX(f32 speed) {
+		gyroCrosshairSpeedX = speed;
+}
+
+f32 inputGyroGetCrosshairSpeedY(void) {
+		return gyroCrosshairSpeedY;
+}
+
+void inputGyroSetCrosshairSpeedY(f32 speed) {
+		gyroCrosshairSpeedY = speed;
 }
 
 const char *inputGetContKeyName(u32 ck)
@@ -1725,41 +1803,42 @@ u32 inputGetKeyModState(void)
 }
 
 
-
 PD_CONSTRUCTOR static void inputConfigInit(void)
 {
-	configRegisterInt("Input.MouseEnabled", &mouseEnabled, 0, 1);
-	configRegisterInt("Input.MouseLockMode", &mouseLockMode, MLOCK_OFF, MLOCK_AUTO);
-	configRegisterFloat("Input.MouseSpeedX", &mouseSensX, -10.f, 10.f);
-	configRegisterFloat("Input.MouseSpeedY", &mouseSensY, -10.f, 10.f);
-	configRegisterInt("Input.GyroEnabled", &gyroEnabled, 0, 1);
-	configRegisterFloat("Input.GyroSpeedX", &gyroSensX, -10.f, 10.f);
-	configRegisterFloat("Input.GyroSpeedY", &gyroSensY, -10.f, 10.f);
-	configRegisterInt("Input.FakeGamepads", &fakeControllers, 0, 4);
-	configRegisterInt("Input.FirstGamepadNum", &firstController, 0, 3);
+		configRegisterInt("Input.MouseEnabled", &mouseEnabled, 0, 1);
+		configRegisterInt("Input.MouseLockMode", &mouseLockMode, MLOCK_OFF, MLOCK_AUTO);
+		configRegisterFloat("Input.MouseSpeedX", &mouseSensX, -10.f, 10.f);
+		configRegisterFloat("Input.MouseSpeedY", &mouseSensY, -10.f, 10.f);
+		configRegisterInt("Input.GyroEnabled", &gyroEnabled, 0, 1);
+		configRegisterFloat("Input.GyroSpeedX", &gyroSensX, -10.f, 10.f);
+		configRegisterFloat("Input.GyroSpeedY", &gyroSensY, -10.f, 10.f);
+		configRegisterFloat("Input.GyroCrosshairSpeedX", &gyroCrosshairSpeedX, -10.f, 10.f);
+		configRegisterFloat("Input.GyroCrosshairSpeedY", &gyroCrosshairSpeedY, -10.f, 10.f);
+		configRegisterInt("Input.FakeGamepads", &fakeControllers, 0, 4);
+		configRegisterInt("Input.FirstGamepadNum", &firstController, 0, 3);
 
-	char secname[] = "Input.Player1.Binds";
-	char keyname[256] = { 0 };
-	for (s32 c = 0; c < MAXCONTROLLERS; ++c) {
-		secname[12] = '1' + c;
-		secname[13] = '\0';
-		configRegisterFloat(strFmt("%s.RumbleScale", secname), &padsCfg[c].rumbleScale, 0.f, 1.f);
-		configRegisterInt(strFmt("%s.LStickDeadzoneX", secname), &padsCfg[c].deadzone[0], 0, 32767);
-		configRegisterInt(strFmt("%s.LStickDeadzoneY", secname), &padsCfg[c].deadzone[1], 0, 32767);
-		configRegisterInt(strFmt("%s.RStickDeadzoneX", secname), &padsCfg[c].deadzone[2], 0, 32767);
-		configRegisterInt(strFmt("%s.RStickDeadzoneY", secname), &padsCfg[c].deadzone[3], 0, 32767);
-		configRegisterFloat(strFmt("%s.LStickScaleX", secname), &padsCfg[c].sens[0], -10.f, 10.f);
-		configRegisterFloat(strFmt("%s.LStickScaleY", secname), &padsCfg[c].sens[1], -10.f, 10.f);
-		configRegisterFloat(strFmt("%s.RStickScaleX", secname), &padsCfg[c].sens[2], -10.f, 10.f);
-		configRegisterFloat(strFmt("%s.RStickScaleY", secname), &padsCfg[c].sens[3], -10.f, 10.f);
-		configRegisterInt(strFmt("%s.StickCButtons", secname), &padsCfg[c].stickCButtons, 0, 1);
-		configRegisterInt(strFmt("%s.CancelCButtons", secname), &padsCfg[c].cancelCButtons, 0, 1);
-		configRegisterInt(strFmt("%s.SwapSticks", secname), &padsCfg[c].swapSticks, 0, 1);
-		configRegisterInt(strFmt("%s.ControllerIndex", secname), &padsCfg[c].deviceIndex, -1, 0x7FFFFFFF);
-		secname[13] = '.';
-		for (u32 ck = 0; ck < CK_TOTAL_COUNT; ++ck) {
-			snprintf(keyname, sizeof(keyname), "%s.%s", secname, inputGetContKeyName(ck));
-			configRegisterString(keyname, bindStrs[c][ck], MAX_BIND_STR);
+		char secname[] = "Input.Player1.Binds";
+		char keyname[256] = { 0 };
+		for (s32 c = 0; c < MAXCONTROLLERS; ++c) {
+				secname[12] = '1' + c;
+				secname[13] = '\0';
+				configRegisterFloat(strFmt("%s.RumbleScale", secname), &padsCfg[c].rumbleScale, 0.f, 1.f);
+				configRegisterInt(strFmt("%s.LStickDeadzoneX", secname), &padsCfg[c].deadzone[0], 0, 32767);
+				configRegisterInt(strFmt("%s.LStickDeadzoneY", secname), &padsCfg[c].deadzone[1], 0, 32767);
+				configRegisterInt(strFmt("%s.RStickDeadzoneX", secname), &padsCfg[c].deadzone[2], 0, 32767);
+				configRegisterInt(strFmt("%s.RStickDeadzoneY", secname), &padsCfg[c].deadzone[3], 0, 32767);
+				configRegisterFloat(strFmt("%s.LStickScaleX", secname), &padsCfg[c].sens[0], -10.f, 10.f);
+				configRegisterFloat(strFmt("%s.LStickScaleY", secname), &padsCfg[c].sens[1], -10.f, 10.f);
+				configRegisterFloat(strFmt("%s.RStickScaleX", secname), &padsCfg[c].sens[2], -10.f, 10.f);
+				configRegisterFloat(strFmt("%s.RStickScaleY", secname), &padsCfg[c].sens[3], -10.f, 10.f);
+				configRegisterInt(strFmt("%s.StickCButtons", secname), &padsCfg[c].stickCButtons, 0, 1);
+				configRegisterInt(strFmt("%s.CancelCButtons", secname), &padsCfg[c].cancelCButtons, 0, 1);
+				configRegisterInt(strFmt("%s.SwapSticks", secname), &padsCfg[c].swapSticks, 0, 1);
+				configRegisterInt(strFmt("%s.ControllerIndex", secname), &padsCfg[c].deviceIndex, -1, 0x7FFFFFFF);
+				secname[13] = '.';
+				for (u32 ck = 0; ck < CK_TOTAL_COUNT; ++ck) {
+						snprintf(keyname, sizeof(keyname), "%s.%s", secname, inputGetContKeyName(ck));
+						configRegisterString(keyname, bindStrs[c][ck], MAX_BIND_STR);
+				}
 		}
-	}
 }
