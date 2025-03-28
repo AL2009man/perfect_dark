@@ -1620,11 +1620,11 @@ void inputSetGyroMinThreshold(f32 threshold)
 {
 		gyroMinThreshold = threshold;
 }
+
+s32 inputGyroIsEnabled(void)
 {
 		return gyroEnabled;
 }
-s32 inputGyroIsEnabled(void)
-
 
 void inputGyroEnable(s32 enabled)
 {
@@ -1895,8 +1895,8 @@ PD_CONSTRUCTOR static void inputConfigInit(void)
 		configRegisterFloat("Input.GyroCrosshairSpeedX", &gyroCrosshairSpeedX, -10.f, 10.f);
 		configRegisterFloat("Input.GyroCrosshairSpeedY", &gyroCrosshairSpeedY, -10.f, 10.f);
 		configRegisterFloat("Input.GyroMinThreshold", &gyroMinThreshold, 0.f, 5.f);
-		configRegisterInt("Input.GyroActivationMode", &g_GyroActivationMode, GYRO_ALWAYS_ON, GYRO_TOGGLE, GYRO_HOLD, GYRO_HOLD_INVERTED);
-		configRegisterInt("Input.GyroAimMode", &g_GyroAimMode, GYRO_AIM_CAMERA, GYRO_AIM_CROSSHAIR, GYRO_AIM_BOTH);
+		configRegisterInt("Input.GyroActivationMode", &g_GyroActivationMode, GYRO_ALWAYS_ON, GYRO_HOLD_INVERTED);
+		configRegisterInt("Input.GyroAimMode", &g_GyroAimMode, GYRO_AIM_CAMERA, GYRO_AIM_BOTH);
 		configRegisterInt("Input.FakeGamepads", &fakeControllers, 0, 4);
 		configRegisterInt("Input.FirstGamepadNum", &firstController, 0, 3);
 
