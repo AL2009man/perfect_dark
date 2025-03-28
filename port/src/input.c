@@ -1061,23 +1061,29 @@ static void inputUpdateGyro(void)
 		gyroData[0] = fabs(gyroData[0]) < gyroMinThreshold ? 0 : gyroData[0];
 		gyroData[1] = fabs(gyroData[1]) < gyroMinThreshold ? 0 : gyroData[1];
 
-		// Handle gyro activation modes
+		// Handle gyro activation modes using the "Gyro Modifier" button
 		s32 gyroActive = 0;
-		switch (g_GyroActivationMode) {
-		case GYRO_ALWAYS_ON:
-				gyroActive = 1;
-				break;
+		switch (inputGetGyroActivationMode()) {
 		case GYRO_TOGGLE:
-				if (inputKeyJustPressed(VK_JOY1_LTRIG)) { // Example: toggle with left trigger
+				// Toggles the gyro on/off with a press of CK_GYRO_MOD
+				if (inputKeyJustPressed(CK_GYRO_MOD)) {
 						g_GyroToggleState = !g_GyroToggleState;
 				}
 				gyroActive = g_GyroToggleState;
 				break;
+
 		case GYRO_HOLD:
-				gyroActive = inputKeyPressed(VK_JOY1_LTRIG); // Example: hold left trigger to activate
+				// Activates the gyro while CK_GYRO_MOD is held
+				gyroActive = inputKeyPressed(CK_GYRO_MOD);
 				break;
+
 		case GYRO_HOLD_INVERTED:
-				gyroActive = !inputKeyPressed(VK_JOY1_LTRIG); // Example: hold left trigger to deactivate
+				// Deactivates the gyro while CK_GYRO_MOD is held
+				gyroActive = !inputKeyPressed(CK_GYRO_MOD);
+				break;
+
+		default:
+				// No additional handling for undefined modes
 				break;
 		}
 
@@ -1093,7 +1099,7 @@ static void inputUpdateGyro(void)
 				gyroY = gyroData[1];
 
 				// Handle gyro aiming modes and axis modes
-				switch (g_GyroAxisMode) {
+				switch (inputGetGyroAxisMode()) {
 				case 0: // Yaw mode
 						updateCameraControl(gyroDX * gyroSensX, gyroDY * gyroSensY, 0);
 						break;
@@ -1107,7 +1113,7 @@ static void inputUpdateGyro(void)
 				float crosshairY = gyroDY * gyroCrosshairSpeedY;
 				updateCrosshairPosition(crosshairX, crosshairY);
 
-				// Cursor behavior logic (simplified, no `mouseLocked`)
+				// Cursor behavior logic
 				if (mouseLockMode == MLOCK_AUTO) {
 						if (abs(gyroDX) > CURSOR_HIDE_THRESHOLD || abs(gyroDY) > CURSOR_HIDE_THRESHOLD) {
 								inputMouseShowCursor(1); // Show cursor if there's significant movement
@@ -1118,6 +1124,7 @@ static void inputUpdateGyro(void)
 				}
 		}
 }
+
 
 s32 inputControllerConnected(s32 idx)
 {
@@ -1613,11 +1620,11 @@ void inputSetGyroMinThreshold(f32 threshold)
 {
 		gyroMinThreshold = threshold;
 }
-
-s32 inputGyroIsEnabled(void)
 {
 		return gyroEnabled;
 }
+s32 inputGyroIsEnabled(void)
+
 
 void inputGyroEnable(s32 enabled)
 {
@@ -1662,6 +1669,33 @@ f32 inputGyroGetCrosshairSpeedY(void)
 void inputGyroSetCrosshairSpeedY(f32 speed)
 {
 		gyroCrosshairSpeedY = speed;
+}
+
+void inputHandleGyroModifier(void)
+{
+		static s32 gyroToggleState = 0;
+
+		// Determine the active gyro mode
+		switch (inputGetGyroActivationMode()) {
+		case GYRO_TOGGLE:
+				if (inputKeyJustPressed(CK_GYRO_MOD)) {
+						gyroToggleState = !gyroToggleState;
+						inputGyroEnable(gyroToggleState);
+				}
+				break;
+
+		case GYRO_HOLD:
+				inputGyroEnable(inputKeyPressed(CK_GYRO_MOD));
+				break;
+
+		case GYRO_HOLD_INVERTED:
+				inputGyroEnable(!inputKeyPressed(CK_GYRO_MOD));
+				break;
+
+		default:
+				// Gyro Always On is omitted to avoid input checks
+				break;
+		}
 }
 
 const char *inputGetContKeyName(u32 ck)
@@ -1860,6 +1894,9 @@ PD_CONSTRUCTOR static void inputConfigInit(void)
 		configRegisterFloat("Input.GyroSpeedY", &gyroSensY, -10.f, 10.f);
 		configRegisterFloat("Input.GyroCrosshairSpeedX", &gyroCrosshairSpeedX, -10.f, 10.f);
 		configRegisterFloat("Input.GyroCrosshairSpeedY", &gyroCrosshairSpeedY, -10.f, 10.f);
+		configRegisterFloat("Input.GyroMinThreshold", &gyroMinThreshold, 0.f, 5.f);
+		configRegisterInt("Input.GyroActivationMode", &g_GyroActivationMode, GYRO_ALWAYS_ON, GYRO_TOGGLE, GYRO_HOLD, GYRO_HOLD_INVERTED);
+		configRegisterInt("Input.GyroAimMode", &g_GyroAimMode, GYRO_AIM_CAMERA, GYRO_AIM_CROSSHAIR, GYRO_AIM_BOTH);
 		configRegisterInt("Input.FakeGamepads", &fakeControllers, 0, 4);
 		configRegisterInt("Input.FirstGamepadNum", &firstController, 0, 3);
 

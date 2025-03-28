@@ -99,6 +99,7 @@ enum contkey {
 	CK_STICK_YPOS,
 	CK_ACCEPT,
 	CK_CANCEL,
+	CK_GYRO_MOD,
 	CK_0040,
 	CK_0080,
 	CK_0100,

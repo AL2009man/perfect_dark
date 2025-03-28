@@ -573,7 +573,7 @@ static MenuItemHandlerResult menuhandlerSwapSticks(s32 operation, struct menuite
 	return 0;
 }
 
-// Function to toggle gyro aiming
+// Function to enable gyro aiming
 static MenuItemHandlerResult menuhandlerGyroEnabled(s32 operation, struct menuitem* item, union handlerdata* data)
 {
 		switch (operation) {
@@ -1929,6 +1929,7 @@ static const struct menubind menuBinds[] = {
 	{ CK_2000,   "Full Crouch [+]\n",   "N64 Ext 2000\n" },
 	{ CK_ACCEPT, "UI Accept [+]\n",     "EXT UI Accept\n" },
 	{ CK_CANCEL, "UI Cancel [+]\n",     "EXT UI Cancel\n" },
+	{ CK_GYRO_MOD, "Gyro Modifier [GY]\n", "Gyro Modifier\n" }
 };
 
 static const char *menutextBind(struct menuitem *item);
