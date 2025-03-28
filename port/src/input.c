@@ -428,6 +428,11 @@ static void inputInitSensor(SDL_GameController* controller, s32 jidx, SDL_Sensor
 		}
 }
 
+static void logSensorData(const char* sensorName, int controllerID, float* data) {
+		sysLogPrintf(LOG_NOTE, "input: %s sensor data for controller %d: X=%f, Y=%f, Z=%f",
+				sensorName, controllerID, data[0], data[1], data[2]);
+}
+
 static void handleSensorUpdate(SDL_Event* event)
 {
 		if (event->csensor.sensor == SDL_SENSOR_GYRO || event->csensor.sensor == SDL_SENSOR_ACCEL) {
@@ -440,20 +445,23 @@ static void handleSensorUpdate(SDL_Event* event)
 				}
 
 				if (SDL_GameControllerGetSensorData(controller, event->csensor.sensor, sensorData, 3) == 0) {
-						sysLogPrintf(LOG_NOTE, "input: %s sensor data for controller %d: X=%f, Y=%f, Z=%f",
-								(event->csensor.sensor == SDL_SENSOR_GYRO ? "Gyroscope" : "Accelerometer"),
-								event->cdevice.which, sensorData[0], sensorData[1], sensorData[2]);
+						const char* sensorName = (event->csensor.sensor == SDL_SENSOR_GYRO) ? "Gyroscope" : "Accelerometer";
+						logSensorData(sensorName, event->cdevice.which, sensorData);
 
 						if (event->csensor.sensor == SDL_SENSOR_GYRO) {
+								// Apply noise filtering to the raw gyro data
+								sensorData[0] = fabs(sensorData[0]) < gyroMinThreshold ? 0 : sensorData[0];
+								sensorData[1] = fabs(sensorData[1]) < gyroMinThreshold ? 0 : sensorData[1];
+								sensorData[2] = fabs(sensorData[2]) < gyroMinThreshold ? 0 : sensorData[2];
+
+								// Process gyroscope data
 								gyroDX = sensorData[0] * gyroSensX;
 								gyroDY = sensorData[1] * gyroSensY;
-
-								gyroDX = fabs(gyroDX) < gyroMinThreshold ? 0 : gyroDX;
-								gyroDY = fabs(gyroDY) < gyroMinThreshold ? 0 : gyroDY;
 
 								updateCameraControl(gyroDX, gyroDY, 0);
 						}
 						else if (event->csensor.sensor == SDL_SENSOR_ACCEL) {
+								// Process accelerometer data
 								accelX = sensorData[0];
 								accelY = sensorData[1];
 								accelZ = sensorData[2];
@@ -1043,15 +1051,21 @@ static void inputUpdateMouse(void)
 
 static void inputUpdateGyro(void)
 {
+		// Check if "Enable Gyro Aim" setting is active
+		if (!gyroEnabled) {
+				sysLogPrintf(LOG_NOTE, "Gyro aiming is disabled via settings.");
+				return; // Exit if gyro is globally disabled
+		}
+
 		SDL_GameController* controller = pads[0]; // Assuming pads[0] is the primary controller
 		if (!controller || !SDL_GameControllerHasSensor(controller, SDL_SENSOR_GYRO)) {
-				sysLogPrintf(LOG_WARNING, "Gyroscope not available or enabled");
+				sysLogPrintf(LOG_WARNING, "Gyroscope not available or enabled.");
 				return;
 		}
 
 		float gyroData[3] = { 0 }; // Initialize gyro data
 		if (SDL_GameControllerGetSensorData(controller, SDL_SENSOR_GYRO, gyroData, 3) != 0) {
-				sysLogPrintf(LOG_WARNING, "Failed to read gyroscope data");
+				sysLogPrintf(LOG_WARNING, "Failed to read gyroscope data.");
 				return;
 		}
 
@@ -1060,6 +1074,7 @@ static void inputUpdateGyro(void)
 		// Apply noise filtering
 		gyroData[0] = fabs(gyroData[0]) < gyroMinThreshold ? 0 : gyroData[0];
 		gyroData[1] = fabs(gyroData[1]) < gyroMinThreshold ? 0 : gyroData[1];
+		gyroData[2] = fabs(gyroData[2]) < gyroMinThreshold ? 0 : gyroData[2]; // Include Z-axis filtering
 
 		// Handle gyro activation modes using the "Gyro Modifier" button
 		s32 gyroActive = 0;
@@ -1083,7 +1098,8 @@ static void inputUpdateGyro(void)
 				break;
 
 		default:
-				// No additional handling for undefined modes
+				// Always On mode: gyro is always active
+				gyroActive = (g_GyroActivationMode == GYRO_ALWAYS_ON) ? 1 : 0;
 				break;
 		}
 
@@ -1103,8 +1119,18 @@ static void inputUpdateGyro(void)
 				case 0: // Yaw mode
 						updateCameraControl(gyroDX * gyroSensX, gyroDY * gyroSensY, 0);
 						break;
+
 				case 1: // Roll mode
 						updateCameraControl(-gyroData[2] * gyroSensX, gyroDY * gyroSensY, gyroData[2] * gyroSensX);
+						break;
+
+				case 2: // Gyro Space axis (placeholder)
+						// Use all three axes (X, Y, Z) for a full gyro space implementation
+						updateCameraControl(gyroData[0] * gyroSensX, gyroData[1] * gyroSensY, gyroData[2] * gyroSensX);
+						break;
+
+				default:
+						sysLogPrintf(LOG_WARNING, "Unknown Gyro Axis Mode: %d", inputGetGyroAxisMode());
 						break;
 				}
 
@@ -1124,7 +1150,6 @@ static void inputUpdateGyro(void)
 				}
 		}
 }
-
 
 s32 inputControllerConnected(s32 idx)
 {
@@ -1601,6 +1626,16 @@ void inputGyroSetSpeedY(f32 speed)
 		gyroSensY = speed;
 }
 
+s32 inputGyroIsEnabled(void)
+{
+		return gyroEnabled;
+}
+
+void inputGyroEnable(s32 enabled)
+{
+		gyroEnabled = !!enabled;
+}
+
 s32 inputGetGyroAxisMode(void)
 {
 		return g_GyroAxisMode;
@@ -1619,16 +1654,6 @@ f32 inputGetGyroMinThreshold(void)
 void inputSetGyroMinThreshold(f32 threshold)
 {
 		gyroMinThreshold = threshold;
-}
-
-s32 inputGyroIsEnabled(void)
-{
-		return gyroEnabled;
-}
-
-void inputGyroEnable(s32 enabled)
-{
-		gyroEnabled = !!enabled;
 }
 
 s32 inputGetGyroActivationMode(void)

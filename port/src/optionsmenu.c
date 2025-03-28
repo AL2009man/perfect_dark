@@ -578,12 +578,12 @@ static MenuItemHandlerResult menuhandlerGyroEnabled(s32 operation, struct menuit
 {
 		switch (operation) {
 		case MENUOP_GET:
-				return inputGyroIsEnabled();
+				return inputGyroIsEnabled(); // Fetch current state of gyroEnabled
 		case MENUOP_SET:
-				inputGyroEnable(data->checkbox.value);
+				inputGyroEnable(data->checkbox.value); // Update gyroEnabled based on user action
 				break;
 		}
-		return 0;
+		return 0; // Ensure proper return value
 }
 
 // Function to handle gyro aim mode
@@ -597,15 +597,15 @@ static MenuItemHandlerResult menuhandlerGyroAimMode(s32 operation, struct menuit
 
 		switch (operation) {
 		case MENUOP_GETOPTIONCOUNT:
-				data->dropdown.value = ARRAYCOUNT(opts);
+				data->dropdown.value = ARRAYCOUNT(opts); // Provides count of options
 				break;
 		case MENUOP_GETOPTIONTEXT:
-				return (intptr_t)opts[data->dropdown.value];
+				return (intptr_t)opts[data->dropdown.value]; // Fetches the text of the current option
 		case MENUOP_SET:
-				inputSetGyroAimMode(data->dropdown.value);
+				inputSetGyroAimMode(data->dropdown.value); // Sets selected mode
 				break;
 		case MENUOP_GETSELECTEDINDEX:
-				data->dropdown.value = inputGetGyroAimMode();
+				data->dropdown.value = inputGetGyroAimMode(); // Retrieves current aim mode
 		}
 
 		return 0;
