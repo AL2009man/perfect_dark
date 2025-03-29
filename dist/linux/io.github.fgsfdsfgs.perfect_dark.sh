@@ -16,7 +16,7 @@ if [ -f ${XDG_DATA_HOME}/roms/pd.ntsc-final.z64 ] | \
    [ -f ${XDG_DATA_HOME}/roms/pd.ntsc-1.0.z64 ]; then
     executable="pd.x86_64"
 elif [ -f ${XDG_DATA_HOME}/roms/pd.jpn-final.z64 ]; then
-    executable="pd.jpn.x"
+    executable="pd.jpn.x86_64"
 elif [ -f ${XDG_DATA_HOME}/roms/pd.pal-final.z64 ]; then
     executable="pd.pal.x86_64"
 fi
