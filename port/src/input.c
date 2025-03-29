@@ -398,33 +398,33 @@ static inline void inputInitController(const s32 cidx, const s32 jidx)
 }
 
 static void inputInitSensor(SDL_GameController* controller, s32 jidx, SDL_SensorType sensorType, const char* sensorName) {
+		// Validate the controller
 		if (!controller) {
 				sysLogPrintf(LOG_WARNING, "input: Invalid controller passed for sensor initialization.");
 				return;
 		}
 
-		// Check if the sensor is available
-		if (SDL_GameControllerHasSensor(controller, sensorType)) {
-				sysLogPrintf(LOG_NOTE, "input: %s sensor available for controller %d", sensorName, jidx);
+		// Check sensor availability
+		if (!SDL_GameControllerHasSensor(controller, sensorType)) {
+				sysLogPrintf(LOG_WARNING, "input: %s sensor not available for controller %d", sensorName, jidx);
+				return;
+		}
 
-				// Attempt to enable the sensor
-				if (SDL_GameControllerSetSensorEnabled(controller, sensorType, SDL_TRUE) == 0) {
-						float rate = SDL_GameControllerGetSensorDataRate(controller, sensorType);
+		sysLogPrintf(LOG_NOTE, "input: %s sensor available for controller %d", sensorName, jidx);
 
-						// Check if the data rate is sufficient
-						if (rate >= 60.0f) {
-								sysLogPrintf(LOG_NOTE, "input: %s sensor enabled for controller %d with data rate %.2f Hz", sensorName, jidx, rate);
-						}
-						else {
-								sysLogPrintf(LOG_WARNING, "input: %s data rate may be insufficient for controller %d (%.2f Hz)", sensorName, jidx, rate);
-						}
-				}
-				else {
-						sysLogPrintf(LOG_WARNING, "input: Failed to enable %s sensor for controller %d", sensorName, jidx);
-				}
+		// Attempt to enable the sensor
+		if (SDL_GameControllerSetSensorEnabled(controller, sensorType, SDL_TRUE) != 0) {
+				sysLogPrintf(LOG_WARNING, "input: Failed to enable %s sensor for controller %d", sensorName, jidx);
+				return;
+		}
+
+		// Retrieve and evaluate data rate
+		float rate = SDL_GameControllerGetSensorDataRate(controller, sensorType);
+		if (rate >= 60.0f) {
+				sysLogPrintf(LOG_NOTE, "input: %s sensor enabled for controller %d with data rate %.2f Hz", sensorName, jidx, rate);
 		}
 		else {
-				sysLogPrintf(LOG_WARNING, "input: %s sensor not available for controller %d", sensorName, jidx);
+				sysLogPrintf(LOG_WARNING, "input: %s data rate may be insufficient for controller %d (%.2f Hz)", sensorName, jidx, rate);
 		}
 }
 
@@ -433,47 +433,49 @@ static void logSensorData(const char* sensorName, int controllerID, float* data)
 				sensorName, controllerID, data[0], data[1], data[2]);
 }
 
-static void handleSensorUpdate(SDL_Event* event)
-{
-		if (event->csensor.sensor == SDL_SENSOR_GYRO || event->csensor.sensor == SDL_SENSOR_ACCEL) {
-				float sensorData[3] = { 0 }; // Initialize sensor data array
-				SDL_GameController* controller = SDL_GameControllerFromInstanceID(event->cdevice.which);
+static void handleSensorUpdate(SDL_Event* event) {
+		// Ensure the sensor type is valid
+		if (event->csensor.sensor != SDL_SENSOR_GYRO && event->csensor.sensor != SDL_SENSOR_ACCEL) {
+				return;
+		}
 
-				if (!controller) {
-						sysLogPrintf(LOG_WARNING, "input: Controller %d not found for sensor data retrieval", event->cdevice.which);
-						return;
+		SDL_GameController* controller = SDL_GameControllerFromInstanceID(event->cdevice.which);
+		if (!controller) {
+				sysLogPrintf(LOG_WARNING, "input: Controller %d not found for sensor data retrieval", event->cdevice.which);
+				return;
+		}
+
+		float sensorData[3] = { 0 }; // Initialize sensor data array
+		if (SDL_GameControllerGetSensorData(controller, event->csensor.sensor, sensorData, 3) != 0) {
+				sysLogPrintf(LOG_WARNING, "input: Failed to retrieve %s sensor data for controller %d",
+						(event->csensor.sensor == SDL_SENSOR_GYRO ? "Gyroscope" : "Accelerometer"),
+						event->cdevice.which);
+				return;
+		}
+
+		// Determine sensor name
+		const char* sensorName = (event->csensor.sensor == SDL_SENSOR_GYRO) ? "Gyroscope" : "Accelerometer";
+		logSensorData(sensorName, event->cdevice.which, sensorData);
+
+		if (event->csensor.sensor == SDL_SENSOR_GYRO) {
+				// Filter noise in gyroscope data
+				for (int i = 0; i < 3; ++i) {
+						sensorData[i] = fabs(sensorData[i]) < gyroMinThreshold ? 0 : sensorData[i];
 				}
 
-				if (SDL_GameControllerGetSensorData(controller, event->csensor.sensor, sensorData, 3) == 0) {
-						const char* sensorName = (event->csensor.sensor == SDL_SENSOR_GYRO) ? "Gyroscope" : "Accelerometer";
-						logSensorData(sensorName, event->cdevice.which, sensorData);
+				gyroDX = -sensorData[1] * gyroSensX; // Negate to reverse horizontal movement
+				gyroDY = -sensorData[0] * gyroSensY; // Vertical movement remains consistent
 
-						if (event->csensor.sensor == SDL_SENSOR_GYRO) {
-								// Apply noise filtering to the raw gyro data
-								sensorData[0] = fabs(sensorData[0]) < gyroMinThreshold ? 0 : sensorData[0];
-								sensorData[1] = fabs(sensorData[1]) < gyroMinThreshold ? 0 : sensorData[1];
-								sensorData[2] = fabs(sensorData[2]) < gyroMinThreshold ? 0 : sensorData[2];
+				updateCameraControl(gyroDX, gyroDY, 0);
 
-								// Process gyroscope data
-								gyroDX = sensorData[0] * gyroSensX;
-								gyroDY = sensorData[1] * gyroSensY;
+		}
+		else if (event->csensor.sensor == SDL_SENSOR_ACCEL) {
+				// Process accelerometer data
+				accelX = sensorData[0];
+				accelY = sensorData[1];
+				accelZ = sensorData[2];
 
-								updateCameraControl(gyroDX, gyroDY, 0);
-						}
-						else if (event->csensor.sensor == SDL_SENSOR_ACCEL) {
-								// Process accelerometer data
-								accelX = sensorData[0];
-								accelY = sensorData[1];
-								accelZ = sensorData[2];
-
-								sysLogPrintf(LOG_NOTE, "Accelerometer data processed (placeholder logic)");
-						}
-				}
-				else {
-						sysLogPrintf(LOG_WARNING, "input: Failed to retrieve %s sensor data for controller %d",
-								(event->csensor.sensor == SDL_SENSOR_GYRO ? "Gyroscope" : "Accelerometer"),
-								event->cdevice.which);
-				}
+				sysLogPrintf(LOG_NOTE, "Accelerometer data processed (placeholder logic)");
 		}
 }
 
