@@ -772,39 +772,46 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 	movedata.analogwalk = movedata.c1stickysafe;
 
 #ifndef PLATFORM_N64
+	// Mouse-based aiming logic
 	if (allowmlook) {
-			// Get scaled deltas for both mouselook and gyro
+			// Process mouse input deltas
 			inputMouseGetScaledDelta(&movedata.freelookdx, &movedata.freelookdy);
 
-			// Use inputGyroIsEnabled to check if gyro is enabled
-			if (inputGyroIsEnabled()) {
-					inputGyroGetScaledDelta(&movedata.gyrolookdx, &movedata.gyrolookdy);
-			}
-			else {
-					movedata.gyrolookdx = 0;
-					movedata.gyrolookdy = 0;
-			}
-
-			// Get current gyro aim mode
-			s32 gyroAimMode = inputGetGyroAimMode();
-
-			// Allow mouse aim crosshair based on classic mouselook mode or specific gyro aim modes
-			allowmcross = ((PLAYER_EXTCFG().mouseaimmode == MOUSEAIM_CLASSIC) ||
-					(inputGyroIsEnabled() && // Ensure gyro is enabled before enabling gyro aim modes
-							(gyroAimMode == GYRO_AIM_CROSSHAIR || gyroAimMode == GYRO_AIM_BOTH))) &&
+			// Allow crosshair aiming based on mouse activity and classic mode
+			allowmcross = (PLAYER_EXTCFG().mouseaimmode == MOUSEAIM_CLASSIC) &&
 					(movedata.freelookdx || movedata.freelookdy ||
-							((gyroAimMode == GYRO_AIM_CROSSHAIR || gyroAimMode == GYRO_AIM_BOTH) &&
-									(movedata.gyrolookdx || movedata.gyrolookdy)) ||  // Only enable for these modes
 							g_Vars.currentplayer->swivelpos[0] || g_Vars.currentplayer->swivelpos[1]);
 
-			// Invert pitch for mouselook and gyro, if needed
+			// Apply pitch inversion for mouse input if specified
 			if (movedata.invertpitch) {
 					movedata.freelookdy = -movedata.freelookdy;
-					movedata.gyrolookdy = -movedata.gyrolookdy;
 			}
 	}
 
-	// always pause with ESC
+	// Gyro-based aiming logic
+	if (inputGyroIsEnabled()) {
+			// Process gyro input deltas
+			inputGyroGetScaledDelta(&movedata.gyrolookdx, &movedata.gyrolookdy);
+
+			// Handle gyro aiming independently
+			if (inputGetGyroAimMode() == GYRO_AIM_CROSSHAIR || inputGetGyroAimMode() == GYRO_AIM_BOTH) {
+					// Add gyro-based crosshair activation logic
+					allowmcross = allowmcross || (movedata.gyrolookdx || movedata.gyrolookdy ||
+							g_Vars.currentplayer->swivelpos[0] || g_Vars.currentplayer->swivelpos[1]);
+
+					// Apply pitch inversion for gyro input if specified
+					if (movedata.invertpitch) {
+							movedata.gyrolookdy = -movedata.gyrolookdy;
+					}
+			}
+	}
+	else {
+			// Reset gyro deltas when disabled
+			movedata.gyrolookdx = 0.0f;
+			movedata.gyrolookdy = 0.0f;
+	}
+
+	// Pause handling with ESC key
 	if (allowc1buttons && g_Vars.currentplayer->isdead == false && g_Vars.currentplayer->pausemode == PAUSEMODE_UNPAUSED) {
 			if (inputKeyJustPressed(VK_ESCAPE)) {
 					c1buttonsthisframe |= START_BUTTON;
@@ -1436,64 +1443,36 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 					}
 
 #ifndef PLATFORM_N64
-					// Handle turning and looking up/down via mouselook and gyro when aiming
+					// Handle turning and looking up/down via mouselook when aiming
 					if (g_Vars.currentplayer->insightaimmode && allowmcross && bgunGetWeaponNum(HAND_RIGHT) != WEAPON_HORIZONSCANNER) {
-							// Mouselook handling
-							if (g_Vars.currentplayer->swivelpos[0] > 0.9f) {
-									movedata.aimturnrightspeed = (g_Vars.currentplayer->swivelpos[0] - 0.9f) / 0.1f;
-									movedata.aimturnleftspeed = 0.f;
-							}
-							else if (g_Vars.currentplayer->swivelpos[0] < -0.9f) {
-									movedata.aimturnleftspeed = (g_Vars.currentplayer->swivelpos[0] - -0.9f) / -0.1f;
-									movedata.aimturnrightspeed = 0.f;
-							}
-
-							f32 vertaup = 0.f, vertadown = 0.f;
-							if (g_Vars.currentplayer->swivelpos[1] > 0.9f) {
-									vertaup = (g_Vars.currentplayer->swivelpos[1] - 0.9f) / 0.1f;
-							}
-							else if (g_Vars.currentplayer->swivelpos[1] < -0.9f) {
-									vertadown = (g_Vars.currentplayer->swivelpos[1] - -0.9f) / -0.1f;
-							}
-
-							// Uninvert pitch if needed
-							if (movedata.invertpitch) {
-									movedata.speedvertaup = vertadown;
-									movedata.speedvertadown = vertaup;
-							}
-							else {
-									movedata.speedvertaup = vertaup;
-									movedata.speedvertadown = vertadown;
-							}
-
-							// Gyro handling for GYRO_AIM_CAMERA and GYRO_AIM_BOTH
-							if (inputGetGyroAimMode() == GYRO_AIM_CAMERA || inputGetGyroAimMode() == GYRO_AIM_BOTH) {
-									if (movedata.gyrolookdx != 0.f || movedata.gyrolookdy != 0.f) {
-											movedata.aimturnrightspeed += movedata.gyrolookdx;
-											movedata.aimturnleftspeed -= movedata.gyrolookdx;
-
-											if (movedata.invertpitch) {
-													movedata.speedvertaup -= movedata.gyrolookdy;
-													movedata.speedvertadown += movedata.gyrolookdy;
-											}
-											else {
-													movedata.speedvertaup += movedata.gyrolookdy;
-													movedata.speedvertadown -= movedata.gyrolookdy;
-											}
-									}
-							}
-					}
-					else {
-							// Reset mouse and gyro aim positions when not aiming
-							g_Vars.currentplayer->swivelpos[0] = 0.f;
-							g_Vars.currentplayer->swivelpos[1] = 0.f;
-
-							if (inputGetGyroAimMode() == GYRO_AIM_CAMERA || inputGetGyroAimMode() == GYRO_AIM_BOTH) {
-									movedata.gyrolookdx = 0.f;
-									movedata.gyrolookdy = 0.f;
-							}
+						if (g_Vars.currentplayer->swivelpos[0] > 0.9f) {
+							movedata.aimturnrightspeed = (g_Vars.currentplayer->swivelpos[0] - 0.9f) / 0.1f;
+							movedata.aimturnleftspeed = 0.f;
+						} else if (g_Vars.currentplayer->swivelpos[0] < -0.9f) {
+							movedata.aimturnleftspeed = (g_Vars.currentplayer->swivelpos[0] - -0.9f) / -0.1f;
+							movedata.aimturnrightspeed = 0.f;
+						}
+						f32 vertaup = 0.f, vertadown = 0.f;
+						if (g_Vars.currentplayer->swivelpos[1] > 0.9f) {
+							vertaup = (g_Vars.currentplayer->swivelpos[1] - 0.9f) / 0.1f;
+						} else if (g_Vars.currentplayer->swivelpos[1] < -0.9f) {
+							vertadown = (g_Vars.currentplayer->swivelpos[1] - -0.9f) / -0.1f;
+						}
+						// Uninvert pitch if needed
+						if (movedata.invertpitch) {
+							movedata.speedvertaup = vertadown;
+							movedata.speedvertadown = vertaup;
+						} else {
+							movedata.speedvertaup = vertaup;
+							movedata.speedvertadown = vertadown;
+						}
+					} else {
+						// Reset mouse aim position when not mouse aiming
+						g_Vars.currentplayer->swivelpos[0] = 0.f;
+						g_Vars.currentplayer->swivelpos[1] = 0.f;
 					}
 #endif
+
 					// Handle A button
 					if (allowc1buttons) {
 						if (g_Vars.currentplayer->invdowntime < -2) {
@@ -2252,34 +2231,41 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 			bgunSwivelWithDamp(x, y, PAL ? 0.955f : 0.963f);
 		}
 	} else if (movedata.canmanualaim) {
-    // Adjust crosshair's position on screen when holding aim and moving stick
-    bgunSetAimType(0);
+		// Adjust crosshair's position on screen
+		// when holding aim and moving stick
+		bgunSetAimType(0);
 #ifndef PLATFORM_N64
+		// Handle crosshair movement based on input type
 		if (allowmcross) {
-				// Move crosshair using both mouse and gyro inputs, independent of joystick activity
 				const f32 xcoeff = 320.f / 1080.f;
 				const f32 ycoeff = 240.f / 1080.f;
-
-				// Calculate mouselook scaling
-				const f32 xscale = (PLAYER_EXTCFG().mouseaimspeedx * xcoeff) / g_Vars.currentplayer->aspect;
-				const f32 yscale = (PLAYER_EXTCFG().mouseaimspeedy * ycoeff);
 
 				// Initialize crosshair position
 				f32 x = g_Vars.currentplayer->swivelpos[0];
 				f32 y = g_Vars.currentplayer->swivelpos[1];
 
-				// Add gyro input only if gyro is enabled (use inputGyroIsEnabled)
-				if (inputGyroIsEnabled()) {
-						const f32 gyroXScale = inputGyroGetCrosshairSpeedX() * xcoeff / g_Vars.currentplayer->aspect;
-						const f32 gyroYScale = inputGyroGetCrosshairSpeedY() * ycoeff;
+				// Mouse-based crosshair movement
+				const f32 xscale = (PLAYER_EXTCFG().mouseaimspeedx * xcoeff) / g_Vars.currentplayer->aspect;
+				const f32 yscale = PLAYER_EXTCFG().mouseaimspeedy * ycoeff;
 
-						x += movedata.gyrolookdx * gyroXScale;
-						y += movedata.gyrolookdy * gyroYScale;
+				if (movedata.freelookdx != 0.0f || movedata.freelookdy != 0.0f) {
+						x += movedata.freelookdx * xscale;
+						y += movedata.freelookdy * yscale;
 				}
 
-				// Add mouse input conditionally
-				x += movedata.freelookdx * xscale;
-				y += movedata.freelookdy * yscale;
+				// Gyro-based crosshair movement (only if gyro is enabled)
+				if (inputGyroIsEnabled()) {
+						s32 gyroAimMode = inputGetGyroAimMode();
+
+						// Add gyro input to crosshair movement unless GYRO_AIM_CAMERA is active
+						if (gyroAimMode == GYRO_AIM_CROSSHAIR || gyroAimMode == GYRO_AIM_BOTH) {
+								const f32 gyroXScale = inputGyroGetCrosshairSpeedX() * xcoeff / g_Vars.currentplayer->aspect;
+								const f32 gyroYScale = inputGyroGetCrosshairSpeedY() * ycoeff;
+
+								x += movedata.gyrolookdx * gyroXScale;
+								y += movedata.gyrolookdy * gyroYScale;
+						}
+				}
 
 				// Clamp crosshair position to screen bounds
 				x = (x < -1.f) ? -1.f : ((x > 1.f) ? 1.f : x);
@@ -2290,9 +2276,12 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 				g_Vars.currentplayer->swivelpos[1] = y;
 				bgunSwivelWithDamp(x, y, 0.01f);
 
+				// Exit function after handling crosshair adjustments
 				return;
 		}
 #endif
+
+		// Default joystick-based movement for manual aim
 		bgunSwivelWithoutDamp((movedata.c1stickxraw * 0.65f) / 80.0f, (movedata.c1stickyraw * 0.65f) / 80.0f);
 	}
 }
