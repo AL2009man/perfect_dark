@@ -254,6 +254,15 @@ void inputGyroGetRawDelta(s32* dx, s32* dy);
 // returns 0, 0 when the gyro is not enabled
 void inputGyroGetScaledDelta(f32* dx, f32* dy);
 
+//
+void inputGyroGetCrosshairDelta(f32* dx, f32* dy);
+
+//
+void inputGyroGetScaledCrosshairDelta(f32* dx, f32* dy);
+
+//
+void inputGyroGetLookDelta(f32* dx, f32* dy);
+
 // returns changes in gyro position since last frame, scaled by absolute sensitivity
 // returns 0, 0 when the gyro is not enabled
 void inputGyroGetAbsScaledDelta(f32* dx, f32* dy);

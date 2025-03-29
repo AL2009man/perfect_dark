@@ -5085,10 +5085,12 @@ struct movedata {
 	/*0xa8*/ s32 analogwalk;
 #ifndef PLATFORM_N64
 	/*0xac*/ s32 alt1tapcount;
-	/*    */ f32 freelookdx; // how much the mouse moved ...
-	/*    */ f32 freelookdy; // ... scaled by sensitivity
-	/*    */ f32 gyrolookdx; // how much the gyro moved ...
-	/*    */ f32 gyrolookdy; // ... scaled by sensitivity
+	/*    */ f32 freelookdx; // Mouse-based horizontal movement delta, scaled by mouse sensitivity
+	/*    */ f32 freelookdy; // Mouse-based vertical movement delta, scaled by mouse sensitivity
+	/*    */ f32 gyrolookdx; // Gyroscope-based horizontal movement delta, scaled by gyroSensX
+	/*    */ f32 gyrolookdy; // Gyroscope-based vertical movement delta, scaled by gyroSensY
+	/*    */ f32 gyrocrosshairdx; // Gyroscope-based horizontal movement delta, scaled by gyroCrosshairSpeedX
+	/*    */ f32 gyrocrosshairdy; // Gyroscope-based vertical movement delta, scaled by gyroCrosshairSpeedY
 	/*    */ f32 analoglean; // how much we're trying to lean
 #endif
 

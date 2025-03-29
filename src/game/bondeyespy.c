@@ -941,31 +941,20 @@ void eyespyProcessInput(bool allowbuttons)
 
 #ifndef PLATFORM_N64
 		if (g_Vars.currentplayernum == 0) {
-				f32 mdx, mdy, gdx, gdy;
-
-				// Retrieve scaled deltas for both mouse and gyro
-				inputMouseGetScaledDelta(&mdx, &mdy);
-				inputGyroGetScaledDelta(&gdx, &gdy);
-
-				// Combine mouse and gyro deltas, ensuring smooth input handling
-				if (mdx || mdy || gdx || gdy) {
-						// Apply pitch inversion for both mouse and gyro if forward pitch is disabled
-						if (g_Vars.currentplayerstats && !optionsGetForwardPitch(g_Vars.currentplayerstats->mpindex)) {
-								mdy = -mdy;
-								gdy = -gdy;
-						}
-
-						// Update the horizontal rotation (theta) using combined deltas
-						g_Vars.currentplayer->eyespy->theta += (mdx + gdx) * 1.5f;
-
-						// Adjust ascent speed or vertical aim based on whether aim is pressed
-						if (aimpressed) {
-								ascendspeed -= (mdy + gdy);
-						}
-						else {
-								g_Vars.currentplayer->eyespy->verta -= (mdy + gdy) * 1.5f;
-						}
+			f32 mdx, mdy;
+			inputMouseGetScaledDelta(&mdx, &mdy);
+			if (mdx || mdy) {
+				if (g_Vars.currentplayerstats && !optionsGetForwardPitch(g_Vars.currentplayerstats->mpindex)) {
+					mdy = -mdy;
 				}
+				g_Vars.currentplayer->eyespy->theta += mdx * 1.5f;
+				// hold aim to move up and down, release to look up and down
+				if (aimpressed) {
+					ascendspeed -= mdy;
+				} else {
+					g_Vars.currentplayer->eyespy->verta -= mdy * 1.5f;
+				}
+			}
 		}
 #endif
 
