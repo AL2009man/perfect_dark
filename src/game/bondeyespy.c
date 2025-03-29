@@ -941,20 +941,21 @@ void eyespyProcessInput(bool allowbuttons)
 
 #ifndef PLATFORM_N64
 		if (g_Vars.currentplayernum == 0) {
-			f32 mdx, mdy;
-			inputMouseGetScaledDelta(&mdx, &mdy);
-			if (mdx || mdy) {
-				if (g_Vars.currentplayerstats && !optionsGetForwardPitch(g_Vars.currentplayerstats->mpindex)) {
-					mdy = -mdy;
+				f32 mdx, mdy;
+				inputMouseGetScaledDelta(&mdx, &mdy);
+				if (mdx || mdy) {
+						if (g_Vars.currentplayerstats && !optionsGetForwardPitch(g_Vars.currentplayerstats->mpindex)) {
+								mdy = -mdy;
+						}
+						g_Vars.currentplayer->eyespy->theta += mdx * 1.5f;
+						// hold aim to move up and down, release to look up and down
+						if (aimpressed) {
+								ascendspeed -= mdy;
+						}
+						else {
+								g_Vars.currentplayer->eyespy->verta -= mdy * 1.5f;
+						}
 				}
-				g_Vars.currentplayer->eyespy->theta += mdx * 1.5f;
-				// hold aim to move up and down, release to look up and down
-				if (aimpressed) {
-					ascendspeed -= mdy;
-				} else {
-					g_Vars.currentplayer->eyespy->verta -= mdy * 1.5f;
-				}
-			}
 		}
 #endif
 
