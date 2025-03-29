@@ -3658,25 +3658,42 @@ void playerTick(bool arg0)
 				sp174 = -stickx * LVUPDATE60FREAL() * 0.00025f;
 
 #ifndef PLATFORM_N64
-				// respect the invert pitch setting
+				// Respect the invert pitch setting
 				if (optionsGetForwardPitch(g_Vars.currentplayerstats->mpindex)) {
-					sp178 = -sp178;
+						sp178 = -sp178;
 				}
-				// mouse control
+
+				// Input handling
 				if (g_Vars.currentplayernum == 0) {
-					f32 mdx, mdy;
-					inputMouseGetScaledDelta(&mdx, &mdy);
-					if (mdx || mdy) {
-						mdx *= 48.f;
-						mdy *= 48.f;
-						mdx = (mdx < -128.f) ? -128.f : (mdx > 127.f) ? 127.f : mdx;
-						mdy = (mdy < -128.f) ? -128.f : (mdy > 127.f) ? 127.f : mdy;
-						if (g_Vars.currentplayerstats && !optionsGetForwardPitch(g_Vars.currentplayerstats->mpindex)) {
-							mdy = -mdy;
+						f32 mdx, mdy, gdx, gdy;
+
+						// Retrieve scaled deltas for mouse and gyro
+						inputMouseGetScaledDelta(&mdx, &mdy);
+						inputGyroGetScaledDelta(&gdx, &gdy);
+
+						if (mdx || mdy || gdx || gdy) {
+								// Scale mouse and gyro deltas
+								mdx *= 48.f;
+								mdy *= 48.f;
+								gdx *= 48.f;
+								gdy *= 48.f;
+
+								// Clamp deltas to screen bounds
+								mdx = (mdx < -128.f) ? -128.f : (mdx > 127.f) ? 127.f : mdx;
+								mdy = (mdy < -128.f) ? -128.f : (mdy > 127.f) ? 127.f : mdy;
+								gdx = (gdx < -128.f) ? -128.f : (gdx > 127.f) ? 127.f : gdx;
+								gdy = (gdy < -128.f) ? -128.f : (gdy > 127.f) ? 127.f : gdy;
+
+								// Apply pitch inversion for both mouse and gyro if needed
+								if (g_Vars.currentplayerstats && !optionsGetForwardPitch(g_Vars.currentplayerstats->mpindex)) {
+										mdy = -mdy;
+										gdy = -gdy;
+								}
+
+								// Combine mouse and gyro deltas for position updates
+								sp178 += (mdy + gdy) * 0.00025f;
+								sp174 -= (mdx + gdx) * 0.00025f;
 						}
-						sp178 += mdy * 0.00025f;
-						sp174 -= mdx * 0.00025f;
-					}
 				}
 #endif
 

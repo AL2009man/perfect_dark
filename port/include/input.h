@@ -99,6 +99,7 @@ enum contkey {
 	CK_STICK_YPOS,
 	CK_ACCEPT,
 	CK_CANCEL,
+	CK_GYRO_MOD,
 	CK_0040,
 	CK_0080,
 	CK_0100,
@@ -116,6 +117,19 @@ enum mouselockmode {
 	MLOCK_OFF = 0,
 	MLOCK_ON = 1,
 	MLOCK_AUTO = 2
+};
+
+enum gyroactivation {
+		GYRO_ALWAYS_ON = 0,
+		GYRO_TOGGLE = 1,
+		GYRO_HOLD = 2,
+		GYRO_HOLD_INVERTED = 3
+};
+
+enum gyroaimmode {
+		GYRO_AIM_CAMERA = 0,
+		GYRO_AIM_CROSSHAIR = 1,
+		GYRO_AIM_BOTH = 2
 };
 
 // returns bitmask of connected controllers or -1 if failed
@@ -228,6 +242,81 @@ void inputMouseSetSpeed(f32 x, f32 y);
 
 s32 inputMouseIsEnabled(void);
 void inputMouseEnable(s32 enabled);
+
+// sets x, y to gyro position in native viewport coordinates (ie, 320x240 most of the time)
+// returns true if gyro has changed this input frame
+s32 inputGyroGetPosition(s32* x, s32* y);
+
+// returns changes in gyro position since last frame, in window coordinates
+void inputGyroGetRawDelta(s32* dx, s32* dy);
+
+// returns changes in gyro position since last frame, scaled by sensitivity
+// returns 0, 0 when the gyro is not enabled
+void inputGyroGetScaledDelta(f32* dx, f32* dy);
+
+// returns changes in gyro position since last frame, scaled by absolute sensitivity
+// returns 0, 0 when the gyro is not enabled
+void inputGyroGetAbsScaledDelta(f32* dx, f32* dy);
+
+// gets the current gyro sensitivity for X and Y axes
+void inputGyroGetSpeed(f32* x, f32* y);
+
+// sets the gyro sensitivity for X and Y axes
+void inputGyroSetSpeed(f32 x, f32 y);
+
+// returns 1 if the gyro is enabled, 0 otherwise
+s32 inputGyroIsEnabled(void);
+
+// enables or disables the gyro
+void inputGyroEnable(s32 enabled);
+
+// gets the current gyro aim mode
+s32 inputGetGyroAimMode(void);
+
+// sets the gyro aim mode
+void inputSetGyroAimMode(s32 mode);
+
+// gets the current gyro sensitivity for the X axis
+f32 inputGyroGetSpeedX(void);
+
+// sets the gyro sensitivity for the X axis
+void inputGyroSetSpeedX(f32 speed);
+
+// gets the current gyro sensitivity for the Y axis
+f32 inputGyroGetSpeedY(void);
+
+// sets the gyro sensitivity for the Y axis
+void inputGyroSetSpeedY(f32 speed);
+
+// gets the current gyro crosshair speed for the X axis
+f32 inputGyroGetCrosshairSpeedX(void);
+
+// sets the gyro crosshair speed for the X axis
+void inputGyroSetCrosshairSpeedX(f32 speed);
+
+// gets the current gyro crosshair speed for the Y axis
+f32 inputGyroGetCrosshairSpeedY(void);
+
+// sets the gyro crosshair speed for the Y axis
+void inputGyroSetCrosshairSpeedY(f32 speed);
+
+// gets the current gyro activation mode
+s32 inputGetGyroActivationMode(void);
+
+// sets the gyro activation mode
+void inputSetGyroActivationMode(s32 mode);
+
+// gets the current gyro axis mode
+s32 inputGetGyroAxisMode(void);
+
+// sets the gyro axis mode
+void inputSetGyroAxisMode(s32 mode);
+
+// gets the current gyro minimum movement threshold
+f32 inputGetGyroMinThreshold(void);
+
+// sets the gyro minimum movement threshold
+void inputSetGyroMinThreshold(f32 threshold);
 
 // call this every frame
 void inputUpdate(void);

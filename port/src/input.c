@@ -31,6 +31,16 @@
 #define CURSOR_HIDE_THRESHOLD 1
 #define CURSOR_HIDE_TIME 3000000 // us
 
+// Define gyro activation modes
+#define GYRO_ALWAYS_ON 0
+#define GYRO_TOGGLE 1
+#define GYRO_HOLD 2
+#define GYRO_HOLD_INVERTED 3
+
+#define GYRO_AIM_CAMERA 0
+#define GYRO_AIM_CROSSHAIR 1
+#define GYRO_AIM_BOTH 2 // Default mode
+
 static SDL_GameController *pads[INPUT_MAX_CONTROLLERS];
 
 #define CONTROLLERCFG_DEFAULT { \
@@ -90,6 +100,36 @@ static s32 mouseShowCursor = 1;
 
 static f32 mouseSensX = 1.5f;
 static f32 mouseSensY = 1.5f;
+
+static s32 gyroEnabled = 1; // Enable gyro aiming by default
+static f32 gyroX, gyroY;
+static s32 gyroDX, gyroDY;
+static f32 accelX = 0.0f;
+static f32 accelY = 0.0f;
+static f32 accelZ = 0.0f;
+
+static f32 gyroSensX = 2.50f;
+static f32 gyroSensY = 2.50f;
+static f32 gyroCrosshairSpeedX = 1.0f;
+static f32 gyroCrosshairSpeedY = 1.0f;
+static f32 gyroMinThreshold = 0.1f;
+
+static s32 g_GyroActivationMode = GYRO_ALWAYS_ON;
+static s32 g_GyroToggleState = 0;
+static s32 g_GyroHoldState = 0;
+
+static s32 g_GyroAxisMode = 0;
+static s32 g_GyroAimMode = GYRO_AIM_BOTH;
+
+// Gyro calibration variables
+static f32 gyro_calibration_x = 0.0f;
+static f32 gyro_calibration_y = 0.0f;
+static f32 gyro_calibration_z = 0.0f;
+
+// Gyro camera control variables
+static f32 gyroCameraYaw = 0.0f;
+static f32 gyroCameraPitch = 0.0f;
+static f32 gyroCameraRoll = 0.0f;
 
 static s32 lastKey = 0;
 static char lastChar = 0;
@@ -307,63 +347,157 @@ static inline s32 inputDeviceIndexFromId(const SDL_JoystickID id) {
 	return -1;
 }
 
-static inline SDL_JoystickID inputControllerGetId(SDL_GameController *ctrl)
+static inline SDL_JoystickID inputControllerGetId(SDL_GameController* ctrl)
 {
-	return SDL_JoystickInstanceID(SDL_GameControllerGetJoystick(ctrl));
+		return SDL_JoystickInstanceID(SDL_GameControllerGetJoystick(ctrl));
 }
+
+// Forward Declarations
+static void inputInitSensor(SDL_GameController* controller, s32 jidx, SDL_SensorType sensorType, const char* sensorName);
+static void inputUpdateMouse(void);
+static void inputUpdateGyro(void);
+static void handleSensorUpdate(SDL_Event* event);
+static void updateCameraControl(f32 dx, f32 dy, f32 dz);
+static void updateCrosshairPosition(float x, float y);
 
 static inline void inputInitController(const s32 cidx, const s32 jidx)
 {
 #if SDL_VERSION_ATLEAST(2, 0, 18)
-	// SDL_GameControllerHasRumble() appeared in 2.0.18 even though SDL_GameControllerRumble() is in 2.0.9
-	padsCfg[cidx].rumbleOn = SDL_GameControllerHasRumble(pads[cidx]);
+		// SDL_GameControllerHasRumble() appeared in 2.0.18 even though SDL_GameControllerRumble() is in 2.0.9
+		padsCfg[cidx].rumbleOn = SDL_GameControllerHasRumble(pads[cidx]);
 #else
-	// assume that all joysticks with haptic feedback support will support rumble
-	padsCfg[cidx].rumbleOn = SDL_JoystickIsHaptic(SDL_GameControllerGetJoystick(pads[cidx]));
-	if (!padsCfg[cidx].rumbleOn) {
-		// at least on Windows some controllers will report no haptics, but rumble will still function
-		// just assume it's supported if the controller is of known type
-		const SDL_GameControllerType ctype = SDL_GameControllerGetType(pads[cidx]);
-		padsCfg[cidx].rumbleOn = ctype && (ctype != SDL_CONTROLLER_TYPE_VIRTUAL);
-	}
+		// Assume that all joysticks with haptic feedback support will support rumble
+		padsCfg[cidx].rumbleOn = SDL_JoystickIsHaptic(SDL_GameControllerGetJoystick(pads[cidx]));
+		if (!padsCfg[cidx].rumbleOn) {
+				// At least on Windows, some controllers will report no haptics, but rumble will still function
+				// Just assume it's supported if the controller is of a known type
+				const SDL_GameControllerType ctype = SDL_GameControllerGetType(pads[cidx]);
+				padsCfg[cidx].rumbleOn = ctype && (ctype != SDL_CONTROLLER_TYPE_VIRTUAL);
+		}
 #endif
 
-	// make the LEDs on the controller indicate which player it's for
-	SDL_GameControllerSetPlayerIndex(pads[cidx], cidx);
+		// Set LEDs to indicate player index
+		SDL_GameControllerSetPlayerIndex(pads[cidx], cidx);
 
-	// remember the joystick index
-	padsCfg[cidx].deviceIndex = jidx;
+		// Remember the joystick index
+		padsCfg[cidx].deviceIndex = jidx;
 
-	connectedMask |= (1 << cidx);
+		connectedMask |= (1 << cidx);
 
-	sysLogPrintf(LOG_NOTE, "input: assigned controller '%d: (%s)' (id %d) to player %d",
-		jidx, SDL_GameControllerName(pads[cidx]), inputControllerGetId(pads[cidx]), cidx);
+		sysLogPrintf(LOG_NOTE, "input: Assigned controller '%d: (%s)' (ID %d) to player %d",
+				jidx, SDL_GameControllerName(pads[cidx]), inputControllerGetId(pads[cidx]), cidx);
 
-	SDL_Joystick* joy = SDL_GameControllerGetJoystick(pads[cidx]);
-	if (joy) {
-		char guidStr[1024] = "";
-		SDL_JoystickGUID guid = SDL_JoystickGetGUID(joy);
-		SDL_JoystickGetGUIDString(guid, guidStr, sizeof(guidStr));
-		sysLogPrintf(LOG_NOTE, "input: GUID for controller %d: %s", jidx, guidStr);
-	}
+		SDL_Joystick* joy = SDL_GameControllerGetJoystick(pads[cidx]);
+		if (joy) {
+				char guidStr[1024] = "";
+				SDL_JoystickGUID guid = SDL_JoystickGetGUID(joy);
+				SDL_JoystickGetGUIDString(guid, guidStr, sizeof(guidStr));
+				sysLogPrintf(LOG_NOTE, "input: GUID for controller %d: %s", jidx, guidStr);
+		}
+
+		// Initialize sensors
+		inputInitSensor(pads[cidx], jidx, SDL_SENSOR_GYRO, "Gyroscope");
+		inputInitSensor(pads[cidx], jidx, SDL_SENSOR_ACCEL, "Accelerometer");
+}
+
+static void inputInitSensor(SDL_GameController* controller, s32 jidx, SDL_SensorType sensorType, const char* sensorName) {
+		// Validate the controller
+		if (!controller) {
+				sysLogPrintf(LOG_WARNING, "input: Invalid controller passed for sensor initialization.");
+				return;
+		}
+
+		// Check sensor availability
+		if (!SDL_GameControllerHasSensor(controller, sensorType)) {
+				sysLogPrintf(LOG_WARNING, "input: %s sensor not available for controller %d", sensorName, jidx);
+				return;
+		}
+
+		sysLogPrintf(LOG_NOTE, "input: %s sensor available for controller %d", sensorName, jidx);
+
+		// Attempt to enable the sensor
+		if (SDL_GameControllerSetSensorEnabled(controller, sensorType, SDL_TRUE) != 0) {
+				sysLogPrintf(LOG_WARNING, "input: Failed to enable %s sensor for controller %d", sensorName, jidx);
+				return;
+		}
+
+		// Retrieve and evaluate data rate
+		float rate = SDL_GameControllerGetSensorDataRate(controller, sensorType);
+		if (rate >= 60.0f) {
+				sysLogPrintf(LOG_NOTE, "input: %s sensor enabled for controller %d with data rate %.2f Hz", sensorName, jidx, rate);
+		}
+		else {
+				sysLogPrintf(LOG_WARNING, "input: %s data rate may be insufficient for controller %d (%.2f Hz)", sensorName, jidx, rate);
+		}
+}
+
+static void logSensorData(const char* sensorName, int controllerID, float* data) {
+		sysLogPrintf(LOG_NOTE, "input: %s sensor data for controller %d: X=%f, Y=%f, Z=%f",
+				sensorName, controllerID, data[0], data[1], data[2]);
+}
+
+static void handleSensorUpdate(SDL_Event* event) {
+		// Ensure the sensor type is valid
+		if (event->csensor.sensor != SDL_SENSOR_GYRO && event->csensor.sensor != SDL_SENSOR_ACCEL) {
+				return;
+		}
+
+		SDL_GameController* controller = SDL_GameControllerFromInstanceID(event->cdevice.which);
+		if (!controller) {
+				sysLogPrintf(LOG_WARNING, "input: Controller %d not found for sensor data retrieval", event->cdevice.which);
+				return;
+		}
+
+		float sensorData[3] = { 0 }; // Initialize sensor data array
+		if (SDL_GameControllerGetSensorData(controller, event->csensor.sensor, sensorData, 3) != 0) {
+				sysLogPrintf(LOG_WARNING, "input: Failed to retrieve %s sensor data for controller %d",
+						(event->csensor.sensor == SDL_SENSOR_GYRO ? "Gyroscope" : "Accelerometer"),
+						event->cdevice.which);
+				return;
+		}
+
+		// Determine sensor name
+		const char* sensorName = (event->csensor.sensor == SDL_SENSOR_GYRO) ? "Gyroscope" : "Accelerometer";
+		logSensorData(sensorName, event->cdevice.which, sensorData);
+
+		if (event->csensor.sensor == SDL_SENSOR_GYRO) {
+				// Filter noise in gyroscope data
+				for (int i = 0; i < 3; ++i) {
+						sensorData[i] = fabs(sensorData[i]) < gyroMinThreshold ? 0 : sensorData[i];
+				}
+
+				gyroDX = -sensorData[1] * gyroSensX; // Negate to reverse horizontal movement
+				gyroDY = -sensorData[0] * gyroSensY; // Vertical movement remains consistent
+
+				updateCameraControl(gyroDX, gyroDY, 0);
+
+		}
+		else if (event->csensor.sensor == SDL_SENSOR_ACCEL) {
+				// Process accelerometer data
+				accelX = sensorData[0];
+				accelY = sensorData[1];
+				accelZ = sensorData[2];
+
+				sysLogPrintf(LOG_NOTE, "Accelerometer data processed (placeholder logic)");
+		}
 }
 
 static inline void inputCloseController(const s32 cidx)
 {
-	sysLogPrintf(LOG_NOTE, "input: removed controller '%d: (%s)' (id %d) from player %d",
-		padsCfg[cidx].deviceIndex, SDL_GameControllerName(pads[cidx]), inputControllerGetId(pads[cidx]), cidx);
+		sysLogPrintf(LOG_NOTE, "input: removed controller '%d: (%s)' (id %d) from player %d",
+				padsCfg[cidx].deviceIndex, SDL_GameControllerName(pads[cidx]), inputControllerGetId(pads[cidx]), cidx);
 
-	// reset player LEDs
-	SDL_GameControllerSetPlayerIndex(pads[cidx], -1);
+		// reset player LEDs
+		SDL_GameControllerSetPlayerIndex(pads[cidx], -1);
 
-	SDL_GameControllerClose(pads[cidx]);
+		SDL_GameControllerClose(pads[cidx]);
 
-	pads[cidx] = NULL;
-	padsCfg[cidx].rumbleOn = 0;
+		pads[cidx] = NULL;
+		padsCfg[cidx].rumbleOn = 0;
 
-	if (cidx) {
-		connectedMask &= ~(1 << cidx);
-	}
+		if (cidx) {
+				connectedMask &= ~(1 << cidx);
+		}
 }
 
 static inline s32 inputControllerGetIndex(SDL_GameController *ctrl)
@@ -466,90 +600,94 @@ static inline void inputInitAllControllers(void)
 	}
 }
 
-static int inputEventFilter(void *data, SDL_Event *event)
+static int inputEventFilter(void* data, SDL_Event* event)
 {
-	switch (event->type) {
+		switch (event->type) {
 		case SDL_CONTROLLERDEVICEADDED:
-			for (s32 i = firstController; i < INPUT_MAX_CONTROLLERS; ++i) {
-				if (!pads[i]) {
-					pads[i] = SDL_GameControllerOpen(event->cdevice.which);
-					if (pads[i]) {
-						inputInitController(i, event->cdevice.which);
-					}
-					break;
+				for (s32 i = firstController; i < INPUT_MAX_CONTROLLERS; ++i) {
+						if (!pads[i]) {
+								pads[i] = SDL_GameControllerOpen(event->cdevice.which);
+								if (pads[i]) {
+										inputInitController(i, event->cdevice.which);
+								}
+								break;
+						}
 				}
-			}
-			break;
+				break;
 
 		case SDL_CONTROLLERDEVICEREMOVED: {
-			SDL_GameController *ctrl = SDL_GameControllerFromInstanceID(event->cdevice.which);
-			const s32 idx = inputControllerGetIndex(ctrl);
-			if (idx >= 0) {
-				inputCloseController(idx);
-				padsCfg[idx].deviceIndex = -1;
-			}
-			break;
+				SDL_GameController* ctrl = SDL_GameControllerFromInstanceID(event->cdevice.which);
+				const s32 idx = inputControllerGetIndex(ctrl);
+				if (idx >= 0) {
+						inputCloseController(idx);
+						padsCfg[idx].deviceIndex = -1;
+				}
+				break;
 		}
 
 		case SDL_JOYDEVICEADDED:
 		case SDL_JOYDEVICEREMOVED:
-			numJoysticks = SDL_NumJoysticks(); // joystick count has changed
-			break;
+				numJoysticks = SDL_NumJoysticks();
+				break;
+
+		case SDL_CONTROLLERSENSORUPDATE:
+				handleSensorUpdate(event); 
+				break;
 
 		case SDL_MOUSEWHEEL:
-			mouseWheel = event->wheel.y;
-			if (!lastKey && mouseWheel) {
-				lastKey = (mouseWheel < 0) + VK_MOUSE_WHEEL_UP;
-			}
-			break;
+				mouseWheel = event->wheel.y;
+				if (!lastKey && mouseWheel) {
+						lastKey = (mouseWheel < 0) + VK_MOUSE_WHEEL_UP;
+				}
+				break;
 
 		case SDL_MOUSEBUTTONDOWN:
-			if (!lastKey) {
-				lastKey = VK_MOUSE_BEGIN - 1 + event->button.button;
-			}
-			break;
+				if (!lastKey) {
+						lastKey = VK_MOUSE_BEGIN - 1 + event->button.button;
+				}
+				break;
 
 		case SDL_KEYDOWN:
-			if (!lastKey) {
-				lastKey = VK_KEYBOARD_BEGIN + event->key.keysym.scancode;
-			}
-			break;
+				if (!lastKey) {
+						lastKey = VK_KEYBOARD_BEGIN + event->key.keysym.scancode;
+				}
+				break;
 
 		case SDL_CONTROLLERBUTTONDOWN:
-			if (!lastKey) {
-				lastKey = VK_JOY1_BEGIN + event->cbutton.button;
-				SDL_GameController *ctrl = SDL_GameControllerFromInstanceID(event->cdevice.which);
-				const s32 idx = inputControllerGetIndex(ctrl);
-				if (idx >= 0) {
-					lastKey += idx * INPUT_MAX_CONTROLLER_BUTTONS;
+				if (!lastKey) {
+						lastKey = VK_JOY1_BEGIN + event->cbutton.button;
+						SDL_GameController* ctrl = SDL_GameControllerFromInstanceID(event->cdevice.which);
+						const s32 idx = inputControllerGetIndex(ctrl);
+						if (idx >= 0) {
+								lastKey += idx * INPUT_MAX_CONTROLLER_BUTTONS;
+						}
 				}
-			}
-			break;
+				break;
 
 		case SDL_CONTROLLERAXISMOTION:
-			if (!lastKey) {
-				if (event->caxis.axis >= SDL_CONTROLLER_AXIS_TRIGGERLEFT && event->caxis.value > TRIG_THRESHOLD) {
-					lastKey = VK_JOY1_LTRIG + (event->caxis.axis - SDL_CONTROLLER_AXIS_TRIGGERLEFT);
-					SDL_GameController *ctrl = SDL_GameControllerFromInstanceID(event->cdevice.which);
-					const s32 idx = inputControllerGetIndex(ctrl);
-					if (idx >= 0) {
-						lastKey += idx * INPUT_MAX_CONTROLLER_BUTTONS;
-					}
+				if (!lastKey) {
+						if (event->caxis.axis >= SDL_CONTROLLER_AXIS_TRIGGERLEFT && event->caxis.value > TRIG_THRESHOLD) {
+								lastKey = VK_JOY1_LTRIG + (event->caxis.axis - SDL_CONTROLLER_AXIS_TRIGGERLEFT);
+								SDL_GameController* ctrl = SDL_GameControllerFromInstanceID(event->cdevice.which);
+								const s32 idx = inputControllerGetIndex(ctrl);
+								if (idx >= 0) {
+										lastKey += idx * INPUT_MAX_CONTROLLER_BUTTONS;
+								}
+						}
 				}
-			}
-			break;
+				break;
 
 		case SDL_TEXTINPUT:
-			if (!lastChar && event->text.text[0] && (u8)event->text.text[0] < 0x80) {
-				lastChar = event->text.text[0];
-			}
-			break;
+				if (!lastChar && event->text.text[0] && (u8)event->text.text[0] < 0x80) {
+						lastChar = event->text.text[0];
+				}
+				break;
 
 		default:
-			break;
-	}
+				break;
+		}
 
-	return 0;
+		return 0;
 }
 
 static inline void inputGetScancodeName(const SDL_Scancode sc, char *out, size_t len)
@@ -713,6 +851,19 @@ s32 inputInit(void)
 		SDL_InitSubSystem(SDL_INIT_GAMECONTROLLER | SDL_INIT_HAPTIC);
 	}
 
+	// Set SDL hints before loading controller mappings
+	SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_PS3, "1");
+	SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_PS4, "1");
+	SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_PS5, "1");
+	SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_SWITCH, "1");
+	SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_PS4_RUMBLE, "1"); // This hint will enable PlayStation's more advanced feature sets when using Bluetooth connecivity, this includes Motion Sensors.
+	SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_PS5_RUMBLE, "1"); // same case as PS4_Rumble hint.
+	SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_JOY_CONS, "1");
+	SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_COMBINE_JOY_CONS, "1");
+	SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_GAMECUBE, "1");
+	SDL_SetHint(SDL_HINT_JOYSTICK_RAWINPUT, "1");
+	SDL_SetHint(SDL_HINT_JOYSTICK_RAWINPUT_CORRELATE_XINPUT, "1");
+
 	// try to load controller db from an external file in the save folder
 	if (fsFileSize("$S/" CONTROLLERDB_FNAME)) {
 		const char *dbpath = fsFullPath("$S/" CONTROLLERDB_FNAME);
@@ -862,55 +1013,179 @@ s32 inputReadController(s32 idx, OSContPad *npad)
 	return 0;
 }
 
-static inline void inputUpdateMouse(void)
-{
-	s32 mx, my;
-	mouseButtons = SDL_GetMouseState(&mx, &my);
-
-	if (mouseWheel > 0) {
-		mouseButtons |= WHEEL_UP_MASK;
-	} else if (mouseWheel < 0) {
-		mouseButtons |= WHEEL_DN_MASK;
-	}
-
-	mouseWheel = 0;
-
-	s32 mdx = 0;
-	s32 mdy = 0;
-	SDL_GetRelativeMouseState(&mdx, &mdy);
-	if (mouseLocked) {
-		mouseDX = mdx;
-		mouseDY = mdy;
-	} else {
-		mouseDX = mx - mouseX;
-		mouseDY = my - mouseY;
-	}
-
-	mouseX = mx;
-	mouseY = my;
-
-	// if MLOCK_AUTO is enabled, disable cursor if mouse is unlocked
-	// and we haven't moved it for a few seconds
-	if (mouseLockMode == MLOCK_AUTO && !mouseLocked) {
-		if (abs(mouseDX) > CURSOR_HIDE_THRESHOLD || abs(mouseDY) > CURSOR_HIDE_THRESHOLD) {
-			if (!mouseShowCursor) {
-				inputMouseShowCursor(1);
-			}
-		} else if (sysGetMicroseconds() > mouseCursorTime) {
-			if (mouseShowCursor) {
-				inputMouseShowCursor(0);
-			}
-		}
-	}
-}
-
 void inputUpdate(void)
 {
-	SDL_GameControllerUpdate();
+		SDL_GameControllerUpdate();
 
-	if (mouseEnabled) {
-		inputUpdateMouse();
-	}
+		if (mouseEnabled) {
+				inputUpdateMouse();
+		}
+
+		if (gyroEnabled) {
+				inputUpdateGyro();
+		}
+}
+
+static void updateCameraControl(f32 dx, f32 dy, f32 dz)
+{
+		// Update camera control logic using gyro inputs
+		gyroCameraYaw += dx;
+		gyroCameraPitch += dy;
+		gyroCameraRoll += dz;
+
+		// Log updated camera control values
+		sysLogPrintf(LOG_NOTE, "input: Updated camera control - Yaw=%f, Pitch=%f, Roll=%f",
+				gyroCameraYaw, gyroCameraPitch, gyroCameraRoll);
+}
+
+static void updateCrosshairPosition(float x, float y)
+{
+		gyroX = x;
+		gyroY = y;
+
+		sysLogPrintf(LOG_NOTE, "input: Updated crosshair position - X=%f, Y=%f", x, y);
+}
+
+static void inputUpdateMouse(void)
+{
+		s32 mx, my;
+		mouseButtons = SDL_GetMouseState(&mx, &my);
+
+		if (mouseWheel > 0) {
+				mouseButtons |= WHEEL_UP_MASK;
+		}
+		else if (mouseWheel < 0) {
+				mouseButtons |= WHEEL_DN_MASK;
+		}
+
+		mouseWheel = 0;
+
+		s32 mdx = 0, mdy = 0;
+		SDL_GetRelativeMouseState(&mdx, &mdy);
+		if (mouseLocked) {
+				mouseDX = mdx;
+				mouseDY = mdy;
+		}
+		else {
+				mouseDX = mx - mouseX;
+				mouseDY = my - mouseY;
+		}
+
+		mouseX = mx;
+		mouseY = my;
+
+		if (mouseLockMode == MLOCK_AUTO && !mouseLocked) {
+				if (abs(mouseDX) > CURSOR_HIDE_THRESHOLD || abs(mouseDY) > CURSOR_HIDE_THRESHOLD) {
+						inputMouseShowCursor(1);
+				}
+				else if (sysGetMicroseconds() > mouseCursorTime) {
+						inputMouseShowCursor(0);
+				}
+		}
+
+		updateCameraControl(mouseDX * mouseSensX, mouseDY * mouseSensY, 0);
+}
+
+static void inputUpdateGyro(void)
+{
+		// Check if "Enable Gyro Aim" setting is active
+		if (!gyroEnabled) {
+				sysLogPrintf(LOG_NOTE, "Gyro aiming is disabled via settings.");
+				return; // Exit if gyro is globally disabled
+		}
+
+		SDL_GameController* controller = pads[0]; // Assuming pads[0] is the primary controller
+		if (!controller || !SDL_GameControllerHasSensor(controller, SDL_SENSOR_GYRO)) {
+				sysLogPrintf(LOG_WARNING, "Gyroscope not available or enabled.");
+				return;
+		}
+
+		float gyroData[3] = { 0 }; // Initialize gyro data
+		if (SDL_GameControllerGetSensorData(controller, SDL_SENSOR_GYRO, gyroData, 3) != 0) {
+				sysLogPrintf(LOG_WARNING, "Failed to read gyroscope data.");
+				return;
+		}
+
+		sysLogPrintf(LOG_NOTE, "Gyro Data: X=%f, Y=%f, Z=%f", gyroData[0], gyroData[1], gyroData[2]);
+
+		// Apply noise filtering
+		gyroData[0] = fabs(gyroData[0]) < gyroMinThreshold ? 0 : gyroData[0];
+		gyroData[1] = fabs(gyroData[1]) < gyroMinThreshold ? 0 : gyroData[1];
+		gyroData[2] = fabs(gyroData[2]) < gyroMinThreshold ? 0 : gyroData[2]; // Include Z-axis filtering
+
+		// Handle gyro activation modes using the "Gyro Modifier" button
+		s32 gyroActive = 0;
+		switch (inputGetGyroActivationMode()) {
+		case GYRO_TOGGLE:
+				// Toggles the gyro on/off with a press of CK_GYRO_MOD
+				if (inputKeyJustPressed(CK_GYRO_MOD)) {
+						g_GyroToggleState = !g_GyroToggleState;
+				}
+				gyroActive = g_GyroToggleState;
+				break;
+
+		case GYRO_HOLD:
+				// Activates the gyro while CK_GYRO_MOD is held
+				gyroActive = inputKeyPressed(CK_GYRO_MOD);
+				break;
+
+		case GYRO_HOLD_INVERTED:
+				// Deactivates the gyro while CK_GYRO_MOD is held
+				gyroActive = !inputKeyPressed(CK_GYRO_MOD);
+				break;
+
+		default:
+				// Always On mode: gyro is always active
+				gyroActive = (g_GyroActivationMode == GYRO_ALWAYS_ON) ? 1 : 0;
+				break;
+		}
+
+		if (gyroActive) {
+				// Relative movement logic to mirror mouse behavior
+				s32 mdx = gyroData[0] - gyroX;
+				s32 mdy = gyroData[1] - gyroY;
+
+				gyroDX = mdx;
+				gyroDY = mdy;
+
+				gyroX = gyroData[0];
+				gyroY = gyroData[1];
+
+				// Handle gyro aiming modes and axis modes
+				switch (inputGetGyroAxisMode()) {
+				case 0: // Yaw mode
+						updateCameraControl(gyroDX * gyroSensX, gyroDY * gyroSensY, 0);
+						break;
+
+				case 1: // Roll mode
+						updateCameraControl(-gyroData[2] * gyroSensX, gyroDY * gyroSensY, gyroData[2] * gyroSensX);
+						break;
+
+				case 2: // Gyro Space axis (placeholder)
+						// Use all three axes (X, Y, Z) for a full gyro space implementation
+						updateCameraControl(gyroData[0] * gyroSensX, gyroData[1] * gyroSensY, gyroData[2] * gyroSensX);
+						break;
+
+				default:
+						sysLogPrintf(LOG_WARNING, "Unknown Gyro Axis Mode: %d", inputGetGyroAxisMode());
+						break;
+				}
+
+				// Update crosshair position
+				float crosshairX = gyroDX * gyroCrosshairSpeedX;
+				float crosshairY = gyroDY * gyroCrosshairSpeedY;
+				updateCrosshairPosition(crosshairX, crosshairY);
+
+				// Cursor behavior logic
+				if (mouseLockMode == MLOCK_AUTO) {
+						if (abs(gyroDX) > CURSOR_HIDE_THRESHOLD || abs(gyroDY) > CURSOR_HIDE_THRESHOLD) {
+								inputMouseShowCursor(1); // Show cursor if there's significant movement
+						}
+						else if (sysGetMicroseconds() > mouseCursorTime) {
+								inputMouseShowCursor(0); // Hide cursor if idle
+						}
+				}
+		}
 }
 
 s32 inputControllerConnected(s32 idx)
@@ -1325,6 +1600,166 @@ void inputSetMouseLockMode(s32 lockmode)
 	}
 }
 
+s32 inputGyroGetPosition(s32* x, s32* y)
+{
+		if (x) *x = gyroX * videoGetNativeWidth() / videoGetWidth();
+		if (y) *y = gyroY * videoGetNativeHeight() / videoGetHeight();
+		return (gyroDX != 0 || gyroDY != 0);
+}
+
+void inputGyroGetRawDelta(s32* dx, s32* dy)
+{
+		if (dx) *dx = gyroDX;
+		if (dy) *dy = gyroDY;
+}
+
+void inputGyroGetScaledDelta(f32* dx, f32* dy)
+{
+		if (dx && dy) {
+				*dx = gyroSensX * (f32)gyroDX / 100.0f;
+				*dy = gyroSensY * (f32)gyroDY / 100.0f;
+		}
+}
+
+void inputGyroGetAbsScaledDelta(f32* dx, f32* dy)
+{
+		if (dx && dy) {
+				*dx = fabsf(gyroSensX) * (f32)gyroDX / 100.0f;
+				*dy = fabsf(gyroSensY) * (f32)gyroDY / 100.0f;
+		}
+}
+
+void inputGyroGetSpeed(f32* x, f32* y)
+{
+		if (x && y) {
+				*x = gyroSensX;
+				*y = gyroSensY;
+		}
+}
+
+void inputGyroSetSpeed(f32 x, f32 y)
+{
+		gyroSensX = x;
+		gyroSensY = y;
+}
+
+f32 inputGyroGetSpeedX(void)
+{
+		return gyroSensX;
+}
+
+void inputGyroSetSpeedX(f32 speed)
+{
+		gyroSensX = speed;
+}
+
+f32 inputGyroGetSpeedY(void)
+{
+		return gyroSensY;
+}
+
+void inputGyroSetSpeedY(f32 speed)
+{
+		gyroSensY = speed;
+}
+
+s32 inputGyroIsEnabled(void)
+{
+		return gyroEnabled;
+}
+
+void inputGyroEnable(s32 enabled)
+{
+		gyroEnabled = !!enabled;
+}
+
+s32 inputGetGyroAxisMode(void)
+{
+		return g_GyroAxisMode;
+}
+
+void inputSetGyroAxisMode(s32 mode)
+{
+		g_GyroAxisMode = mode;
+}
+
+f32 inputGetGyroMinThreshold(void)
+{
+		return gyroMinThreshold;
+}
+
+void inputSetGyroMinThreshold(f32 threshold)
+{
+		gyroMinThreshold = threshold;
+}
+
+s32 inputGetGyroActivationMode(void)
+{
+		return g_GyroActivationMode;
+}
+
+void inputSetGyroActivationMode(s32 mode)
+{
+		g_GyroActivationMode = mode;
+}
+
+s32 inputGetGyroAimMode(void)
+{
+		return g_GyroAimMode;
+}
+
+void inputSetGyroAimMode(s32 mode)
+{
+		g_GyroAimMode = mode;
+}
+
+f32 inputGyroGetCrosshairSpeedX(void)
+{
+		return gyroCrosshairSpeedX;
+}
+
+void inputGyroSetCrosshairSpeedX(f32 speed)
+{
+		gyroCrosshairSpeedX = speed;
+}
+
+f32 inputGyroGetCrosshairSpeedY(void)
+{
+		return gyroCrosshairSpeedY;
+}
+
+void inputGyroSetCrosshairSpeedY(f32 speed)
+{
+		gyroCrosshairSpeedY = speed;
+}
+
+void inputHandleGyroModifier(void)
+{
+		static s32 gyroToggleState = 0;
+
+		// Determine the active gyro mode
+		switch (inputGetGyroActivationMode()) {
+		case GYRO_TOGGLE:
+				if (inputKeyJustPressed(CK_GYRO_MOD)) {
+						gyroToggleState = !gyroToggleState;
+						inputGyroEnable(gyroToggleState);
+				}
+				break;
+
+		case GYRO_HOLD:
+				inputGyroEnable(inputKeyPressed(CK_GYRO_MOD));
+				break;
+
+		case GYRO_HOLD_INVERTED:
+				inputGyroEnable(!inputKeyPressed(CK_GYRO_MOD));
+				break;
+
+		default:
+				// Gyro Always On is omitted to avoid input checks
+				break;
+		}
+}
+
 const char *inputGetContKeyName(u32 ck)
 {
 	if (ck >= CK_TOTAL_COUNT) {
@@ -1509,39 +1944,48 @@ u32 inputGetKeyModState(void)
 	return SDL_GetModState();
 }
 
+
 PD_CONSTRUCTOR static void inputConfigInit(void)
 {
-	configRegisterInt("Input.MouseEnabled", &mouseEnabled, 0, 1);
-	configRegisterInt("Input.MouseLockMode", &mouseLockMode, MLOCK_OFF, MLOCK_AUTO);
-	configRegisterFloat("Input.MouseSpeedX", &mouseSensX, -10.f, 10.f);
-	configRegisterFloat("Input.MouseSpeedY", &mouseSensY, -10.f, 10.f);
-	configRegisterInt("Input.FakeGamepads", &fakeControllers, 0, 4);
-	configRegisterInt("Input.FirstGamepadNum", &firstController, 0, 3);
-	configRegisterInt("Input.UseHIDAPI", &useHIDAPI, 0, 1);
-	configRegisterInt("Input.UseRawInput", &useRawInput, 0, 1);
+		configRegisterInt("Input.MouseEnabled", &mouseEnabled, 0, 1);
+		configRegisterInt("Input.MouseLockMode", &mouseLockMode, MLOCK_OFF, MLOCK_AUTO);
+		configRegisterFloat("Input.MouseSpeedX", &mouseSensX, -10.f, 10.f);
+		configRegisterFloat("Input.MouseSpeedY", &mouseSensY, -10.f, 10.f);
+		configRegisterInt("Input.GyroEnabled", &gyroEnabled, 0, 1);
+		configRegisterFloat("Input.GyroSpeedX", &gyroSensX, -10.f, 10.f);
+		configRegisterFloat("Input.GyroSpeedY", &gyroSensY, -10.f, 10.f);
+		configRegisterFloat("Input.GyroCrosshairSpeedX", &gyroCrosshairSpeedX, -10.f, 10.f);
+		configRegisterFloat("Input.GyroCrosshairSpeedY", &gyroCrosshairSpeedY, -10.f, 10.f);
+		configRegisterFloat("Input.GyroMinThreshold", &gyroMinThreshold, 0.f, 5.f);
+		configRegisterInt("Input.GyroActivationMode", &g_GyroActivationMode, GYRO_ALWAYS_ON, GYRO_HOLD_INVERTED);
+		configRegisterInt("Input.GyroAimMode", &g_GyroAimMode, GYRO_AIM_CAMERA, GYRO_AIM_BOTH);
+		configRegisterInt("Input.FakeGamepads", &fakeControllers, 0, 4);
+		configRegisterInt("Input.FirstGamepadNum", &firstController, 0, 3);
+    configRegisterInt("Input.UseHIDAPI", &useHIDAPI, 0, 1);
+	  configRegisterInt("Input.UseRawInput", &useRawInput, 0, 1);
 
-	char secname[] = "Input.Player1.Binds";
-	char keyname[256] = { 0 };
-	for (s32 c = 0; c < MAXCONTROLLERS; ++c) {
-		secname[12] = '1' + c;
-		secname[13] = '\0';
-		configRegisterFloat(strFmt("%s.RumbleScale", secname), &padsCfg[c].rumbleScale, 0.f, 1.f);
-		configRegisterInt(strFmt("%s.LStickDeadzoneX", secname), &padsCfg[c].deadzone[0], 0, 32767);
-		configRegisterInt(strFmt("%s.LStickDeadzoneY", secname), &padsCfg[c].deadzone[1], 0, 32767);
-		configRegisterInt(strFmt("%s.RStickDeadzoneX", secname), &padsCfg[c].deadzone[2], 0, 32767);
-		configRegisterInt(strFmt("%s.RStickDeadzoneY", secname), &padsCfg[c].deadzone[3], 0, 32767);
-		configRegisterFloat(strFmt("%s.LStickScaleX", secname), &padsCfg[c].sens[0], -10.f, 10.f);
-		configRegisterFloat(strFmt("%s.LStickScaleY", secname), &padsCfg[c].sens[1], -10.f, 10.f);
-		configRegisterFloat(strFmt("%s.RStickScaleX", secname), &padsCfg[c].sens[2], -10.f, 10.f);
-		configRegisterFloat(strFmt("%s.RStickScaleY", secname), &padsCfg[c].sens[3], -10.f, 10.f);
-		configRegisterInt(strFmt("%s.StickCButtons", secname), &padsCfg[c].stickCButtons, 0, 1);
-		configRegisterInt(strFmt("%s.CancelCButtons", secname), &padsCfg[c].cancelCButtons, 0, 1);
-		configRegisterInt(strFmt("%s.SwapSticks", secname), &padsCfg[c].swapSticks, 0, 1);
-		configRegisterInt(strFmt("%s.ControllerIndex", secname), &padsCfg[c].deviceIndex, -1, 0x7FFFFFFF);
-		secname[13] = '.';
-		for (u32 ck = 0; ck < CK_TOTAL_COUNT; ++ck) {
-			snprintf(keyname, sizeof(keyname), "%s.%s", secname, inputGetContKeyName(ck));
-			configRegisterString(keyname, bindStrs[c][ck], MAX_BIND_STR);
+		char secname[] = "Input.Player1.Binds";
+		char keyname[256] = { 0 };
+		for (s32 c = 0; c < MAXCONTROLLERS; ++c) {
+				secname[12] = '1' + c;
+				secname[13] = '\0';
+				configRegisterFloat(strFmt("%s.RumbleScale", secname), &padsCfg[c].rumbleScale, 0.f, 1.f);
+				configRegisterInt(strFmt("%s.LStickDeadzoneX", secname), &padsCfg[c].deadzone[0], 0, 32767);
+				configRegisterInt(strFmt("%s.LStickDeadzoneY", secname), &padsCfg[c].deadzone[1], 0, 32767);
+				configRegisterInt(strFmt("%s.RStickDeadzoneX", secname), &padsCfg[c].deadzone[2], 0, 32767);
+				configRegisterInt(strFmt("%s.RStickDeadzoneY", secname), &padsCfg[c].deadzone[3], 0, 32767);
+				configRegisterFloat(strFmt("%s.LStickScaleX", secname), &padsCfg[c].sens[0], -10.f, 10.f);
+				configRegisterFloat(strFmt("%s.LStickScaleY", secname), &padsCfg[c].sens[1], -10.f, 10.f);
+				configRegisterFloat(strFmt("%s.RStickScaleX", secname), &padsCfg[c].sens[2], -10.f, 10.f);
+				configRegisterFloat(strFmt("%s.RStickScaleY", secname), &padsCfg[c].sens[3], -10.f, 10.f);
+				configRegisterInt(strFmt("%s.StickCButtons", secname), &padsCfg[c].stickCButtons, 0, 1);
+				configRegisterInt(strFmt("%s.CancelCButtons", secname), &padsCfg[c].cancelCButtons, 0, 1);
+				configRegisterInt(strFmt("%s.SwapSticks", secname), &padsCfg[c].swapSticks, 0, 1);
+				configRegisterInt(strFmt("%s.ControllerIndex", secname), &padsCfg[c].deviceIndex, -1, 0x7FFFFFFF);
+				secname[13] = '.';
+				for (u32 ck = 0; ck < CK_TOTAL_COUNT; ++ck) {
+						snprintf(keyname, sizeof(keyname), "%s.%s", secname, inputGetContKeyName(ck));
+						configRegisterString(keyname, bindStrs[c][ck], MAX_BIND_STR);
+				}
 		}
-	}
 }

@@ -176,6 +176,9 @@ PD_CONSTRUCTOR static void gameConfigInit(void)
 		configRegisterInt(strFmt("Game.Player%d.MouseAimMode", i), &g_PlayerExtCfg[j].mouseaimmode, 0, 1);
 		configRegisterFloat(strFmt("Game.Player%d.MouseAimSpeedX", i), &g_PlayerExtCfg[j].mouseaimspeedx, 0.f, 10.f);
 		configRegisterFloat(strFmt("Game.Player%d.MouseAimSpeedY", i), &g_PlayerExtCfg[j].mouseaimspeedy, 0.f, 10.f);
+		configRegisterInt(strFmt("Game.Player%d.GyroAimMode", i), &g_PlayerExtCfg[j].gyroaimmode, GYRO_AIM_CAMERA, GYRO_AIM_BOTH);
+		configRegisterFloat(strFmt("Game.Player%d.GyroAimSpeedX", i), &g_PlayerExtCfg[j].gyrospeedx, 0.f, 10.f);
+		configRegisterFloat(strFmt("Game.Player%d.GyroAimSpeedY", i), &g_PlayerExtCfg[j].gyrospeedy, 0.f, 10.f);
 		configRegisterFloat(strFmt("Game.Player%d.RadialMenuSpeed", i), &g_PlayerExtCfg[j].radialmenuspeed, 0.f, 10.f);
 		configRegisterFloat(strFmt("Game.Player%d.CrosshairSway", i), &g_PlayerExtCfg[j].crosshairsway, 0.f, 10.f);
 		configRegisterInt(strFmt("Game.Player%d.CrouchMode", i), &g_PlayerExtCfg[j].crouchmode, 0, CROUCHMODE_TOGGLE_ANALOG);
