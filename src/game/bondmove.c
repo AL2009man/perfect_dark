@@ -772,17 +772,17 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 	movedata.analogwalk = movedata.c1stickysafe;
 
 #ifndef PLATFORM_N64
-	// Mouse-based aiming logic
+	// Mouse-based freelook and aiming logic
 	if (allowmlook) {
-			// Process mouse input deltas
+			// Retrieve mouse input deltas for freelook movement
 			inputMouseGetScaledDelta(&movedata.freelookdx, &movedata.freelookdy);
 
-			// Allow crosshair aiming based on mouse activity and classic mode
+			// Crosshair activation in Classic mode based on mouse input or crosshair position
 			allowmcross = (PLAYER_EXTCFG().mouseaimmode == MOUSEAIM_CLASSIC) &&
 					(movedata.freelookdx || movedata.freelookdy ||
 							g_Vars.currentplayer->swivelpos[0] || g_Vars.currentplayer->swivelpos[1]);
 
-			// Apply pitch inversion for mouse input if specified
+			// Apply pitch inversion for vertical freelook movement if enabled
 			if (movedata.invertpitch) {
 					movedata.freelookdy = -movedata.freelookdy;
 			}
@@ -793,7 +793,7 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 			// Process gyro input deltas
 			inputGyroGetScaledDelta(&movedata.gyrolookdx, &movedata.gyrolookdy);
 
-			// Handle gyro aiming independently
+			// Handle "GYRO_AIM_CROSSHAIR" and "GYRO_AIM_BOTH" modes
 			if (inputGetGyroAimMode() == GYRO_AIM_CROSSHAIR || inputGetGyroAimMode() == GYRO_AIM_BOTH) {
 					// Add gyro-based crosshair activation logic
 					allowmcross = allowmcross || (movedata.gyrolookdx || movedata.gyrolookdy ||
@@ -806,7 +806,7 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 			}
 	}
 	else {
-			// Reset gyro deltas when disabled
+			// Reset gyro deltas when gyro is disabled
 			movedata.gyrolookdx = 0.0f;
 			movedata.gyrolookdy = 0.0f;
 	}
@@ -818,6 +818,7 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 			}
 	}
 #endif
+
 
 	// Pausing
 	if (g_Vars.currentplayer->isdead == false) {
