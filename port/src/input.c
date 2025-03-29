@@ -347,12 +347,19 @@ static inline void inputInitController(const s32 cidx, const s32 jidx)
 		sysLogPrintf(LOG_NOTE, "input: GUID for controller %d: %s", jidx, guidStr);
 	}
 
-	// Enable the gyroscope sensor if available
+	// Enable the gyroscope and accelerometer sensors if available
 	if (SDL_GameControllerHasSensor(pads[cidx], SDL_SENSOR_GYRO)) {
 			SDL_GameControllerSetSensorEnabled(pads[cidx], SDL_SENSOR_GYRO, SDL_TRUE);
-			float rate = SDL_GameControllerGetSensorDataRate(pads[cidx], SDL_SENSOR_GYRO);
-			sysLogPrintf(LOG_NOTE, "input: Gyroscope sensor data rate for controller %d: %f", jidx, rate);
+			float gyroRate = SDL_GameControllerGetSensorDataRate(pads[cidx], SDL_SENSOR_GYRO);
+			sysLogPrintf(LOG_NOTE, "input: Gyroscope sensor data rate for controller %d: %f", jidx, gyroRate);
 	}
+
+	if (SDL_GameControllerHasSensor(pads[cidx], SDL_SENSOR_ACCEL)) {
+			SDL_GameControllerSetSensorEnabled(pads[cidx], SDL_SENSOR_ACCEL, SDL_TRUE);
+			float accelRate = SDL_GameControllerGetSensorDataRate(pads[cidx], SDL_SENSOR_ACCEL);
+			sysLogPrintf(LOG_NOTE, "input: Accelerometer sensor data rate for controller %d: %f", jidx, accelRate);
+	}
+
 }
 
 static inline void inputCloseController(const s32 cidx)
@@ -504,11 +511,27 @@ static int inputEventFilter(void *data, SDL_Event *event)
 				break;
 
 		case SDL_CONTROLLERSENSORUPDATE:
+				SDL_GameController* controller = SDL_GameControllerFromInstanceID(event->cdevice.which);
+				if (!controller) {
+						break;
+				}
+
+				float sensorData[3]; // Generic array for sensor data
+				const char* sensorTypeStr = NULL;
+
+				// Check sensor type
 				if (event->csensor.sensor == SDL_SENSOR_GYRO) {
-						float gyroData[3];
-						SDL_GameController* controller = SDL_GameControllerFromInstanceID(event->cdevice.which);
-						if (controller && SDL_GameControllerGetSensorData(controller, SDL_SENSOR_GYRO, gyroData, 3) == 0) {
-								// Gyro data handling code can be added here
+						sensorTypeStr = "Gyro";
+						if (SDL_GameControllerGetSensorData(controller, SDL_SENSOR_GYRO, sensorData, 3) == 0) {
+								// Log gyroscope data
+								sysLogPrintf(LOG_NOTE, "%s: X=%f, Y=%f, Z=%f", sensorTypeStr, sensorData[0], sensorData[1], sensorData[2]);
+						}
+				}
+				else if (event->csensor.sensor == SDL_SENSOR_ACCEL) {
+						sensorTypeStr = "Accel";
+						if (SDL_GameControllerGetSensorData(controller, SDL_SENSOR_ACCEL, sensorData, 3) == 0) {
+								// Log accelerometer data
+								sysLogPrintf(LOG_NOTE, "%s: X=%f, Y=%f, Z=%f", sensorTypeStr, sensorData[0], sensorData[1], sensorData[2]);
 						}
 				}
 				break;
