@@ -1549,24 +1549,16 @@ void inputGyroGetScaledDelta(f32* dx, f32* dy)
 				gdx = (f32)gyroDeltaYaw;
 				gdy = (f32)gyroDeltaPitch;
 
-				// Baseline factor for default sensitivity reference
+				// Baseline factor for consistent sensitivity scaling
 				const f32 baselineFactor = 0.3f;
 
-				// Dynamic scaling with gyro sensitivity
-				const f32 effectiveScaleX = baselineFactor * gyroSensX; // Dynamic horizontal scaling
-				const f32 effectiveScaleY = baselineFactor * gyroSensY; // Dynamic vertical scaling
-
-				// Apply scaling based on in-game sensitivity
-				gdx *= effectiveScaleX; // Scale horizontal movement
-				gdy *= effectiveScaleY; // Scale vertical movement
-
-				// Apply movement threshold to filter out minor inputs
-				applyGyroThreshold(&gdx, &gdy, gyroMinThreshold);
+				// Apply gyro sensitivity directly using baseline factor
+				gdx *= baselineFactor * gyroSensX; // Horizontal scaling
+				gdy *= baselineFactor * gyroSensY; // Vertical scaling
 		}
 
-		// Debugging: Log raw and scaled deltas for validation
-		printf("Gyro Raw Delta - X: %.2f, Y: %.2f\n", gyroDeltaYaw, gyroDeltaPitch);
-		printf("Gyro Scaled Delta - X: %.2f, Y: %.2f (SensX: %.2f, SensY: %.2f)\n", gdx, gdy, gyroSensX, gyroSensY);
+		// Debugging: Log scaled deltas for validation during testing
+		printf("Final Scaled Gyro Delta - X: %.2f, Y: %.2f (SensX: %.2f, SensY: %.2f)\n", gdx, gdy, gyroSensX, gyroSensY);
 
 		// Assign scaled deltas to output variables
 		if (dx) *dx = gdx;
