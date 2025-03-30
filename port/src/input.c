@@ -31,6 +31,23 @@
 #define CURSOR_HIDE_THRESHOLD 1
 #define CURSOR_HIDE_TIME 3000000 // us
 
+
+// Define gyro modes
+#define GYRO_ALWAYS_ON 0
+#define GYRO_TOGGLE 1
+#define GYRO_HOLD 2
+#define GYRO_HOLD_INVERTED 3
+
+#define GYRO_AXIS_YAW 0
+#define GYRO_AXIS_ROLL 1
+#define GYRO_AXIS_LOCAL_SPACE 2
+#define GYRO_AXIS_PLAYER_SPACE 3
+#define GYRO_AXIS_WORLD_SPACE 4
+
+#define GYRO_AIM_MODE_CAMERA 0
+#define GYRO_AIM_MODE_CROSSHAIR 1
+#define GYRO_AIM_MODE_BOTH 2 // Default mode
+
 static SDL_GameController *pads[INPUT_MAX_CONTROLLERS];
 
 #define CONTROLLERCFG_DEFAULT { \
@@ -90,6 +107,19 @@ static s32 mouseShowCursor = 1;
 
 static f32 mouseSensX = 1.5f;
 static f32 mouseSensY = 1.5f;
+
+// Gyro aiming variables
+static s32 gyroEnabled = 1;
+static f32 gyroYaw, gyroPitch, gyroRoll;             // Current gyro values for yaw, pitch, and roll
+static f32 gyroDeltaYaw, gyroDeltaPitch, gyroDeltaRoll; // Delta values (change) for each axis
+static f32 gyroSensX = 1.0f;                        // Sensitivity for Yaw or Roll
+static f32 gyroSensY = 1.0f;                        // Sensitivity for Pitch
+static f32 gyroAimSensX = 5.0f; // Speed for aiming horizontally (Yaw/Roll)
+static f32 gyroAimSensY = 5.0f; // Speed for aiming vertically (Pitch)
+static s32 g_GyroAxisMode = GYRO_YAW; // Default axis mode (Yaw)
+static s32 g_GyroAimMode = GYRO_AIM_MODE_CAMERA; // Default aim mode
+static f32 gyroMinThreshold = 0.0f;
+static s32 g_GyroActivationMode = GYRO_ALWAYS_ON;
 
 static s32 lastKey = 0;
 static char lastChar = 0;
@@ -516,7 +546,7 @@ static int inputEventFilter(void *data, SDL_Event *event)
 						break;
 				}
 
-				float sensorData[3]; // Generic array for sensor data
+				float sensorData[3];
 				const char* sensorTypeStr = NULL;
 
 				// Check sensor type
@@ -591,6 +621,8 @@ static int inputEventFilter(void *data, SDL_Event *event)
 
 	return 0;
 }
+
+static SDL_GameController* gyroController = NULL;
 
 static inline void inputGetScancodeName(const SDL_Scancode sc, char *out, size_t len)
 {
@@ -944,13 +976,97 @@ static inline void inputUpdateMouse(void)
 	}
 }
 
+void initializeGyroController() {
+		if (SDL_NumJoysticks() > 0) {
+				// Open the first available controller
+				gyroController = SDL_GameControllerOpen(0);
+				if (gyroController) {
+						// Enable gyro sensor
+						SDL_GameControllerSetSensorEnabled(gyroController, SDL_SENSOR_GYRO, SDL_TRUE);
+						printf("Gyro Controller initialized: %s\n", SDL_GameControllerName(gyroController));
+				}
+				else {
+						printf("Failed to initialize gyro controller: %s\n", SDL_GetError());
+				}
+		}
+		else {
+				printf("No controllers found.\n");
+		}
+}
+
+static inline void inputUpdateGyro(void)
+{
+		if (!gyroEnabled) {
+				return; // Exit if gyro is not enabled
+		}
+
+		// Declare variables for gyro input
+		float gyroData[3];
+
+		// Iterate through all connected controllers
+		for (int i = 0; i < SDL_NumJoysticks(); i++) {
+				if (SDL_IsGameController(i)) {
+						SDL_GameController* controller = SDL_GameControllerFromInstanceID(i);
+						if (controller) {
+								// Ensure the gyro sensor is enabled
+								SDL_GameControllerSetSensorEnabled(controller, SDL_SENSOR_GYRO, SDL_TRUE);
+
+								// Retrieve gyro data
+								s32 gyroState = SDL_GameControllerGetSensorData(controller, SDL_SENSOR_GYRO, gyroData, 3);
+
+								// Reset deltas
+								gyroDeltaYaw = 0.f;
+								gyroDeltaPitch = 0.f;
+								gyroDeltaRoll = 0.f;
+
+								// Process gyro input if available
+								if (gyroState == 0) {
+										f32 deltaX = 0.f, deltaY = 0.f;
+
+										// Apply axis mapping to gyro input
+										applyGyroAxisMapping(gyroData, &deltaX, &deltaY);
+
+										// Apply sensitivity scaling
+										deltaX *= gyroSensX; // Use sensitivity from menu
+										deltaY *= gyroSensY;
+
+										// Apply activation mode logic
+										applyGyroActivationMode(&deltaX, &deltaY, inputGetGyroActivationMode());
+
+										// Apply movement threshold
+										applyGyroThreshold(&deltaX, &deltaY, inputGetGyroMinThreshold());
+
+										// Assign deltas based on axis mapping
+										gyroDeltaYaw = deltaX;    // Map X-axis delta
+										gyroDeltaPitch = deltaY;  // Map Y-axis delta
+										gyroDeltaRoll = gyroData[2]; // Keep Roll for other use cases
+
+										// Update current gyro values
+										gyroYaw += gyroDeltaYaw;
+										gyroPitch += gyroDeltaPitch;
+										gyroRoll += gyroDeltaRoll;
+
+										// Optionally, log gyro state for debugging
+										sysLogPrintf(LOG_NOTE,
+												"Controller %d - Gyro Input Updated - Yaw: %f, Pitch: %f, Roll: %f (DeltaX: %f, DeltaY: %f)",
+												i, gyroYaw, gyroPitch, gyroRoll, deltaX, deltaY);
+								}
+						}
+				}
+		}
+}
+
 void inputUpdate(void)
 {
-	SDL_GameControllerUpdate();
+		SDL_GameControllerUpdate();
 
-	if (mouseEnabled) {
-		inputUpdateMouse();
-	}
+		if (mouseEnabled) {
+				inputUpdateMouse();
+		}
+
+		if (gyroEnabled) {
+				inputUpdateGyro();
+		}
 }
 
 s32 inputControllerConnected(s32 idx)
@@ -1365,6 +1481,228 @@ void inputSetMouseLockMode(s32 lockmode)
 	}
 }
 
+s32 inputGyroIsEnabled(void)
+{
+		return gyroEnabled; // Returns the current state of gyro input (enabled or not)
+}
+
+void inputGyroEnable(s32 enabled)
+{
+		gyroEnabled = (enabled != 0); // Update the gyroEnabled state (true or false)
+}
+
+enum gyroaxismode inputGetGyroAxisMode(void)
+{
+		return g_GyroAxisMode;
+}
+
+void inputSetGyroAxisMode(enum gyroaxismode mode)
+{
+		g_GyroAxisMode = mode;
+}
+
+void applyGyroAxisMapping(float gyroData[3], f32* deltaX, f32* deltaY)
+{
+		switch (inputGetGyroAxisMode()) { // Correct function call to retrieve the axis mode
+		case GYRO_YAW:
+				*deltaX = -gyroData[1]; // Yaw for horizontal movement
+				*deltaY = -gyroData[0]; // Pitch for vertical movement
+				break;
+
+		case GYRO_ROLL:
+				*deltaX = -gyroData[2]; // Roll for horizontal movement
+				*deltaY = -gyroData[0]; // Pitch for vertical movement
+				break;
+
+				// Add other modes (GYRO_LOCAL, GYRO_PLAYER, GYRO_SPACE)
+		default:
+				*deltaX = 0.f; // Default to zero if mode is unrecognized
+				*deltaY = 0.f;
+				break;
+		}
+}
+
+s32 inputGetGyroAimMode(void)
+{
+		return g_GyroAimMode;
+}
+
+void inputSetGyroAimMode(s32 mode)
+{
+		g_GyroAimMode = mode;
+}
+
+void inputGyroGetRawDelta(s32* dx, s32* dy, s32* dz)
+{
+		if (dx) *dx = (s32)gyroDeltaYaw;
+		if (dy) *dy = (s32)gyroDeltaPitch;
+		if (dz) *dz = (s32)gyroDeltaRoll;
+}
+
+void inputGyroGetScaledDelta(f32* dx, f32* dy)
+{
+		// Default deltas to zero
+		f32 gdx = 0.f, gdy = 0.f;
+
+		if (gyroEnabled) {
+				// Retrieve raw gyro deltas (yaw and pitch)
+				gdx = (f32)gyroDeltaYaw;
+				gdy = (f32)gyroDeltaPitch;
+
+				// Baseline factor for default sensitivity reference
+				const f32 baselineFactor = 0.3f;
+
+				// Dynamic scaling with gyro sensitivity
+				const f32 effectiveScaleX = baselineFactor * gyroSensX; // Dynamic horizontal scaling
+				const f32 effectiveScaleY = baselineFactor * gyroSensY; // Dynamic vertical scaling
+
+				// Apply scaling based on in-game sensitivity
+				gdx *= effectiveScaleX; // Scale horizontal movement
+				gdy *= effectiveScaleY; // Scale vertical movement
+
+				// Apply movement threshold to filter out minor inputs
+				applyGyroThreshold(&gdx, &gdy, gyroMinThreshold);
+		}
+
+		// Debugging: Log raw and scaled deltas for validation
+		printf("Gyro Raw Delta - X: %.2f, Y: %.2f\n", gyroDeltaYaw, gyroDeltaPitch);
+		printf("Gyro Scaled Delta - X: %.2f, Y: %.2f (SensX: %.2f, SensY: %.2f)\n", gdx, gdy, gyroSensX, gyroSensY);
+
+		// Assign scaled deltas to output variables
+		if (dx) *dx = gdx;
+		if (dy) *dy = gdy;
+}
+
+void inputGyroGetScaledDeltaCrosshair(f32* dx, f32* dy)
+{
+		// Default deltas to zero
+		f32 gdx = 0.f, gdy = 0.f;
+
+		if (gyroEnabled) {
+				// Scale movement for aim mode
+				gdx = gyroAimSensX * (f32)gyroDeltaYaw / 100.0f;
+				gdy = gyroAimSensY * (f32)gyroDeltaPitch / 100.0f;
+		}
+
+		// Assign scaled deltas to output variables
+		if (dx) *dx = gdx;
+		if (dy) *dy = gdy;
+}
+
+void inputGyroGetSpeed(f32* x, f32* y)
+{
+		*x = gyroSensX;
+		*y = gyroSensY;
+}
+
+void inputGyroSetSpeed(f32 x, f32 y)
+{
+		gyroSensX = x;
+		gyroSensY = y;
+		printf("Gyro Speed Updated - X: %.2f, Y: %.2f\n", gyroSensX, gyroSensY); // Debugging
+}
+
+f32 inputGyroGetSpeedX(void) { return gyroSensX; }
+void inputGyroSetSpeedX(f32 x) { gyroSensX = x; }
+
+f32 inputGyroGetSpeedY(void) { return gyroSensY; }
+void inputGyroSetSpeedY(f32 y) { gyroSensY = y; }
+
+
+void inputGyroGetAimSpeed(f32* x, f32* y)
+{
+		*x = gyroAimSensX;
+		*y = gyroAimSensY;
+}
+
+void inputGyroSetAimSpeed(f32 x, f32 y)
+{
+		gyroAimSensX = x;
+		gyroAimSensY = y;
+		printf("Gyro Aim Speed Updated - X: %.2f, Y: %.2f\n", gyroAimSensX, gyroAimSensY); // Debugging
+}
+
+f32 inputGyroGetAimSpeedX(void) { return gyroAimSensX; }
+void inputGyroSetAimSpeedX(f32 x) { gyroAimSensX = x; }
+
+f32 inputGyroGetAimSpeedY(void) { return gyroAimSensY; }
+void inputGyroSetAimSpeedY(f32 y) { gyroAimSensY = y; }
+
+
+s32 inputGetGyroActivationMode(void)
+{
+		return g_GyroActivationMode;
+}
+
+void inputSetGyroActivationMode(s32 mode)
+{
+		g_GyroActivationMode = mode;
+}
+
+void applyGyroActivationMode(f32* deltaX, f32* deltaY, s32 activationMode)
+{
+		switch (activationMode) {
+		case GYRO_ALWAYS_ON:
+				// Gyro input is always active; no changes needed
+				break;
+
+		case GYRO_TOGGLE:
+				// Toggle the gyro input state when CK_GYRO_MOD is pressed
+				if (inputKeyJustPressed(CK_GYRO_MOD)) {
+						g_GyroActivationMode = (g_GyroActivationMode == GYRO_TOGGLE) ? GYRO_ALWAYS_ON : GYRO_TOGGLE;
+				}
+
+				// If gyro is not in "on" state, zero out input
+				if (g_GyroActivationMode != GYRO_ALWAYS_ON) {
+						if (deltaX) *deltaX = 0.f;
+						if (deltaY) *deltaY = 0.f;
+				}
+				break;
+
+		case GYRO_HOLD:
+				// Only allow gyro input while CK_GYRO_MOD is held down
+				if (!inputKeyJustPressed(CK_GYRO_MOD)) {
+						if (deltaX) *deltaX = 0.f;
+						if (deltaY) *deltaY = 0.f;
+				}
+				break;
+
+		case GYRO_HOLD_INVERTED:
+				// Inverted hold; disable gyro input when CK_GYRO_MOD is held down
+				if (inputKeyJustPressed(CK_GYRO_MOD)) {
+						if (deltaX) *deltaX = 0.f;
+						if (deltaY) *deltaY = 0.f;
+				}
+				break;
+
+		default:
+				// Invalid activation mode; disable gyro input
+				if (deltaX) *deltaX = 0.f;
+				if (deltaY) *deltaY = 0.f;
+				break;
+		}
+}
+
+f32 inputGetGyroMinThreshold(void)
+{
+		return gyroMinThreshold;
+}
+
+void inputSetGyroMinThreshold(f32 threshold)
+{
+		gyroMinThreshold = threshold;
+}
+
+void applyGyroThreshold(f32* deltaX, f32* deltaY, f32 threshold)
+{
+		if (deltaX && fabsf(*deltaX) < threshold) {
+				*deltaX = 0.f; // Zero out horizontal movement if below threshold
+		}
+		if (deltaY && fabsf(*deltaY) < threshold) {
+				*deltaY = 0.f; // Zero out vertical movement if below threshold
+		}
+}
+
 const char *inputGetContKeyName(u32 ck)
 {
 	if (ck >= CK_TOTAL_COUNT) {
@@ -1555,6 +1893,10 @@ PD_CONSTRUCTOR static void inputConfigInit(void)
 	configRegisterInt("Input.MouseLockMode", &mouseLockMode, MLOCK_OFF, MLOCK_AUTO);
 	configRegisterFloat("Input.MouseSpeedX", &mouseSensX, -10.f, 10.f);
 	configRegisterFloat("Input.MouseSpeedY", &mouseSensY, -10.f, 10.f);
+	configRegisterInt("Input.GyroEnabled", &gyroEnabled, 0, 1);
+	configRegisterInt("Input.GyroAimMode", &g_GyroAimMode, GYRO_AIM_MODE_CAMERA, GYRO_AIM_MODE_BOTH);
+	configRegisterFloat("Input.gyroAimSpeedX", &gyroAimSensX, -10.f, 10.f);
+	configRegisterFloat("Input.gyroAimSpeedY", &gyroAimSensY, -10.f, 10.f);
 	configRegisterInt("Input.FakeGamepads", &fakeControllers, 0, 4);
 	configRegisterInt("Input.FirstGamepadNum", &firstController, 0, 3);
 	configRegisterInt("Input.UseHIDAPI", &useHIDAPI, 0, 1);

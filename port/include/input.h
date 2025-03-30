@@ -99,6 +99,7 @@ enum contkey {
 	CK_STICK_YPOS,
 	CK_ACCEPT,
 	CK_CANCEL,
+	CK_GYRO_MOD,
 	CK_0040,
 	CK_0080,
 	CK_0100,
@@ -116,6 +117,28 @@ enum mouselockmode {
 	MLOCK_OFF = 0,
 	MLOCK_ON = 1,
 	MLOCK_AUTO = 2
+};
+
+enum gyroactivation {
+		GYRO_ALWAYS_ON = 0,
+		GYRO_TOGGLE = 1,
+		GYRO_HOLD = 2,
+		GYRO_HOLD_INVERTED = 3
+};
+
+enum gyroaxismode {
+		GYRO_YAW = 0,
+		GYRO_ROLL = 1,
+		GYRO_LOCAL = 2,
+		GYRO_PLAYER = 3,
+		GYRO_SPACE = 4,
+};
+
+
+enum gyroaimmode {
+		GYRO_AIM_MODE_CAMERA = 0,
+		GYRO_AIM_MODE_CROSSHAIR = 1,
+		GYRO_AIM_MODE_BOTH = 2
 };
 
 // returns bitmask of connected controllers or -1 if failed
@@ -228,6 +251,55 @@ void inputMouseSetSpeed(f32 x, f32 y);
 
 s32 inputMouseIsEnabled(void);
 void inputMouseEnable(s32 enabled);
+
+// Gyro controller initialization and management
+void initializeGyroController(void);
+s32 inputGyroIsEnabled(void);
+void inputGyroEnable(s32 enabled);
+
+// Raw gyro movement retrieval
+void inputGyroGetRawDelta(s32* dx, s32* dy, s32* dz);
+
+// Scaled gyro movement retrieval
+void inputGyroGetScaledDelta(f32* dx, f32* dy);
+
+// Scaled gyro movement retrieval for crosshair
+void inputGyroGetScaledDeltaCrosshair(f32* dx, f32* dy);
+
+// Gyro's FreeLook sensitivity management
+void inputGyroGetSpeed(f32* x, f32* y);
+void inputGyroSetSpeed(f32 x, f32 y);
+f32 inputGyroGetSpeedX(void);
+void inputGyroSetSpeedX(f32 x);
+f32 inputGyroGetSpeedY(void);
+void inputGyroSetSpeedY(f32 y);
+
+// Gyro's Aim Mode sensitivity management
+void inputGyroGetAimSpeed(f32* x, f32* y);
+void inputGyroSetAimSpeed(f32 x, f32 y);
+f32 inputGyroGetAimSpeedX(void);
+void inputGyroSetAimSpeedX(f32 x);
+f32 inputGyroGetAimSpeedY(void);
+void inputGyroSetAimSpeedY(f32 y);
+
+// Gyro aim mode management
+s32 inputGetGyroAimMode(void);
+void inputSetGyroAimMode(s32 mode);
+
+// Gyro axis mode management
+enum gyroaxismode inputGetGyroAxisMode(void);
+void inputSetGyroAxisMode(enum gyroaxismode mode);
+void applyGyroAxisMapping(float gyroData[3], f32* deltaX, f32* deltaY);
+
+// Gyro activation mode management
+s32 inputGetGyroActivationMode(void);
+void inputSetGyroActivationMode(s32 mode);
+void applyGyroActivationMode(f32* deltaX, f32* deltaY, s32 activationMode);
+
+// Gyro movement threshold management
+void applyGyroThreshold(f32* deltaX, f32* deltaY, f32 threshold);
+f32 inputGetGyroMinThreshold(void);
+void inputSetGyroMinThreshold(f32 threshold);
 
 // call this every frame
 void inputUpdate(void);

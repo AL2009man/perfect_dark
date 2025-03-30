@@ -714,7 +714,14 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 #ifndef PLATFORM_N64
 	const f32 mlookscale = g_Vars.lvupdate240 ? (4.f / (f32)g_Vars.lvupdate240) : 4.f;
 	const bool allowmlook = (g_Vars.currentplayernum == 0) && (allowc1x || allowc1y);
+	const f32 gyroscale = g_Vars.lvupdate240 ? (4.f / (f32)g_Vars.lvupdate240) : 4.f;
+	const bool allowgyro = (g_Vars.currentplayernum == 0) && (allowc1x || allowc1y);
 	bool allowmcross = false;
+	bool allowgcross = (g_Vars.currentplayernum == 0) &&
+			(allowc1x || allowc1y) &&
+			(PLAYER_EXTCFG().gyroaimmode == GYRO_AIM_MODE_CROSSHAIR ||
+					PLAYER_EXTCFG().gyroaimmode == GYRO_AIM_MODE_BOTH);
+
 #endif
 
 	controlmode = optionsGetControlMode(g_Vars.currentplayerstats->mpindex);
@@ -773,19 +780,29 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 
 #ifndef PLATFORM_N64
 	if (allowmlook) {
-		inputMouseGetScaledDelta(&movedata.freelookdx, &movedata.freelookdy);
-		allowmcross = (PLAYER_EXTCFG().mouseaimmode == MOUSEAIM_CLASSIC) &&
-			(movedata.freelookdx || movedata.freelookdy || g_Vars.currentplayer->swivelpos[0] || g_Vars.currentplayer->swivelpos[1]);
-		if (movedata.invertpitch) {
-			movedata.freelookdy = -movedata.freelookdy;
-		}
+			// Handle mouse input for freelook
+			inputMouseGetScaledDelta(&movedata.freelookdx, &movedata.freelookdy);
+
+			// Add gyro deltas for freelook if gyro is enabled and in CAMERA mode
+			if (allowgyro && (PLAYER_EXTCFG().gyroaimmode == GYRO_AIM_MODE_CAMERA)) {
+					f32 gyroDx = 0.f, gyroDy = 0.f;
+
+					// Use general gyro sensitivity for freelook
+					inputGyroGetScaledDelta(&gyroDx, &gyroDy);
+					movedata.freelookdx += gyroDx; // Horizontal freelook movement
+					movedata.freelookdy += gyroDy; // Vertical freelook movement
+			}
 	}
-	// always pause with ESC
-	if (allowc1buttons && g_Vars.currentplayer->isdead == false && g_Vars.currentplayer->pausemode == PAUSEMODE_UNPAUSED) {
-		if (inputKeyJustPressed(VK_ESCAPE)) {
-			c1buttonsthisframe |= START_BUTTON;
-		}
+	else {
+			// Reset gyro deltas if gyro is disabled or not in crosshair mode
+			movedata.gyrolookdx = 0.0f;
+			movedata.gyrolookdy = 0.0f;
 	}
+
+	// Update crosshair movement logic for mouse input
+	allowmcross = (PLAYER_EXTCFG().mouseaimmode == MOUSEAIM_CLASSIC) &&
+			(movedata.freelookdx != 0 || movedata.freelookdy != 0 ||
+					g_Vars.currentplayer->swivelpos[0] != 0 || g_Vars.currentplayer->swivelpos[1]);
 #endif
 
 	// Pausing
@@ -1412,7 +1429,7 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 					}
 
 #ifndef PLATFORM_N64
-					// Handle turning and looking up/down via mouselook when aiming
+					// Handle turning and looking up/down via mouselook or gyro when aiming
 					if (g_Vars.currentplayer->insightaimmode && allowmcross && bgunGetWeaponNum(HAND_RIGHT) != WEAPON_HORIZONSCANNER) {
 						if (g_Vars.currentplayer->swivelpos[0] > 0.9f) {
 							movedata.aimturnrightspeed = (g_Vars.currentplayer->swivelpos[0] - 0.9f) / 0.1f;
@@ -2199,30 +2216,50 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 
 			bgunSwivelWithDamp(x, y, PAL ? 0.955f : 0.963f);
 		}
-	} else if (movedata.canmanualaim) {
-		// Adjust crosshair's position on screen
-		// when holding aim and moving stick
-		bgunSetAimType(0);
-#ifndef PLATFORM_N64
-		if (allowmcross) {
-			// joystick is inactive, move crosshair using the mouse
-			const f32 xcoeff = 320.f / 1080.f;
-			const f32 ycoeff = 240.f / 1080.f;
-			const f32 xscale = (PLAYER_EXTCFG().mouseaimspeedx * xcoeff) / g_Vars.currentplayer->aspect;
-			const f32 yscale = PLAYER_EXTCFG().mouseaimspeedy * ycoeff;
-			f32 x = g_Vars.currentplayer->swivelpos[0] + movedata.freelookdx * xscale;
-			f32 y = g_Vars.currentplayer->swivelpos[1] + movedata.freelookdy * yscale;
-			x = (x < -1.f) ? -1.f : ((x > 1.f) ? 1.f : x);
-			y = (y < -1.f) ? -1.f : ((y > 1.f) ? 1.f : y);
-			g_Vars.currentplayer->swivelpos[0] = x;
-			g_Vars.currentplayer->swivelpos[1] = y;
-			bgunSwivelWithDamp(x, y, 0.01f);
-			return;
-		}
-#endif
-		bgunSwivelWithoutDamp((movedata.c1stickxraw * 0.65f) / 80.0f, (movedata.c1stickyraw * 0.65f) / 80.0f);
 	}
-}
+	else if (movedata.canmanualaim) {
+			// Adjust crosshair's position on screen
+			// when holding aim and moving stick
+			bgunSetAimType(0);
+
+#ifndef PLATFORM_N64
+			// Joystick is inactive, check for mouse or gyro crosshair movement
+			if (allowmcross || allowgcross) {
+					const f32 xcoeff = 320.f / 1080.f;
+					const f32 ycoeff = 240.f / 1080.f;
+
+					// Define mouse scaling factors
+					const f32 mouseXScale = (allowmcross ? (PLAYER_EXTCFG().mouseaimspeedx * xcoeff) / g_Vars.currentplayer->aspect : 0.f);
+					const f32 mouseYScale = (allowmcross ? PLAYER_EXTCFG().mouseaimspeedy * ycoeff : 0.f);
+
+					// Define gyro scaling factors using dedicated aim speed sliders
+					const f32 gyroXScale = (allowgcross ? (PLAYER_EXTCFG().gyroaimsensx * xcoeff) / g_Vars.currentplayer->aspect : 0.f);
+					const f32 gyroYScale = (allowgcross ? PLAYER_EXTCFG().gyroaimsensy * ycoeff : 0.f);
+
+					// Calculate updated crosshair position
+					f32 x = g_Vars.currentplayer->swivelpos[0]
+							+ (allowmcross ? movedata.freelookdx * mouseXScale : 0.f) // Mouse movement
+							+ (allowgcross ? movedata.freelookdx * gyroXScale : 0.f); // Gyro movement
+					f32 y = g_Vars.currentplayer->swivelpos[1]
+							+ (allowmcross ? movedata.freelookdy * mouseYScale : 0.f) // Mouse movement
+							+ (allowgcross ? movedata.freelookdy * gyroYScale : 0.f); // Gyro movement
+
+					// Clamp crosshair position to screen bounds
+					x = (x < -1.f) ? -1.f : ((x > 1.f) ? 1.f : x);
+					y = (y < -1.f) ? -1.f : ((y > 1.f) ? 1.f : y);
+
+					// Update player swivel position
+					g_Vars.currentplayer->swivelpos[0] = x;
+					g_Vars.currentplayer->swivelpos[1] = y;
+
+					// Apply damping to smooth crosshair movement
+					bgunSwivelWithDamp(x, y, 0.01f);
+					return;
+			}
+#endif
+			bgunSwivelWithoutDamp((movedata.c1stickxraw * 0.65f) / 80.0f, (movedata.c1stickyraw * 0.65f) / 80.0f);
+			}
+		}
 
 void bmoveFindEnteredRoomsByPos(struct player *player, struct coord *mid, RoomNum *rooms)
 {
