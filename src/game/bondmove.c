@@ -786,8 +786,7 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 
 			// Check if mouse aim crosshair should be allowed
 			allowmcross = (PLAYER_EXTCFG().mouseaimmode == MOUSEAIM_CLASSIC) &&
-					(movedata.freelookdx || movedata.freelookdy ||
-							g_Vars.currentplayer->swivelpos[0] || g_Vars.currentplayer->swivelpos[1]);
+					(movedata.freelookdx || movedata.freelookdy);
 
 			// Apply pitch inversion if enabled
 			if (movedata.invertpitch) {
@@ -802,21 +801,29 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 			// Apply gyro aim mode activator
 			applyGyroAimMode(&movedata.gyrolookdx, &movedata.gyrolookdy);
 
-			// Apply gyro deltas only when freelook modes are active
+			// Determine if freelook logic should be applied
 			if (inputGetGyroAimMode() == GYRO_AIM_MODE_CAMERA ||
 					inputGetGyroAimMode() == GYRO_AIM_MODE_BOTH) {
+					// Apply gyro deltas only when freelook modes are active
 					movedata.freelookdx += movedata.gyrolookdx;
 					movedata.freelookdy += movedata.gyrolookdy;
 			}
 
-			// Crosshair mode activation
+			// Determine if gyro crosshair logic should be applied
 			allowgcross = (inputGetGyroAimMode() == GYRO_AIM_MODE_CROSSHAIR ||
-					inputGetGyroAimMode() == GYRO_AIM_MODE_BOTH);
+					inputGetGyroAimMode() == GYRO_AIM_MODE_BOTH) &&
+					(movedata.gyrolookdx || movedata.gyrolookdy);
 
 			if (allowgcross) {
-					// Ensure crosshair mode activation is based on gyro input itself
+					// Move crosshair cursor in a mouse-like way
 					g_Vars.currentplayer->swivelpos[0] += movedata.gyrolookdx;
 					g_Vars.currentplayer->swivelpos[1] += movedata.gyrolookdy;
+
+					// Prevent freelook from interfering when GYRO_AIM_MODE_CROSSHAIR is active
+					if (inputGetGyroAimMode() == GYRO_AIM_MODE_CROSSHAIR) {
+							movedata.freelookdx = 0.f;
+							movedata.freelookdy = 0.f;
+					}
 			}
 
 			// Apply pitch inversion if enabled (specific to gyro inputs)
@@ -824,6 +831,7 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 					movedata.gyrolookdy = -movedata.gyrolookdy;
 			}
 	}
+
 
 	// Pause game using ESC key if allowed
 	if (allowc1buttons && !g_Vars.currentplayer->isdead &&
