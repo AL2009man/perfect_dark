@@ -670,7 +670,7 @@ static MenuItemHandlerResult menuhandlerGyroSensitivityX(s32 operation, struct m
 		switch (operation) {
 		case MENUOP_GETSLIDER:
 				// Retrieve gyro sensitivity for X-axis
-				data->slider.value = inputGyroGetSpeedX() * 100.f + 0.5f;
+				data->slider.value = inputGyroGetSpeedX() * 100.f + 0.1f;
 				break;
 		case MENUOP_SET:
 				// Update gyro sensitivity for X-axis
@@ -690,7 +690,7 @@ static MenuItemHandlerResult menuhandlerGyroSensitivityY(s32 operation, struct m
 		switch (operation) {
 		case MENUOP_GETSLIDER:
 				// Retrieve gyro sensitivity for Y-axis
-				data->slider.value = inputGyroGetSpeedY() * 100.f + 0.5f;
+				data->slider.value = inputGyroGetSpeedY() * 100.f + 0.1f;
 				break;
 		case MENUOP_SET:
 				// Update gyro sensitivity for Y-axis

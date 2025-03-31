@@ -263,6 +263,10 @@ void inputGyroGetRawDelta(s32* dx, s32* dy, s32* dz);
 // Scaled gyro movement retrieval
 void inputGyroGetScaledDelta(f32* dx, f32* dy);
 
+// returns changes in gyro movement since last frame, scaled by absolute sensitivity
+// returns 0, 0 when the gyro is disabled
+void inputGyroGetAbsScaledDelta(f32* dx, f32* dy);
+
 // Scaled gyro movement retrieval for crosshair
 void inputGyroGetScaledDeltaCrosshair(f32* dx, f32* dy);
 

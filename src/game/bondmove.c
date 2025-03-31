@@ -779,30 +779,53 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 	movedata.analogwalk = movedata.c1stickysafe;
 
 #ifndef PLATFORM_N64
+
 	if (allowmlook) {
-			// Handle mouse input for freelook
+			// Retrieve mouse deltas for freelook
 			inputMouseGetScaledDelta(&movedata.freelookdx, &movedata.freelookdy);
 
-			// Add gyro deltas for freelook if gyro is enabled and in CAMERA mode
-			if (allowgyro && (PLAYER_EXTCFG().gyroaimmode == GYRO_AIM_MODE_CAMERA)) {
-					f32 gyroDx = 0.f, gyroDy = 0.f;
+			// Check if mouse aim crosshair should be allowed
+			allowmcross = (PLAYER_EXTCFG().mouseaimmode == MOUSEAIM_CLASSIC) &&
+					(movedata.freelookdx || movedata.freelookdy ||
+							g_Vars.currentplayer->swivelpos[0] || g_Vars.currentplayer->swivelpos[1]);
 
-					// Use general gyro sensitivity for freelook
-					inputGyroGetScaledDelta(&gyroDx, &gyroDy);
-					movedata.freelookdx += gyroDx; // Horizontal freelook movement
-					movedata.freelookdy += gyroDy; // Vertical freelook movement
+			// Apply pitch inversion if enabled
+			if (movedata.invertpitch) {
+					movedata.freelookdy = -movedata.freelookdy;
 			}
 	}
-	else {
-			// Reset gyro deltas if gyro is disabled or not in crosshair mode
-			movedata.gyrolookdx = 0.0f;
-			movedata.gyrolookdy = 0.0f;
+
+    if (allowgyro) {
+        // Retrieve gyro deltas for freelook
+        inputGyroGetScaledDelta(&movedata.gyrolookdx, &movedata.gyrolookdy);
+
+        // Combine gyro deltas into freelook deltas if necessary
+        if (PLAYER_EXTCFG().gyroaimmode == GYRO_AIM_MODE_CAMERA ||
+            PLAYER_EXTCFG().gyroaimmode == GYRO_AIM_MODE_BOTH) {
+            movedata.freelookdx += movedata.gyrolookdx;
+            movedata.freelookdy += movedata.gyrolookdy;
+        }
+
+        // Check if gyro aim crosshair should be allowed
+        allowgcross = (PLAYER_EXTCFG().gyroaimmode == GYRO_AIM_MODE_CROSSHAIR ||
+                       PLAYER_EXTCFG().gyroaimmode == GYRO_AIM_MODE_BOTH) &&
+                      (movedata.gyrolookdx || movedata.gyrolookdy ||
+                       g_Vars.currentplayer->swivelpos[0] || g_Vars.currentplayer->swivelpos[1]);
+
+        // Apply pitch inversion if enabled (gyro-specific)
+        if (movedata.invertpitch) {
+            movedata.gyrolookdy = -movedata.gyrolookdy;
+        }
+    }
+
+	// Pause game using ESC key if allowed
+	if (allowc1buttons && !g_Vars.currentplayer->isdead &&
+			g_Vars.currentplayer->pausemode == PAUSEMODE_UNPAUSED) {
+			if (inputKeyJustPressed(VK_ESCAPE)) {
+					c1buttonsthisframe |= START_BUTTON;
+			}
 	}
 
-	// Update crosshair movement logic for mouse input
-	allowmcross = (PLAYER_EXTCFG().mouseaimmode == MOUSEAIM_CLASSIC) &&
-			(movedata.freelookdx != 0 || movedata.freelookdy != 0 ||
-					g_Vars.currentplayer->swivelpos[0] != 0 || g_Vars.currentplayer->swivelpos[1]);
 #endif
 
 	// Pausing

@@ -1027,7 +1027,7 @@ static inline void inputUpdateGyro(void)
 										applyGyroAxisMapping(gyroData, &deltaX, &deltaY);
 
 										// Apply sensitivity scaling
-										deltaX *= gyroSensX; // Use sensitivity from menu
+										deltaX *= gyroSensX;
 										deltaY *= gyroSensY;
 
 										// Apply activation mode logic
@@ -1541,26 +1541,36 @@ void inputGyroGetRawDelta(s32* dx, s32* dy, s32* dz)
 
 void inputGyroGetScaledDelta(f32* dx, f32* dy)
 {
-		// Default deltas to zero
-		f32 gdx = 0.f, gdy = 0.f;
+		f32 gdx, gdy;
 
 		if (gyroEnabled) {
-				// Retrieve raw gyro deltas (yaw and pitch)
-				gdx = (f32)gyroDeltaYaw;
-				gdy = (f32)gyroDeltaPitch;
-
-				// Baseline factor for consistent sensitivity scaling
-				const f32 baselineFactor = 0.3f;
-
-				// Apply gyro sensitivity directly using baseline factor
-				gdx *= baselineFactor * gyroSensX; // Horizontal scaling
-				gdy *= baselineFactor * gyroSensY; // Vertical scaling
+				// Apply gyro sensitivity scaling similar to mouse scaling
+				gdx = gyroSensX * (f32)gyroDeltaYaw / 100.0f; // Match mouse scaling factor
+				gdy = gyroSensY * (f32)gyroDeltaPitch / 100.0f; // Match mouse scaling factor
+		}
+		else {
+				gdx = 0.f;
+				gdy = 0.f;
 		}
 
-		// Debugging: Log scaled deltas for validation during testing
-		printf("Final Scaled Gyro Delta - X: %.2f, Y: %.2f (SensX: %.2f, SensY: %.2f)\n", gdx, gdy, gyroSensX, gyroSensY);
+		if (dx) *dx = gdx;
+		if (dy) *dy = gdy;
+}
 
-		// Assign scaled deltas to output variables
+void inputGyroGetAbsScaledDelta(f32* dx, f32* dy)
+{
+		f32 gdx, gdy;
+
+		if (gyroEnabled) {
+				// Use absolute values with gyro sensitivity scaling
+				gdx = fabsf(gyroSensX) * (f32)gyroDeltaYaw / 100.0f; // Match mouse scaling factor
+				gdy = fabsf(gyroSensY) * (f32)gyroDeltaPitch / 100.0f; // Match mouse scaling factor
+		}
+		else {
+				gdx = 0.f;
+				gdy = 0.f;
+		}
+
 		if (dx) *dx = gdx;
 		if (dy) *dy = gdy;
 }
@@ -1687,12 +1697,35 @@ void inputSetGyroMinThreshold(f32 threshold)
 
 void applyGyroThreshold(f32* deltaX, f32* deltaY, f32 threshold)
 {
-		if (deltaX && fabsf(*deltaX) < threshold) {
-				*deltaX = 0.f; // Zero out horizontal movement if below threshold
+		// Define clamping limits for movement deltas
+		const f32 maxDelta = 20.f; // Maximum allowable delta for gyro input
+		const f32 minDelta = -20.f; // Minimum allowable delta for gyro input
+
+		// Check and apply threshold for horizontal movement
+		if (deltaX) {
+				if (fabsf(*deltaX) < threshold) {
+						*deltaX = 0.f; // Zero out horizontal movement if below threshold
+				}
+				else {
+						// Clamp horizontal movement to allowable range
+						*deltaX = (*deltaX > maxDelta) ? maxDelta : ((*deltaX < minDelta) ? minDelta : *deltaX);
+				}
 		}
-		if (deltaY && fabsf(*deltaY) < threshold) {
-				*deltaY = 0.f; // Zero out vertical movement if below threshold
+
+		// Check and apply threshold for vertical movement
+		if (deltaY) {
+				if (fabsf(*deltaY) < threshold) {
+						*deltaY = 0.f; // Zero out vertical movement if below threshold
+				}
+				else {
+						// Clamp vertical movement to allowable range
+						*deltaY = (*deltaY > maxDelta) ? maxDelta : ((*deltaY < minDelta) ? minDelta : *deltaY);
+				}
 		}
+
+		// Debugging: Log threshold adjustments and clamped values for validation
+		printf("Gyro Threshold Applied - X: %.2f, Y: %.2f (Threshold: %.2f, ClampRange: [%.2f, %.2f])\n",
+				deltaX ? *deltaX : 0.f, deltaY ? *deltaY : 0.f, threshold, minDelta, maxDelta);
 }
 
 const char *inputGetContKeyName(u32 ck)
@@ -1887,6 +1920,8 @@ PD_CONSTRUCTOR static void inputConfigInit(void)
 	configRegisterFloat("Input.MouseSpeedY", &mouseSensY, -10.f, 10.f);
 	configRegisterInt("Input.GyroEnabled", &gyroEnabled, 0, 1);
 	configRegisterInt("Input.GyroAimMode", &g_GyroAimMode, GYRO_AIM_MODE_CAMERA, GYRO_AIM_MODE_BOTH);
+	configRegisterFloat("Input.gyroSpeedX", &gyroSensX, -10.f, 10.f);
+	configRegisterFloat("Input.gyroSpeedY", &gyroSensY, -10.f, 10.f);
 	configRegisterFloat("Input.gyroAimSpeedX", &gyroAimSensX, -10.f, 10.f);
 	configRegisterFloat("Input.gyroAimSpeedY", &gyroAimSensY, -10.f, 10.f);
 	configRegisterInt("Input.FakeGamepads", &fakeControllers, 0, 4);
