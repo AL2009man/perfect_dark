@@ -3663,36 +3663,37 @@ void playerTick(bool arg0)
 						sp178 = -sp178;
 				}
 
-				// Input handling
+				// Mouse control
 				if (g_Vars.currentplayernum == 0) {
-						f32 mdx, mdy, gdx, gdy;
-
-						// Retrieve scaled deltas for mouse and gyro
+						f32 mdx, mdy;
 						inputMouseGetScaledDelta(&mdx, &mdy);
-						inputGyroGetScaledDelta(&gdx, &gdy);
-
-						if (mdx || mdy || gdx || gdy) {
-								// Scale mouse and gyro deltas
+						if (mdx || mdy) {
 								mdx *= 48.f;
 								mdy *= 48.f;
-								gdx *= 48.f;
-								gdy *= 48.f;
-
-								// Clamp deltas to screen bounds
 								mdx = (mdx < -128.f) ? -128.f : (mdx > 127.f) ? 127.f : mdx;
 								mdy = (mdy < -128.f) ? -128.f : (mdy > 127.f) ? 127.f : mdy;
-								gdx = (gdx < -128.f) ? -128.f : (gdx > 127.f) ? 127.f : gdx;
-								gdy = (gdy < -128.f) ? -128.f : (gdy > 127.f) ? 127.f : gdy;
-
-								// Apply pitch inversion for both mouse and gyro if needed
 								if (g_Vars.currentplayerstats && !optionsGetForwardPitch(g_Vars.currentplayerstats->mpindex)) {
 										mdy = -mdy;
+								}
+								sp178 += mdy * 0.00025f;
+								sp174 -= mdx * 0.00025f;
+						}
+				}
+
+				// Gyro control
+				if (g_Vars.currentplayernum == 0) {
+						f32 gdx, gdy;
+						inputGyroGetScaledDelta(&gdx, &gdy); // Retrieve scaled gyro deltas
+						if (gdx || gdy) {
+								gdx *= 48.f;
+								gdy *= 48.f;
+								gdx = (gdx < -128.f) ? -128.f : (gdx > 127.f) ? 127.f : gdx;
+								gdy = (gdy < -128.f) ? -128.f : (gdy > 127.f) ? 127.f : gdy;
+								if (g_Vars.currentplayerstats && !optionsGetForwardPitch(g_Vars.currentplayerstats->mpindex)) {
 										gdy = -gdy;
 								}
-
-								// Combine mouse and gyro deltas for position updates
-								sp178 += (mdy + gdy) * 0.00025f;
-								sp174 -= (mdx + gdx) * 0.00025f;
+								sp178 += gdy * 0.00025f; // Apply vertical gyro movement
+								sp174 -= gdx * 0.00025f; // Apply horizontal gyro movement
 						}
 				}
 #endif

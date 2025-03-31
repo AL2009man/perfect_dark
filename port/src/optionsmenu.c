@@ -669,13 +669,17 @@ static MenuItemHandlerResult menuhandlerGyroSensitivityX(s32 operation, struct m
 {
 		switch (operation) {
 		case MENUOP_GETSLIDER:
-				data->slider.value = inputGyroGetSpeedX() * 100.f + 0.5f;
+				// Retrieve gyro sensitivity for X-axis
+				data->slider.value = inputGyroGetSpeedX() * 100.f + 0.1f;
 				break;
 		case MENUOP_SET:
+				// Update gyro sensitivity for X-axis
 				inputGyroSetSpeedX((f32)data->slider.value / 100.f);
 				break;
 		case MENUOP_GETSLIDERLABEL:
-				sprintf(data->slider.label, "%.2f", (f32)data->slider.value / 100.f);
+				// Display X sensitivity on the slider label
+				sprintf(data->slider.label, "%.2f", inputGyroGetSpeedX());
+				break;
 		}
 		return 0;
 }
@@ -685,13 +689,17 @@ static MenuItemHandlerResult menuhandlerGyroSensitivityY(s32 operation, struct m
 {
 		switch (operation) {
 		case MENUOP_GETSLIDER:
-				data->slider.value = inputGyroGetSpeedY() * 100.f + 0.5f;
+				// Retrieve gyro sensitivity for Y-axis
+				data->slider.value = inputGyroGetSpeedY() * 100.f + 0.1f;
 				break;
 		case MENUOP_SET:
+				// Update gyro sensitivity for Y-axis
 				inputGyroSetSpeedY((f32)data->slider.value / 100.f);
 				break;
 		case MENUOP_GETSLIDERLABEL:
-				sprintf(data->slider.label, "%.2f", (f32)data->slider.value / 100.f);
+				// Display Y sensitivity on the slider label
+				sprintf(data->slider.label, "%.2f", inputGyroGetSpeedY());
+				break;
 		}
 		return 0;
 }
@@ -700,13 +708,16 @@ static MenuItemHandlerResult menuhandlerGyroCrosshairSpeedX(s32 operation, struc
 {
 		switch (operation) {
 		case MENUOP_GETSLIDER:
-				data->slider.value = inputGyroGetCrosshairSpeedX() * 100.f + 0.5f;
+				// Retrieve gyro aim sensitivity for X-axis
+				data->slider.value = inputGyroGetAimSpeedX() * 100.f + 0.5f;
 				break;
 		case MENUOP_SET:
-				inputGyroSetCrosshairSpeedX((f32)data->slider.value / 100.f);
+				// Update gyro aim sensitivity for X-axis
+				inputGyroSetAimSpeedX((f32)data->slider.value / 100.f);
 				break;
 		case MENUOP_GETSLIDERLABEL:
-				sprintf(data->slider.label, "%.2f", (f32)data->slider.value / 100.f);
+				// Display X-axis aim sensitivity on slider label
+				sprintf(data->slider.label, "%.2f", inputGyroGetAimSpeedX());
 				break;
 		}
 		return 0;
@@ -716,13 +727,16 @@ static MenuItemHandlerResult menuhandlerGyroCrosshairSpeedY(s32 operation, struc
 {
 		switch (operation) {
 		case MENUOP_GETSLIDER:
-				data->slider.value = inputGyroGetCrosshairSpeedY() * 100.f + 0.5f;
+				// Retrieve gyro aim sensitivity for Y-axis
+				data->slider.value = inputGyroGetAimSpeedY() * 100.f + 0.5f;
 				break;
 		case MENUOP_SET:
-				inputGyroSetCrosshairSpeedY((f32)data->slider.value / 100.f);
+				// Update gyro aim sensitivity for Y-axis
+				inputGyroSetAimSpeedY((f32)data->slider.value / 100.f);
 				break;
 		case MENUOP_GETSLIDERLABEL:
-				sprintf(data->slider.label, "%.2f", (f32)data->slider.value / 100.f);
+				// Display Y-axis aim sensitivity on slider label
+				sprintf(data->slider.label, "%.2f", inputGyroGetAimSpeedY());
 				break;
 		}
 		return 0;
@@ -731,20 +745,24 @@ static MenuItemHandlerResult menuhandlerGyroCrosshairSpeedY(s32 operation, struc
 // Function to handle gyro movement threshold
 static MenuItemHandlerResult menuhandlerGyroMinThreshold(s32 operation, struct menuitem* item, union handlerdata* data)
 {
-		switch (operation) {
-		case MENUOP_GETSLIDER:
-				data->slider.value = inputGetGyroMinThreshold() * 100.0f;
-				break;
-		case MENUOP_SET:
-				inputSetGyroMinThreshold(data->slider.value / 100.0f);
-				break;
-		case MENUOP_GETSLIDERLABEL:
-				sprintf(data->slider.label, "%.2f", inputGetGyroMinThreshold());
-				break;
-		}
+    switch (operation) {
+    case MENUOP_GETSLIDER:
+        // Retrieve the gyro minimum threshold and scale it for the slider
+        data->slider.value = inputGetGyroMinThreshold() * 100.0f;
+        break;
+    case MENUOP_SET:
+        // Set the gyro minimum threshold based on the slider value
+        inputSetGyroMinThreshold((f32)data->slider.value / 100.0f);
+        break;
+    case MENUOP_GETSLIDERLABEL:
+        // Format and display the threshold value on the slider label
+        sprintf(data->slider.label, "%.2f", inputGetGyroMinThreshold());
+        break;
+    }
 
-		return 0;
+    return 0;
 }
+
 
 struct menuitem g_ExtendedGyroMenuItems[] = {
 		{
@@ -920,7 +938,7 @@ struct menuitem g_ExtendedControllerMenuItems[] = {
 		MENUITEMFLAG_SELECTABLE_OPENSDIALOG | MENUITEMFLAG_LITERAL_TEXT,
 		(uintptr_t)"Stick Settings...\n",
 		0,
-		(void *)&g_ExtendedStickMenuDialog,
+		(void*)&g_ExtendedStickMenuDialog,
 	},
 	{
 		MENUITEMTYPE_SELECTABLE,
@@ -1929,7 +1947,6 @@ static const struct menubind menuBinds[] = {
 	{ CK_2000,   "Full Crouch [+]\n",   "N64 Ext 2000\n" },
 	{ CK_ACCEPT, "UI Accept [+]\n",     "EXT UI Accept\n" },
 	{ CK_CANCEL, "UI Cancel [+]\n",     "EXT UI Cancel\n" },
-	{ CK_GYRO_MOD, "Gyro Modifier [GY]\n", "Gyro Modifier\n" }
 };
 
 static const char *menutextBind(struct menuitem *item);
