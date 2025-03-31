@@ -1026,17 +1026,13 @@ static inline void inputUpdateGyro(void)
 										// Apply axis mapping to gyro input
 										applyGyroAxisMapping(gyroData, &deltaX, &deltaY);
 
-										// Apply sensitivity scaling
-										deltaX *= gyroSensX;
-										deltaY *= gyroSensY;
-
 										// Apply activation mode logic
 										applyGyroActivationMode(&deltaX, &deltaY, inputGetGyroActivationMode());
 
 										// Apply movement threshold
 										applyGyroThreshold(&deltaX, &deltaY, inputGetGyroMinThreshold());
 
-										// Assign deltas based on axis mapping
+										// Assign raw deltas based on axis mapping without scaling
 										gyroDeltaYaw = deltaX;    // Map X-axis delta
 										gyroDeltaPitch = deltaY;  // Map Y-axis delta
 										gyroDeltaRoll = gyroData[2]; // Keep Roll for other use cases
@@ -1541,49 +1537,37 @@ void inputGyroGetRawDelta(s32* dx, s32* dy, s32* dz)
 
 void inputGyroGetScaledDelta(f32* dx, f32* dy)
 {
-		f32 gdx, gdy;
+		// Default deltas to zero
+		f32 gdx = 0.f, gdy = 0.f;
 
 		if (gyroEnabled) {
-				// Apply gyro sensitivity scaling similar to mouse scaling
-				gdx = gyroSensX * (f32)gyroDeltaYaw / 100.0f; // Match mouse scaling factor
-				gdy = gyroSensY * (f32)gyroDeltaPitch / 100.0f; // Match mouse scaling factor
-		}
-		else {
-				gdx = 0.f;
-				gdy = 0.f;
+				// Retrieve raw gyro deltas (yaw and pitch)
+				gdx = (f32)gyroDeltaYaw;
+				gdy = (f32)gyroDeltaPitch;
+
+				// Apply sensitivity scaling using natural scale
+				gdx *= gyroSensX; // Horizontal sensitivity scaling
+				gdy *= gyroSensY; // Vertical sensitivity scaling
 		}
 
+		// Assign scaled deltas to output variables
 		if (dx) *dx = gdx;
 		if (dy) *dy = gdy;
 }
 
 void inputGyroGetAbsScaledDelta(f32* dx, f32* dy)
 {
-		f32 gdx, gdy;
-
-		if (gyroEnabled) {
-				// Use absolute values with gyro sensitivity scaling
-				gdx = fabsf(gyroSensX) * (f32)gyroDeltaYaw / 100.0f; // Match mouse scaling factor
-				gdy = fabsf(gyroSensY) * (f32)gyroDeltaPitch / 100.0f; // Match mouse scaling factor
-		}
-		else {
-				gdx = 0.f;
-				gdy = 0.f;
-		}
-
-		if (dx) *dx = gdx;
-		if (dy) *dy = gdy;
-}
-
-void inputGyroGetScaledDeltaCrosshair(f32* dx, f32* dy)
-{
 		// Default deltas to zero
 		f32 gdx = 0.f, gdy = 0.f;
 
 		if (gyroEnabled) {
-				// Scale movement for aim mode
-				gdx = gyroAimSensX * (f32)gyroDeltaYaw / 100.0f;
-				gdy = gyroAimSensY * (f32)gyroDeltaPitch / 100.0f;
+				// Retrieve raw gyro deltas (yaw and pitch)
+				gdx = (f32)gyroDeltaYaw;
+				gdy = (f32)gyroDeltaPitch;
+
+				// Apply absolute sensitivity scaling
+				gdx *= fabsf(gyroSensX); // Horizontal scaling with absolute sensitivity
+				gdy *= fabsf(gyroSensY); // Vertical scaling with absolute sensitivity
 		}
 
 		// Assign scaled deltas to output variables
@@ -1593,23 +1577,40 @@ void inputGyroGetScaledDeltaCrosshair(f32* dx, f32* dy)
 
 void inputGyroGetSpeed(f32* x, f32* y)
 {
-		*x = gyroSensX;
-		*y = gyroSensY;
+		// Return current sensitivity values
+		if (x) *x = gyroSensX;
+		if (y) *y = gyroSensY;
 }
 
 void inputGyroSetSpeed(f32 x, f32 y)
 {
+		// Set new sensitivity values
 		gyroSensX = x;
 		gyroSensY = y;
-		printf("Gyro Speed Updated - X: %.2f, Y: %.2f\n", gyroSensX, gyroSensY); // Debugging
+
+		// Optional debugging log
+		printf("Gyro Speed Updated - X: %.2f, Y: %.2f\n", gyroSensX, gyroSensY);
 }
 
-f32 inputGyroGetSpeedX(void) { return gyroSensX; }
-void inputGyroSetSpeedX(f32 x) { gyroSensX = x; }
+f32 inputGyroGetSpeedX(void)
+{
+		return gyroSensX; // Return horizontal sensitivity
+}
 
-f32 inputGyroGetSpeedY(void) { return gyroSensY; }
-void inputGyroSetSpeedY(f32 y) { gyroSensY = y; }
+void inputGyroSetSpeedX(f32 x)
+{
+		gyroSensX = x; // Set new horizontal sensitivity
+}
 
+f32 inputGyroGetSpeedY(void)
+{
+		return gyroSensY; // Return vertical sensitivity
+}
+
+void inputGyroSetSpeedY(f32 y)
+{
+		gyroSensY = y; // Set new vertical sensitivity
+}
 
 void inputGyroGetAimSpeed(f32* x, f32* y)
 {
@@ -1697,35 +1698,46 @@ void inputSetGyroMinThreshold(f32 threshold)
 
 void applyGyroThreshold(f32* deltaX, f32* deltaY, f32 threshold)
 {
-		// Define clamping limits for movement deltas
+		// Deadzone and smoothing parameters
+		const f32 deadzone = threshold; // Central deadzone for subtle movements
+		const f32 smoothingFactor = 0.85f; // Soft-tiered smoothing factor (closer to 1.0 means smoother)
 		const f32 maxDelta = 20.f; // Maximum allowable delta for gyro input
 		const f32 minDelta = -20.f; // Minimum allowable delta for gyro input
 
-		// Check and apply threshold for horizontal movement
+		// Dynamic scaling based on motion intensity (soft-tiered smoothing)
+		const f32 dynamicThreshold = threshold * smoothingFactor; // Reduce threshold dynamically
+
+		// Apply threshold and smoothing to horizontal movement
 		if (deltaX) {
-				if (fabsf(*deltaX) < threshold) {
-						*deltaX = 0.f; // Zero out horizontal movement if below threshold
+				if (fabsf(*deltaX) < deadzone) {
+						*deltaX = 0.f; // Zero out movement within deadzone
 				}
 				else {
+						// Apply soft-tiered smoothing for smaller movements
+						f32 adjustedX = (*deltaX > 0) ? (*deltaX - dynamicThreshold) : (*deltaX + dynamicThreshold);
+
 						// Clamp horizontal movement to allowable range
-						*deltaX = (*deltaX > maxDelta) ? maxDelta : ((*deltaX < minDelta) ? minDelta : *deltaX);
+						*deltaX = (adjustedX > maxDelta) ? maxDelta : ((adjustedX < minDelta) ? minDelta : adjustedX);
 				}
 		}
 
-		// Check and apply threshold for vertical movement
+		// Apply threshold and smoothing to vertical movement
 		if (deltaY) {
-				if (fabsf(*deltaY) < threshold) {
-						*deltaY = 0.f; // Zero out vertical movement if below threshold
+				if (fabsf(*deltaY) < deadzone) {
+						*deltaY = 0.f; // Zero out movement within deadzone
 				}
 				else {
+						// Apply soft-tiered smoothing for smaller movements
+						f32 adjustedY = (*deltaY > 0) ? (*deltaY - dynamicThreshold) : (*deltaY + dynamicThreshold);
+
 						// Clamp vertical movement to allowable range
-						*deltaY = (*deltaY > maxDelta) ? maxDelta : ((*deltaY < minDelta) ? minDelta : *deltaY);
+						*deltaY = (adjustedY > maxDelta) ? maxDelta : ((adjustedY < minDelta) ? minDelta : adjustedY);
 				}
 		}
 
-		// Debugging: Log threshold adjustments and clamped values for validation
-		printf("Gyro Threshold Applied - X: %.2f, Y: %.2f (Threshold: %.2f, ClampRange: [%.2f, %.2f])\n",
-				deltaX ? *deltaX : 0.f, deltaY ? *deltaY : 0.f, threshold, minDelta, maxDelta);
+		// Debugging: Log adjustments and clamped values for validation
+		printf("Gyro Threshold Applied - X: %.2f, Y: %.2f (Deadzone: %.2f, Threshold: %.2f, ClampRange: [%.2f, %.2f])\n",
+				deltaX ? *deltaX : 0.f, deltaY ? *deltaY : 0.f, deadzone, threshold, minDelta, maxDelta);
 }
 
 const char *inputGetContKeyName(u32 ck)
