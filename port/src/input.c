@@ -1026,6 +1026,9 @@ static inline void inputUpdateGyro(void)
 										// Apply axis mapping to gyro input
 										applyGyroAxisMapping(gyroData, &deltaX, &deltaY);
 
+										// Apply gyro aim mode logic
+										applyGyroAimMode(&deltaX, &deltaY);
+
 										// Apply activation mode logic
 										applyGyroActivationMode(&deltaX, &deltaY, inputGetGyroActivationMode());
 
@@ -1526,6 +1529,12 @@ s32 inputGetGyroAimMode(void)
 void inputSetGyroAimMode(s32 mode)
 {
 		g_GyroAimMode = mode;
+}
+
+void applyGyroAimMode(f32* deltaX, f32* deltaY)
+{
+		// Retrieve current Gyro Aim Mode (no changes to deltaX or deltaY here)
+		s32 gyroAimMode = inputGetGyroAimMode();
 }
 
 void inputGyroGetRawDelta(s32* dx, s32* dy, s32* dz)

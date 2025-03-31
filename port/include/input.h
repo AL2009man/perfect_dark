@@ -289,6 +289,7 @@ void inputGyroSetAimSpeedY(f32 y);
 // Gyro aim mode management
 s32 inputGetGyroAimMode(void);
 void inputSetGyroAimMode(s32 mode);
+void applyGyroAimMode(f32* deltaX, f32* deltaY);
 
 // Gyro axis mode management
 enum gyroaxismode inputGetGyroAxisMode(void);
