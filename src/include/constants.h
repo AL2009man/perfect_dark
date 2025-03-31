@@ -4756,7 +4756,7 @@ enum weaponnum {
 
 #define MPSETUP_MAXSETUPS 128
 #define MPSETUP_MAXNAME 18
-#define MPSETUP_BLOCKSIZE 64
+#define MPSETUP_BLOCKSIZE 80
 
 #endif
 
