@@ -1554,9 +1554,9 @@ void inputGyroGetScaledDelta(f32* dx, f32* dy)
 				gdx = (f32)gyroDeltaYaw;
 				gdy = (f32)gyroDeltaPitch;
 
-				// Apply sensitivity scaling using natural scale
-				gdx *= gyroSensX; // Horizontal sensitivity scaling
-				gdy *= gyroSensY; // Vertical sensitivity scaling
+				// Apply baseline sensitivity adjustment
+				gdx *= (gyroSensX * 0.300000f); // Override baseline
+				gdy *= (gyroSensY * 0.300000f); // Ensure all scaling starts at 0.3
 		}
 
 		// Assign scaled deltas to output variables
@@ -1574,12 +1574,12 @@ void inputGyroGetAbsScaledDelta(f32* dx, f32* dy)
 				gdx = (f32)gyroDeltaYaw;
 				gdy = (f32)gyroDeltaPitch;
 
-				// Apply absolute sensitivity scaling
-				gdx *= fabsf(gyroSensX); // Horizontal scaling with absolute sensitivity
-				gdy *= fabsf(gyroSensY); // Vertical scaling with absolute sensitivity
+				// Apply **negative scaling** (higher sensitivity = smaller movement)
+				gdx /= (gyroSensX != 0.f) ? gyroSensX : 1.f; // Prevent division by zero
+				gdy /= (gyroSensY != 0.f) ? gyroSensY : 1.f;
 		}
 
-		// Assign scaled deltas to output variables
+		// Assign deltas to output variables
 		if (dx) *dx = gdx;
 		if (dy) *dy = gdy;
 }
@@ -1621,25 +1621,63 @@ void inputGyroSetSpeedY(f32 y)
 		gyroSensY = y; // Set new vertical sensitivity
 }
 
-void inputGyroGetAimSpeed(f32* x, f32* y)
+
+void inputGyroGetScaledDeltaCrosshair(f32* dx, f32* dy)
 {
-		*x = gyroAimSensX;
-		*y = gyroAimSensY;
+    // Default deltas to zero
+    f32 gdx = 0.f, gdy = 0.f;
+
+    if (gyroEnabled) {
+        // Retrieve raw gyro deltas (yaw and pitch) for crosshair movement
+        gdx = (f32)gyroDeltaYaw;
+        gdy = (f32)gyroDeltaPitch;
+
+        // Apply sensitivity scaling (consistent with mouse scaling method)
+        gdx *= gyroAimSensX / 100.0f; // Horizontal sensitivity scaling
+        gdy *= gyroAimSensY / 100.0f; // Vertical sensitivity scaling
+    }
+
+    // Assign scaled deltas to output variables
+    if (dx) *dx = gdx;
+    if (dy) *dy = gdy;
 }
 
-void inputGyroSetAimSpeed(f32 x, f32 y)
+void inputGyroGetCrosshairSpeed(f32* x, f32* y)
 {
+		// Return current crosshair sensitivity values
+		if (x) *x = gyroAimSensX;
+		if (y) *y = gyroAimSensY;
+}
+
+void inputGyroSetCrosshairSpeed(f32 x, f32 y)
+{
+		// Set new crosshair sensitivity values
 		gyroAimSensX = x;
 		gyroAimSensY = y;
-		printf("Gyro Aim Speed Updated - X: %.2f, Y: %.2f\n", gyroAimSensX, gyroAimSensY); // Debugging
+
+		// Optional debugging log
+		printf("Gyro Crosshair Speed Updated - X: %.2f, Y: %.2f\n", gyroAimSensX, gyroAimSensY);
 }
 
-f32 inputGyroGetAimSpeedX(void) { return gyroAimSensX; }
-void inputGyroSetAimSpeedX(f32 x) { gyroAimSensX = x; }
+f32 inputGyroGetAimSpeedX(void)
+{
+		return gyroAimSensX;
+}
 
-f32 inputGyroGetAimSpeedY(void) { return gyroAimSensY; }
-void inputGyroSetAimSpeedY(f32 y) { gyroAimSensY = y; }
+void inputGyroSetAimSpeedX(f32 x)
+{
+		gyroAimSensX = x;
+}
 
+f32 inputGyroGetAimSpeedY(void)
+{
+		return gyroAimSensY;
+}
+
+void inputGyroSetAimSpeedY(f32 y)
+{
+		gyroAimSensY = y;
+}
 
 s32 inputGetGyroActivationMode(void)
 {
@@ -1943,8 +1981,8 @@ PD_CONSTRUCTOR static void inputConfigInit(void)
 	configRegisterInt("Input.GyroAimMode", &g_GyroAimMode, GYRO_AIM_MODE_CAMERA, GYRO_AIM_MODE_BOTH);
 	configRegisterFloat("Input.gyroSpeedX", &gyroSensX, -10.f, 10.f);
 	configRegisterFloat("Input.gyroSpeedY", &gyroSensY, -10.f, 10.f);
-	configRegisterFloat("Input.gyroAimSpeedX", &gyroAimSensX, -10.f, 10.f);
-	configRegisterFloat("Input.gyroAimSpeedY", &gyroAimSensY, -10.f, 10.f);
+	configRegisterFloat("Input.gyroAimSensX", &gyroAimSensX, -10.f, 10.f);
+	configRegisterFloat("Input.gyroAimSensY", &gyroAimSensY, -10.f, 10.f);
 	configRegisterInt("Input.FakeGamepads", &fakeControllers, 0, 4);
 	configRegisterInt("Input.FirstGamepadNum", &firstController, 0, 3);
 	configRegisterInt("Input.UseHIDAPI", &useHIDAPI, 0, 1);
