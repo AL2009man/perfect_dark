@@ -721,6 +721,8 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 			(allowc1x || allowc1y) &&
 			(PLAYER_EXTCFG().gyroaimmode == GYRO_AIM_MODE_CROSSHAIR ||
 					PLAYER_EXTCFG().gyroaimmode == GYRO_AIM_MODE_BOTH);
+		const f32 targetFPS = 60.f;
+	const f32 frameScale = targetFPS / (f32)g_Vars.lvupdate240;
 
 #endif
 

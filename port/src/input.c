@@ -6,6 +6,7 @@
 #include <PR/os_cont.h>
 #include "platform.h"
 #include "input.h"
+#include "../include/types.h"
 #include "video.h"
 #include "config.h"
 #include "utils.h"
@@ -1554,9 +1555,21 @@ void inputGyroGetScaledDelta(f32* dx, f32* dy)
 				gdx = (f32)gyroDeltaYaw;
 				gdy = (f32)gyroDeltaPitch;
 
-				// Apply baseline sensitivity adjustment
-				gdx *= (gyroSensX * 0.300000f); // Override baseline
-				gdy *= (gyroSensY * 0.300000f); // Ensure all scaling starts at 0.3
+				// **Normalize Scaling Based on Frame Rate**
+				static Uint64 lastTick = 0;
+				Uint64 currentTick = SDL_GetTicks();
+				f32 frameTime = (lastTick > 0) ? ((f32)(currentTick - lastTick) / 1000.0f) : (1.0f / 60.0f);
+				lastTick = currentTick;
+
+				// Ensure frameTime is never too small
+				frameTime = fmaxf(frameTime, 1.0f / 240.0f); // Prevent extreme scaling at high FPS
+
+				// Apply normalized sensitivity scaling
+				const f32 targetFPS = 60.f;
+				const f32 frameScale = targetFPS * frameTime;
+
+				gdx *= (gyroSensX * 0.300000f) * frameScale;
+				gdy *= (gyroSensY * 0.300000f) * frameScale;
 		}
 
 		// Assign scaled deltas to output variables
@@ -1574,9 +1587,12 @@ void inputGyroGetAbsScaledDelta(f32* dx, f32* dy)
 				gdx = (f32)gyroDeltaYaw;
 				gdy = (f32)gyroDeltaPitch;
 
-				// Apply **negative scaling** (higher sensitivity = smaller movement)
-				gdx /= (gyroSensX != 0.f) ? gyroSensX : 1.f; // Prevent division by zero
-				gdy /= (gyroSensY != 0.f) ? gyroSensY : 1.f;
+				// Apply absolute scaling, preventing division by excessively small values
+				const f32 minSensX = fmaxf(gyroSensX, 0.1f); // Prevent division by near-zero
+				const f32 minSensY = fmaxf(gyroSensY, 0.1f);
+
+				gdx /= minSensX;
+				gdy /= minSensY;
 		}
 
 		// Assign deltas to output variables
