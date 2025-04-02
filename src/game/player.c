@@ -3708,8 +3708,8 @@ void playerTick(bool arg0)
 						}
 
 						// Apply movement separately for each mode
-						sp178 += gdy_cam * 0.00025f;  // Camera movement
-						sp174 -= gdx_cam * 0.00025f;
+						sp178 += gdy_cam * 0.00022f;  // Camera movement
+						sp174 -= gdx_cam * 0.00022f;
 
 						g_Vars.currentplayer->swivelpos[0] += gdx_crosshair; // Crosshair movement
 						g_Vars.currentplayer->swivelpos[1] += gdy_crosshair;

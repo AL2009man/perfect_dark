@@ -111,14 +111,14 @@ static f32 mouseSensY = 1.5f;
 
 // Gyro aiming variables
 static s32 gyroEnabled = 1;
-static f32 gyroYaw, gyroPitch, gyroRoll;             // Current gyro values for yaw, pitch, and roll
-static f32 gyroDeltaYaw, gyroDeltaPitch, gyroDeltaRoll; // Delta values (change) for each axis
-static f32 gyroSensX = 1.0f;                        // Sensitivity for Yaw or Roll
-static f32 gyroSensY = 1.0f;                        // Sensitivity for Pitch
-static f32 gyroAimSensX = 5.0f; // Speed for aiming horizontally (Yaw/Roll)
-static f32 gyroAimSensY = 5.0f; // Speed for aiming vertically (Pitch)
-static s32 g_GyroAxisMode = GYRO_YAW; // Default axis mode (Yaw)
-static s32 g_GyroAimMode = GYRO_AIM_MODE_CAMERA; // Default aim mode
+static f32 gyroYaw, gyroPitch, gyroRoll;
+static f32 gyroDeltaYaw, gyroDeltaPitch, gyroDeltaRoll;
+static f32 gyroSensX = 2.5f;
+static f32 gyroSensY = 2.5f;
+static f32 gyroAimSensX = 1.0f; 
+static f32 gyroAimSensY = 1.0f;
+static s32 g_GyroAxisMode = GYRO_YAW; 
+static s32 g_GyroAimMode = GYRO_AIM_MODE_BOTH;
 static f32 gyroMinThreshold = 0.0f;
 static s32 g_GyroActivationMode = GYRO_ALWAYS_ON;
 
@@ -1569,7 +1569,7 @@ void inputGyroGetScaledDelta(f32* dx, f32* dy)
 				const f32 frameScale = targetFPS * frameTime;
 
 				// Reduce baseline sensitivity slightly for smoother input
-				const f32 baselineSensitivityFactor = 0.25f; // Lowered from 0.30f
+				const f32 baselineSensitivityFactor = 0.26f; // Lowered from 0.30f
 
 				gdx *= (gyroSensX * baselineSensitivityFactor) * frameScale;
 				gdy *= (gyroSensY * baselineSensitivityFactor) * frameScale;
@@ -1604,8 +1604,8 @@ void inputGyroGetAbsScaledDelta(f32* dx, f32* dy)
         const f32 frameScale = targetFPS * frameTime;
 
         // Apply absolute scaling with refined sensitivity handling
-        const f32 minSensX = fmaxf(fabsf(gyroSensX), 0.5f); // Lowered to 0.05f for finer control
-        const f32 minSensY = fmaxf(fabsf(gyroSensY), 0.5f);
+        const f32 minSensX = fmaxf(fabsf(gyroSensX), 0.022f); // Lowered to 0.05f for finer control
+        const f32 minSensY = fmaxf(fabsf(gyroSensY), 0.022f);
 
         gdx = (gdx / minSensX) * frameScale;
         gdy = (gdy / minSensY) * frameScale;
