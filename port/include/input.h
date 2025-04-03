@@ -252,25 +252,23 @@ void inputMouseSetSpeed(f32 x, f32 y);
 s32 inputMouseIsEnabled(void);
 void inputMouseEnable(s32 enabled);
 
-// Gyro controller initialization and management
+// Gyro Controller Initialization & Management
 void initializeGyroController(void);
 s32 inputGyroIsEnabled(void);
 void inputGyroEnable(s32 enabled);
 
-// Raw gyro movement retrieval
+// Raw Gyro Movement Retrieval
 void inputGyroGetRawDelta(s32* dx, s32* dy, s32* dz);
 
-// Scaled gyro movement retrieval
+// Scaled Gyro Movement Retrieval
 void inputGyroGetScaledDelta(f32* dx, f32* dy);
+void inputGyroGetAbsScaledDelta(f32* dx, f32* dy); // Returns 0,0 if gyro is disabled
 
-// returns changes in gyro movement since last frame, scaled by absolute sensitivity
-// returns 0, 0 when the gyro is disabled
-void inputGyroGetAbsScaledDelta(f32* dx, f32* dy);
-
-// Scaled gyro movement retrieval for crosshair
+// Gyro Crosshair Movement Retrieval & Adjustment
 void inputGyroGetScaledDeltaCrosshair(f32* dx, f32* dy);
+void inputGyroGetCrosshairDelta(f32* dx, f32* dy);
 
-// Gyro's FreeLook sensitivity management
+// Gyro FreeLook Sensitivity Management
 void inputGyroGetSpeed(f32* x, f32* y);
 void inputGyroSetSpeed(f32 x, f32 y);
 f32 inputGyroGetSpeedX(void);
@@ -278,7 +276,7 @@ void inputGyroSetSpeedX(f32 x);
 f32 inputGyroGetSpeedY(void);
 void inputGyroSetSpeedY(f32 y);
 
-// Gyro's Aim Mode sensitivity management
+// Gyro Aim Mode Sensitivity Management
 void inputGyroGetAimSpeed(f32* x, f32* y);
 void inputGyroSetAimSpeed(f32 x, f32 y);
 f32 inputGyroGetAimSpeedX(void);
@@ -286,21 +284,30 @@ void inputGyroSetAimSpeedX(f32 x);
 f32 inputGyroGetAimSpeedY(void);
 void inputGyroSetAimSpeedY(f32 y);
 
-// Gyro aim mode management
+// Gyro Aim Mode Management
 s32 inputGetGyroAimMode(void);
 void inputSetGyroAimMode(s32 mode);
+void applyGyroAimMode(f32* deltaX, f32* deltaY);
 
-// Gyro axis mode management
+// Gyro Axis Mapping Management
 enum gyroaxismode inputGetGyroAxisMode(void);
 void inputSetGyroAxisMode(enum gyroaxismode mode);
 void applyGyroAxisMapping(float gyroData[3], f32* deltaX, f32* deltaY);
 
-// Gyro activation mode management
+// Gyro Activation Mode Management
 s32 inputGetGyroActivationMode(void);
 void inputSetGyroActivationMode(s32 mode);
 void applyGyroActivationMode(f32* deltaX, f32* deltaY, s32 activationMode);
 
-// Gyro movement threshold management
+// Gyro Crosshair Sensitivity Management (Renamed for Accuracy)
+void inputGyroGetCrosshairSpeed(f32* x, f32* y);
+void inputGyroSetCrosshairSpeed(f32 x, f32 y);
+f32 inputGyroGetCrosshairSpeedX(void);
+void inputGyroSetCrosshairSpeedX(f32 x);
+f32 inputGyroGetCrosshairSpeedY(void);
+void inputGyroSetCrosshairSpeedY(f32 y);
+
+// Gyro Movement Threshold Management
 void applyGyroThreshold(f32* deltaX, f32* deltaY, f32 threshold);
 f32 inputGetGyroMinThreshold(void);
 void inputSetGyroMinThreshold(f32 threshold);
