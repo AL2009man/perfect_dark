@@ -43,6 +43,11 @@
 #include "input.h"
 #include "video.h"
 
+// Provide a fallback implementation if needed
+#ifndef fmax
+#define fmax(a, b) ((a) > (b) ? (a) : (b))
+#endif
+
 static void bgunProcessQuickDetonate(struct movedata *data, u32 c1buttons, u32 c1buttonsthisframe, u32 buttons1, u32 buttons2) {
 	if ((((c1buttons & (buttons1)) && (c1buttonsthisframe & (buttons2)))
 			|| ((c1buttons & (buttons2)) && (c1buttonsthisframe & (buttons1))))
@@ -721,7 +726,7 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 			(allowc1x || allowc1y) &&
 			(PLAYER_EXTCFG().gyroaimmode == GYRO_AIM_MODE_CROSSHAIR ||
 					PLAYER_EXTCFG().gyroaimmode == GYRO_AIM_MODE_BOTH);
-		const f32 targetFPS = 60.f;
+	const f32 targetFPS = 60.f;
 	const f32 frameScale = targetFPS / (f32)g_Vars.lvupdate240;
 
 #endif
@@ -809,6 +814,9 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 					inputGyroGetScaledDeltaCrosshair(&gyroCrossDx, &gyroCrossDy);
 					g_Vars.currentplayer->swivelpos[0] += gyroCrossDx;
 					g_Vars.currentplayer->swivelpos[1] += gyroCrossDy;
+
+					// Ensure activation logic considers gyro input
+					allowmcross = allowmcross || (gyroCrossDx || gyroCrossDy);
 			}
 
 			// Apply pitch inversion correctly
@@ -822,6 +830,7 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 			fVar25 += movedata.gyrolookdx * gyroscale;
 			fVar25 += movedata.gyrolookdy * gyroscale;
 	}
+
 
 	// Always pause with ESC key
 	if (allowc1buttons && g_Vars.currentplayer->isdead == false && g_Vars.currentplayer->pausemode == PAUSEMODE_UNPAUSED) {
