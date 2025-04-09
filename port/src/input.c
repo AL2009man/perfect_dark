@@ -6,6 +6,7 @@
 #include <PR/os_cont.h>
 #include "platform.h"
 #include "input.h"
+#include "gyrospace.h"
 #include "../include/types.h"
 #include "video.h"
 #include "config.h"
@@ -1027,7 +1028,7 @@ void autoCalibrateGyro() {
 		static f32 accumulatedOffsetY = 0.f;
 		static s32 sampleCount = 0;
 
-		// **Reset offsets at the beginning of calibration**
+		// Reset offsets at the beginning of calibration
 		if (sampleCount == 0) {
 				accumulatedOffsetX = 0.f;
 				accumulatedOffsetY = 0.f;
@@ -1035,14 +1036,14 @@ void autoCalibrateGyro() {
 				gyroOffsetY = 0.f;
 		}
 
-		// **Only collect calibration data when movement is almost zero**
+		// Only collect calibration data when movement is almost zero
 		if (fabsf(gyroDeltaYaw) < 0.02f && fabsf(gyroDeltaPitch) < 0.02f) {
 				accumulatedOffsetX += gyroDeltaYaw;
 				accumulatedOffsetY += gyroDeltaPitch;
 				sampleCount++;
 		}
 
-		// **Apply calibration offsets after 200 stable frames**
+		// Apply calibration offsets after 200 stable frames
 		if (sampleCount >= 200) {
 				gyroOffsetX = accumulatedOffsetX / sampleCount;
 				gyroOffsetY = accumulatedOffsetY / sampleCount;
@@ -1061,10 +1062,10 @@ static inline void inputUpdateGyro(void)
 
 		float gyroData[3];
 
-		// **Check if any controllers are connected**
+		// Check if any controllers are connected
 		if (SDL_NumJoysticks() == 0 || connectedMask == 0)
 		{
-				// **No controllers detected—reset gyro offsets to prevent drift**
+				// No controllers detected—reset gyro offsets to prevent drift
 				gyroYaw = 0.f;
 				gyroPitch = 0.f;
 				gyroRoll = 0.f;
@@ -1085,7 +1086,7 @@ static inline void inputUpdateGyro(void)
 						SDL_GameController* controller = SDL_GameControllerFromInstanceID(i);
 						if (controller)
 						{
-								// **Handle Controller Reconnection Properly**
+								// Handle Controller Reconnection Properly
 								bool hasGyro = SDL_GameControllerHasSensor(controller, SDL_SENSOR_GYRO);
 								bool hasAccel = SDL_GameControllerHasSensor(controller, SDL_SENSOR_ACCEL);
 
@@ -1093,14 +1094,14 @@ static inline void inputUpdateGyro(void)
 								{
 										sysLogPrintf(LOG_WARNING, "Controller %d reconnected. Re-enabling gyro.", i);
 
-										// **Reset gyro offsets to prevent spinning**
+										// Reset gyro offsets to prevent spinning
 										gyroOffsetX = 0.f;
 										gyroOffsetY = 0.f;
 										gyroYaw = 0.f;
 										gyroPitch = 0.f;
 										gyroRoll = 0.f;
 
-										// **Re-enable gyro sensors**
+										// Re-enable gyro sensors
 										SDL_GameControllerSetSensorEnabled(controller, SDL_SENSOR_GYRO, SDL_TRUE);
 										SDL_GameControllerSetSensorEnabled(controller, SDL_SENSOR_ACCEL, SDL_TRUE);
 								}
@@ -1123,13 +1124,13 @@ static inline void inputUpdateGyro(void)
 										applyGyroActivationMode(&deltaX, &deltaY, inputGetGyroActivationMode());
 										applyGyroThreshold(&deltaX, &deltaY, inputGetGyroMinThreshold());
 
-										// **Perform auto-calibration ONLY when the controller is connected
+										// Perform auto-calibration ONLY when the controller is connected
 										if (inputGyroAutoCalibrationIsEnabled() && SDL_NumJoysticks() > 0)
 										{
 												autoCalibrateGyro();
 										}
 
-										// Apply updated offsets **immediately after calibration
+										// Apply updated offsets immediately after calibration
 										deltaX -= gyroOffsetX;
 										deltaY -= gyroOffsetY;
 
@@ -1609,12 +1610,104 @@ void applyGyroAxisMapping(float gyroData[3], f32* deltaX, f32* deltaY)
 				break;
 
 		case GYRO_LOCAL:
-				*deltaX = -gyroData[1]; // Yaw for horizontal movement
-				*deltaY = -gyroData[0]; // Pitch for vertical movement
-				*deltaX += gyroData[2]; // Add Roll for horizontal movement
-				break;
+		{
+				// Apply dead zone to prevent drift
+				if (fabsf(gyroData[0]) < 0.01f) gyroData[0] = 0.f;
+				if (fabsf(gyroData[1]) < 0.01f) gyroData[1] = 0.f;
+				if (fabsf(gyroData[2]) < 0.01f) gyroData[2] = 0.f;
 
-				// Add other modes (GYRO_LOCAL, GYRO_PLAYER, GYRO_SPACE))
+				// Check for NaN values before proceeding
+				if (isnan(gyroData[0]) || isnan(gyroData[1]) || isnan(gyroData[2])) {
+						*deltaX = 0.f;
+						*deltaY = 0.f;
+						return;
+				}
+
+				// Ensure yaw, pitch, and roll match GYRO_YAW and GYRO_ROLL behavior
+				float processedYaw = -gyroData[1];  // Yaw for horizontal movement
+				float processedRoll = gyroData[2];   // Roll for horizontal movement
+				float processedPitch = -gyroData[0]; // Pitch for vertical movement
+
+				// Apply Local Space transformation
+				Vector3 transformedGyro = TransformToLocalSpace(
+						processedYaw, processedPitch, processedRoll,
+						1.0f, 1.0f, 1.0f, 0.0f // Sensitivities remain constant
+				);
+
+				// Assign transformed values, keeping them aligned with YAW & ROLL logic
+				*deltaX = transformedGyro.x;
+				*deltaY = transformedGyro.y;
+		}
+		break;
+
+		case GYRO_PLAYER:
+		{
+				// Apply dead zone to prevent drift
+				if (fabsf(gyroData[0]) < 0.01f) gyroData[0] = 0.f;
+				if (fabsf(gyroData[1]) < 0.01f) gyroData[1] = 0.f;
+				if (fabsf(gyroData[2]) < 0.01f) gyroData[2] = 0.f;
+
+				// Check for NaN values before proceeding
+				if (isnan(gyroData[0]) || isnan(gyroData[1]) || isnan(gyroData[2])) {
+						*deltaX = 0.f;
+						*deltaY = 0.f;
+						return;
+				}
+
+				// Get gravity vector for Player Space transformations
+				Vector3 gravityVector = GetGravityVector();
+
+				// Ensure yaw, pitch, and roll match player-relative transformation
+				float processedYaw = -gyroData[1];
+				float processedRoll = gyroData[2];
+				float processedPitch = -gyroData[0];
+
+				// Apply Player Space transformation with gravity alignment
+				Vector3 transformedGyro = TransformToPlayerSpace(
+						processedYaw, processedPitch, processedRoll,
+						gravityVector, 1.0f, 1.0f, 1.0f
+				);
+
+				// Assign transformed values, ensuring proper Player Space movement
+				*deltaX = transformedGyro.x;
+				*deltaY = transformedGyro.y;
+		}
+		break;
+
+		case GYRO_WORLD:
+		{
+				// Apply dead zone to prevent drift
+				if (fabsf(gyroData[0]) < 0.01f) gyroData[0] = 0.f;
+				if (fabsf(gyroData[1]) < 0.01f) gyroData[1] = 0.f;
+				if (fabsf(gyroData[2]) < 0.01f) gyroData[2] = 0.f;
+
+				// Check for NaN values before proceeding
+				if (isnan(gyroData[0]) || isnan(gyroData[1]) || isnan(gyroData[2])) {
+						*deltaX = 0.f;
+						*deltaY = 0.f;
+						return;
+				}
+
+				// Retrieve gravity vector for World Space alignment
+				Vector3 gravityVector = GetGravityVector();
+
+				// Process gyro inputs, ensuring global alignment
+				float processedYaw = -gyroData[1];
+				float processedRoll = gyroData[2];
+				float processedPitch = -gyroData[0];
+
+				// Apply World Space transformation with gravity influence
+				Vector3 transformedGyro = TransformToWorldSpace(
+						processedYaw, processedPitch, processedRoll,
+						gravityVector, 1.0f, 1.0f, 1.0f
+				);
+
+				// Assign transformed values, keeping them aligned with global world movement
+				*deltaX = transformedGyro.x;
+				*deltaY = transformedGyro.y;
+		}
+		break;
+
 		default:
 				*deltaX = 0.f; // Default to zero if mode is unrecognized
 				*deltaY = 0.f;
@@ -1647,74 +1740,48 @@ void inputGyroGetRawDelta(s32* dx, s32* dy, s32* dz)
 
 void inputGyroGetScaledDelta(f32* dx, f32* dy)
 {
-		// Ensure input pointers are valid
-		if (!dx || !dy) return;
+		if (!dx || !dy) return; // Safety check
 
-		// Default deltas to zero
 		f32 gdx = 0.f, gdy = 0.f;
 
 		if (gyroEnabled) {
-				// Retrieve raw gyro deltas (yaw and pitch)
-				gdx = (f32)gyroDeltaYaw;
-				gdy = (f32)gyroDeltaPitch;
+				// Ensure values aren't NaN before applying scaling
+				if (!isnan(gyroDeltaYaw) && !isnan(gyroDeltaPitch)) {
+						gdx = gyroSensX * (f32)gyroDeltaYaw / 15.0f;
+						gdy = gyroSensY * (f32)gyroDeltaPitch / 15.0f;
 
-				// Prevent frame time anomalies
-				static Uint64 lastTick = 0;
-				Uint64 currentTick = SDL_GetTicks();
-				f32 frameTime = (lastTick > 0) ? ((f32)(currentTick - lastTick) / 1000.0f) : (1.0f / 60.0f);
-				lastTick = currentTick;
-
-				// Ensure frameTime remains in a stable range
-				frameTime = fmaxf(frameTime, 1.0f / 240.0f);
-
-				// Sensitivity Scaling
-				const f32 targetFPS = 60.f;
-				const f32 frameScale = targetFPS * frameTime;
-
-				// Reduce sensitivity slightly to smooth input
-				gdx *= gyroSensX * 0.26f * frameScale;
-				gdy *= gyroSensY * 0.26f * frameScale;
+						// Prevent excessive movement spikes
+						gdx = fminf(fmaxf(gdx, -2.0f), 2.0f);
+						gdy = fminf(fmaxf(gdy, -2.0f), 2.0f);
+				}
+				else {
+						gdx = 0.f;
+						gdy = 0.f;
+				}
 		}
 
-		// Assign scaled deltas
 		*dx = gdx;
 		*dy = gdy;
 }
 
 void inputGyroGetAbsScaledDelta(f32* dx, f32* dy)
 {
-    // Default deltas to zero
-    f32 gdx = 0.f, gdy = 0.f;
+		if (!dx || !dy) return; // Safety check
 
-    if (gyroEnabled) {
-        // Retrieve raw gyro deltas (yaw and pitch)
-        gdx = (f32)gyroDeltaYaw;
-        gdy = (f32)gyroDeltaPitch;
+		f32 gdx = 0.f, gdy = 0.f;
 
-        // Normalize Scaling Based on Frame Rate
-        static Uint64 lastTick = 0;
-        Uint64 currentTick = SDL_GetTicks();
-        f32 frameTime = (lastTick > 0) ? ((f32)(currentTick - lastTick) / 1000.0f) : (1.0f / 60.0f);
-        lastTick = currentTick;
+		if (gyroEnabled) {
+				// Apply absolute scaling to mimic mouse behavior
+				gdx = fabsf(gyroSensX) * (f32)gyroDeltaYaw / 15.0f;
+				gdy = fabsf(gyroSensY) * (f32)gyroDeltaPitch / 15.0f;
 
-        // Ensure frameTime is within a stable range
-        frameTime = fmaxf(frameTime, 1.0f / 240.0f);
+				// Clamp values for stability
+				gdx = fminf(fmaxf(gdx, -2.0f), 2.0f);
+				gdy = fminf(fmaxf(gdy, -2.0f), 2.0f);
+		}
 
-        // Apply frame-rate normalization scaling
-        const f32 targetFPS = 60.f;
-        const f32 frameScale = targetFPS * frameTime;
-
-        // Apply absolute scaling with refined sensitivity handling
-        const f32 minSensX = fmaxf(fabsf(gyroSensX), 0.030f);
-        const f32 minSensY = fmaxf(fabsf(gyroSensY), 0.030f);
-
-        gdx = (gdx / minSensX) * frameScale;
-        gdy = (gdy / minSensY) * frameScale;
-    }
-
-    // Assign deltas to output variables
-    if (dx) *dx = gdx;
-    if (dy) *dy = gdy;
+		*dx = gdx;
+		*dy = gdy;
 }
 
 void inputGyroGetSpeed(f32* x, f32* y)
