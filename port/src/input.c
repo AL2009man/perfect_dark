@@ -122,7 +122,7 @@ static s32 g_GyroAxisMode = GYRO_YAW;
 static s32 g_GyroAimMode = GYRO_AIM_MODE_BOTH;
 static f32 gyroMinThreshold = 0.06f;
 static s32 g_GyroActivationMode = GYRO_ALWAYS_ON;
-static s32 gyroAutoCalibration = 1;
+static s32 gyroAutoCalibration = 0;
 static f32 gyroOffsetX = 0.f;
 static f32 gyroOffsetY = 0.f;
 
@@ -1022,13 +1022,23 @@ void closeGyroController() {
 		}
 }
 
-
 void autoCalibrateGyro() {
 		static f32 accumulatedOffsetX = 0.f;
 		static f32 accumulatedOffsetY = 0.f;
 		static s32 sampleCount = 0;
+		static bool calibrating = true;
 
-		// Reset offsets at the beginning of calibration
+		if (!inputGyroAutoCalibrationIsEnabled()) {
+				return;
+		}
+
+		// Validate gyro sensor readings before processing
+		if (isnan(gyroDeltaYaw) || isinf(gyroDeltaYaw) || isnan(gyroDeltaPitch) || isinf(gyroDeltaPitch)) {
+				printf("WARNING: Invalid gyro data detected.\n");
+				return;
+		}
+
+		// Reset calibration data at the beginning of the process
 		if (sampleCount == 0) {
 				accumulatedOffsetX = 0.f;
 				accumulatedOffsetY = 0.f;
@@ -1036,19 +1046,29 @@ void autoCalibrateGyro() {
 				gyroOffsetY = 0.f;
 		}
 
-		// Only collect calibration data when movement is almost zero
-		if (fabsf(gyroDeltaYaw) < 0.02f && fabsf(gyroDeltaPitch) < 0.02f) {
+		// Accumulate offset values when movement is minimal
+		if (calibrating && fabsf(gyroDeltaYaw) < 0.02f && fabsf(gyroDeltaPitch) < 0.02f) {
 				accumulatedOffsetX += gyroDeltaYaw;
 				accumulatedOffsetY += gyroDeltaPitch;
 				sampleCount++;
 		}
 
-		// Apply calibration offsets after 200 stable frames
+		// Apply calibration offsets once enough samples are gathered
 		if (sampleCount >= 200) {
-				gyroOffsetX = accumulatedOffsetX / sampleCount;
-				gyroOffsetY = accumulatedOffsetY / sampleCount;
+				if (sampleCount > 0) {
+						gyroOffsetX = accumulatedOffsetX / sampleCount;
+						gyroOffsetY = accumulatedOffsetY / sampleCount;
+				}
+				else {
+						gyroOffsetX = 0.f;
+						gyroOffsetY = 0.f;
+						printf("WARNING: Sample count was zero; skipping calibration.\n");
+				}
 
-				sampleCount = 0; // Reset sample count after applying offsets
+				// Reset sample count after applying offsets
+				sampleCount = 0;
+				calibrating = false;
+
 				printf("Gyro Auto-Calibration Completed! OffsetX: %.4f, OffsetY: %.4f\n", gyroOffsetX, gyroOffsetY);
 		}
 }
@@ -1955,13 +1975,7 @@ void applyGyroThreshold(f32* deltaX, f32* deltaY, f32 threshold)
 {
 		if (!deltaX || !deltaY) return;
 
-		// **Check if a controller is connected; prevent forced drift**
-		if (SDL_NumJoysticks() == 0 || connectedMask == 0) {
-				*deltaX = 0.f;
-				*deltaY = 0.f;
-				return;
-		}
-
+		// Detect if the active controller is a Nintendo Switch controller
 		bool isNintendoController = false;
 		if (pads[0]) {
 				SDL_GameControllerType controllerType = SDL_GameControllerGetType(pads[0]);
@@ -1969,32 +1983,14 @@ void applyGyroThreshold(f32* deltaX, f32* deltaY, f32 threshold)
 						controllerType == SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_JOYCON_PAIR);
 		}
 
-		// Adjust deadzone dynamically
-		const f32 baseDeadzone = isNintendoController ? fmaxf(threshold, 0.08f) : fmaxf(threshold, 0.05f);
-		const f32 maxDelta = fmaxf(15.f, threshold * 3.f);
-		const f32 minDelta = -maxDelta;
+		// Define dedicated deadzones per controller type
+		const f32 nintendoDeadzone = fmaxf(threshold * 0.85f, 0.07f);
+		const f32 baseDeadzone = fmaxf(threshold * 0.75f, 0.04f);
+		const f32 appliedDeadzone = isNintendoController ? nintendoDeadzone : baseDeadzone;
 
-		// **Only apply offsets when gyro input is valid**
-		if (gyroEnabled) {
-				*deltaX -= gyroOffsetX;
-				*deltaY -= gyroOffsetY;
-		}
-
-		// **Process X-axis (yaw)**
-		if (fabsf(*deltaX) < baseDeadzone) {
-				*deltaX = 0.f;
-		}
-		else {
-				*deltaX = fmaxf(fminf(*deltaX, maxDelta), minDelta);
-		}
-
-		// **Process Y-axis (pitch)**
-		if (fabsf(*deltaY) < baseDeadzone) {
-				*deltaY = 0.f;
-		}
-		else {
-				*deltaY = fmaxf(fminf(*deltaY, maxDelta), minDelta);
-		}
+		// Apply minimum velocity threshold to prevent unintended movement
+		if (fabsf(*deltaX) < appliedDeadzone) *deltaX = 0.f;
+		if (fabsf(*deltaY) < appliedDeadzone) *deltaY = 0.f;
 }
 
 const char *inputGetContKeyName(u32 ck)
