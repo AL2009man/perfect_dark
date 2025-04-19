@@ -120,7 +120,7 @@ static f32 gyroAimSensX = 5.0f;
 static f32 gyroAimSensY = 5.0f;
 static s32 g_GyroAxisMode = GYRO_YAW; 
 static s32 g_GyroAimMode = GYRO_AIM_MODE_BOTH;
-static f32 gyroMinThreshold = 0.06f;
+static f32 gyroMinThreshold = 0.07f;
 static s32 g_GyroActivationMode = GYRO_ALWAYS_ON;
 static s32 gyroAutoCalibration = 0;
 static f32 gyroOffsetX = 0.f;
@@ -268,6 +268,7 @@ void inputSetDefaultKeyBinds(s32 cidx, s32 n64mode)
 			{ CK_C_L,    SDL_CONTROLLER_BUTTON_DPAD_LEFT     },
 			{ CK_ACCEPT, SDL_CONTROLLER_BUTTON_A             },
 			{ CK_CANCEL, SDL_CONTROLLER_BUTTON_B             },
+			{ CK_GYRO_MOD, SDL_CONTROLLER_BUTTON_RIGHTSTICK  },
 			{ CK_8000,   SDL_CONTROLLER_BUTTON_LEFTSTICK     },
 		};
 
@@ -391,20 +392,31 @@ static inline void inputInitController(const s32 cidx, const s32 jidx)
 
 static inline void inputCloseController(const s32 cidx)
 {
+		if (cidx < 0 || cidx >= INPUT_MAX_CONTROLLERS || !pads[cidx]) {
+				return; // Invalid index or no controller to close
+		}
+
 		sysLogPrintf(LOG_NOTE, "input: removed controller '%d: (%s)' (id %d) from player %d",
 				padsCfg[cidx].deviceIndex, SDL_GameControllerName(pads[cidx]), inputControllerGetId(pads[cidx]), cidx);
 
-		// reset player LEDs
+		// Reset player LEDs
 		SDL_GameControllerSetPlayerIndex(pads[cidx], -1);
 
+		// Close the controller
 		SDL_GameControllerClose(pads[cidx]);
-
 		pads[cidx] = NULL;
-		padsCfg[cidx].rumbleOn = 0;
 
-		if (cidx) {
-				connectedMask &= ~(1 << cidx);
-		}
+		// Reset controller configuration
+		padsCfg[cidx] = (struct controllercfg)CONTROLLERCFG_DEFAULT;
+
+		// Update the connected mask
+		connectedMask &= ~(1 << cidx);
+
+		// Ensure no lingering input data is processed
+		memset(binds[cidx], 0, sizeof(binds[cidx]));
+		memset(bindStrs[cidx], 0, sizeof(bindStrs[cidx]));
+
+		sysLogPrintf(LOG_NOTE, "input: controller %d fully reset and disconnected.", cidx);
 }
 
 static inline s32 inputControllerGetIndex(SDL_GameController* ctrl)
@@ -510,31 +522,44 @@ static inline void inputInitAllControllers(void)
 static int inputEventFilter(void* data, SDL_Event* event)
 {
 		switch (event->type) {
-		case SDL_CONTROLLERDEVICEADDED:
+		case SDL_CONTROLLERDEVICEADDED: {
+				sysLogPrintf(LOG_NOTE, "Controller added: device index %d", event->cdevice.which);
+
 				for (s32 i = firstController; i < INPUT_MAX_CONTROLLERS; ++i) {
 						if (!pads[i]) {
 								pads[i] = SDL_GameControllerOpen(event->cdevice.which);
 								if (pads[i]) {
 										inputInitController(i, event->cdevice.which);
+										sysLogPrintf(LOG_NOTE, "Controller assigned to slot %d", i);
+								}
+								else {
+										sysLogPrintf(LOG_WARNING, "Failed to open controller at device index %d", event->cdevice.which);
 								}
 								break;
 						}
 				}
 				break;
+		}
 
 		case SDL_CONTROLLERDEVICEREMOVED: {
 				SDL_GameController* ctrl = SDL_GameControllerFromInstanceID(event->cdevice.which);
 				const s32 idx = inputControllerGetIndex(ctrl);
+
 				if (idx >= 0) {
+						sysLogPrintf(LOG_NOTE, "Controller removed: instance ID %d, slot %d", event->cdevice.which, idx);
 						inputCloseController(idx);
 						padsCfg[idx].deviceIndex = -1;
+				}
+				else {
+						sysLogPrintf(LOG_WARNING, "Controller removal event for unknown instance ID %d", event->cdevice.which);
 				}
 				break;
 		}
 
 		case SDL_JOYDEVICEADDED:
 		case SDL_JOYDEVICEREMOVED:
-				numJoysticks = SDL_NumJoysticks(); // joystick count has changed
+				numJoysticks = SDL_NumJoysticks(); // Update joystick count
+				sysLogPrintf(LOG_NOTE, "Joystick count updated: %d", numJoysticks);
 				break;
 
 		case SDL_MOUSEWHEEL:
@@ -556,7 +581,7 @@ static int inputEventFilter(void* data, SDL_Event* event)
 				}
 				break;
 
-		case SDL_CONTROLLERBUTTONDOWN:
+		case SDL_CONTROLLERBUTTONDOWN: {
 				if (!lastKey) {
 						lastKey = VK_JOY1_BEGIN + event->cbutton.button;
 						SDL_GameController* ctrl = SDL_GameControllerFromInstanceID(event->cdevice.which);
@@ -566,8 +591,9 @@ static int inputEventFilter(void* data, SDL_Event* event)
 						}
 				}
 				break;
+		}
 
-		case SDL_CONTROLLERAXISMOTION:
+		case SDL_CONTROLLERAXISMOTION: {
 				if (!lastKey) {
 						if (event->caxis.axis >= SDL_CONTROLLER_AXIS_TRIGGERLEFT && event->caxis.value > TRIG_THRESHOLD) {
 								lastKey = VK_JOY1_LTRIG + (event->caxis.axis - SDL_CONTROLLER_AXIS_TRIGGERLEFT);
@@ -579,6 +605,7 @@ static int inputEventFilter(void* data, SDL_Event* event)
 						}
 				}
 				break;
+		}
 
 		case SDL_TEXTINPUT:
 				if (!lastChar && event->text.text[0] && (u8)event->text.text[0] < 0x80) {
@@ -723,41 +750,38 @@ static SDL_GameController* gyroController = NULL;
 
 void inputHandleGyroController()
 {
-		// Ensure previous controller is closed before initializing a new one
+		// Ensure previous controller is safely closed before initializing a new one
 		if (gyroController) {
 				closeGyroController();
+				gyroController = NULL;
 		}
 
+		// Check available controllers
 		if (SDL_NumJoysticks() > 0) {
-				// Open the first available controller
 				gyroController = SDL_GameControllerOpen(0);
 
 				if (!gyroController) {
 						sysLogPrintf(LOG_WARNING, "Failed to initialize gyro controller.");
-						gyroController = NULL;
 						return;
 				}
 
-				// Check for sensor availability
+				// Verify sensor availability
 				bool hasGyro = SDL_GameControllerHasSensor(gyroController, SDL_SENSOR_GYRO);
 				bool hasAccel = SDL_GameControllerHasSensor(gyroController, SDL_SENSOR_ACCEL);
 
 				if (!hasGyro && !hasAccel) {
 						sysLogPrintf(LOG_WARNING, "Controller does not support gyro or accelerometer. Closing.");
 						closeGyroController();
+						gyroController = NULL;
 						return;
 				}
 
 #if !SDL_VERSION_ATLEAST(2, 0, 14)
-				// Ensure compatibility with older SDL versions (Pre-2.0.14)
-				if (hasGyro) {
-						sysLogPrintf(LOG_WARNING, "SDL < 2.0.14 does not fully support gyro sensors.");
-				}
-				if (hasAccel) {
-						sysLogPrintf(LOG_WARNING, "SDL < 2.0.14 does not fully support accelerometers.");
-				}
+				// Compatibility warning for older SDL versions
+				if (hasGyro) sysLogPrintf(LOG_WARNING, "SDL < 2.0.14 lacks full gyro support.");
+				if (hasAccel) sysLogPrintf(LOG_WARNING, "SDL < 2.0.14 lacks full accelerometer support.");
 #else
-				// Enable gyro and accelerometer sensors safely for newer versions
+				// Safely enable gyro and accelerometer sensors
 				if (hasGyro && SDL_GameControllerSetSensorEnabled(gyroController, SDL_SENSOR_GYRO, SDL_TRUE) != 0) {
 						sysLogPrintf(LOG_WARNING, "Failed to enable gyro sensor.");
 				}
@@ -767,19 +791,35 @@ void inputHandleGyroController()
 				}
 #endif
 
-				// Fetch sensor data
-				float sensorData[3] = { 0.f, 0.f, 0.f }; // Prevent garbage values
-				if (hasGyro && SDL_GameControllerGetSensorData(gyroController, SDL_SENSOR_GYRO, sensorData, 3) == 0) {
-						gyroDeltaYaw = sensorData[0];
-						gyroDeltaPitch = sensorData[1];
-						gyroDeltaRoll = sensorData[2];
+				// Fetch sensor data safely (prevent invalid reads)
+				float sensorData[3] = { 0.f, 0.f, 0.f }; 
+
+				if (hasGyro) {
+						if (SDL_GameControllerGetSensorData(gyroController, SDL_SENSOR_GYRO, sensorData, 3) != 0) {
+								sysLogPrintf(LOG_WARNING, "Failed to retrieve gyro data.");
+								gyroDeltaYaw = gyroDeltaPitch = gyroDeltaRoll = 0.f;
+						}
+						else {
+								gyroDeltaYaw = sensorData[0];
+								gyroDeltaPitch = sensorData[1];
+								gyroDeltaRoll = sensorData[2];
+						}
 				}
 
-				if (hasAccel && SDL_GameControllerGetSensorData(gyroController, SDL_SENSOR_ACCEL, sensorData, 3) == 0) {
-						accelDeltaX = sensorData[0];
-						accelDeltaY = sensorData[1];
-						accelDeltaZ = sensorData[2];
+				if (hasAccel) {
+						if (SDL_GameControllerGetSensorData(gyroController, SDL_SENSOR_ACCEL, sensorData, 3) != 0) {
+								sysLogPrintf(LOG_WARNING, "Failed to retrieve accelerometer data.");
+								accelDeltaX = accelDeltaY = accelDeltaZ = 0.f;
+						}
+						else {
+								accelDeltaX = sensorData[0];
+								accelDeltaY = sensorData[1];
+								accelDeltaZ = sensorData[2];
+						}
 				}
+		}
+		else {
+				sysLogPrintf(LOG_WARNING, "No joysticks detected.");
 		}
 }
 
@@ -1033,55 +1073,61 @@ void autoCalibrateGyro() {
 		static f32 accumulatedOffsetY = 0.f;
 		static s32 sampleCount = 0;
 		static bool calibrating = true;
+		static s32 stationarySampleCount = 0;
 
+		// If auto-calibration is disabled, reset offsets to stock values
 		if (!inputGyroAutoCalibrationIsEnabled()) {
+				gyroOffsetX = 0.f;
+				gyroOffsetY = 0.f;
+				sampleCount = 0;
+				calibrating = false;
 				return;
 		}
 
 		// Validate gyro sensor readings before processing
 		if (isnan(gyroDeltaYaw) || isinf(gyroDeltaYaw) || isnan(gyroDeltaPitch) || isinf(gyroDeltaPitch)) {
-				printf("WARNING: Invalid gyro data detected.\n");
-				return;
+				return; // Ignore invalid gyro data
 		}
 
-		// Reset calibration data at the beginning of the process
-		if (sampleCount == 0) {
-				accumulatedOffsetX = 0.f;
-				accumulatedOffsetY = 0.f;
-				gyroOffsetX = 0.f;
-				gyroOffsetY = 0.f;
+		// Detect if controller is stationary (placed on a flat surface)
+		const f32 noiseThreshold = 0.005f;
+		bool isStationary = fabsf(gyroDeltaYaw) < noiseThreshold && fabsf(gyroDeltaPitch) < noiseThreshold;
+
+		// Count samples where controller remains stationary
+		if (isStationary) {
+				stationarySampleCount++;
+		}
+		else {
+				stationarySampleCount = 0; // Reset count if movement is detected
 		}
 
-		// Accumulate offset values when movement is minimal
-		if (calibrating && fabsf(gyroDeltaYaw) < 0.02f && fabsf(gyroDeltaPitch) < 0.02f) {
+		// Accumulate offsets only when controller has been stationary for multiple frames
+		if (calibrating && stationarySampleCount > 50) { 
 				accumulatedOffsetX += gyroDeltaYaw;
 				accumulatedOffsetY += gyroDeltaPitch;
 				sampleCount++;
 		}
 
-		// Apply calibration offsets once enough samples are gathered
+		// Apply calibration offsets once enough stationary samples are gathered
 		if (sampleCount >= 200) {
-				if (sampleCount > 0) {
-						gyroOffsetX = accumulatedOffsetX / sampleCount;
-						gyroOffsetY = accumulatedOffsetY / sampleCount;
-				}
-				else {
-						gyroOffsetX = 0.f;
-						gyroOffsetY = 0.f;
-						printf("WARNING: Sample count was zero; skipping calibration.\n");
-				}
-
-				// Reset sample count after applying offsets
+				gyroOffsetX = accumulatedOffsetX / sampleCount;
+				gyroOffsetY = accumulatedOffsetY / sampleCount;
 				sampleCount = 0;
-				calibrating = false;
+				stationarySampleCount = 0;
+				calibrating = true;
 
 				printf("Gyro Auto-Calibration Completed! OffsetX: %.4f, OffsetY: %.4f\n", gyroOffsetX, gyroOffsetY);
 		}
+
+		// Continuous drift correction
+		gyroDeltaYaw -= gyroOffsetX;
+		gyroDeltaPitch -= gyroOffsetY;
 }
 
 static inline void inputUpdateGyro(void)
 {
 		if (!gyroEnabled) {
+				sysLogPrintf(LOG_NOTE, "Gyro is disabled. Skipping update.");
 				return; // Exit if gyro is not enabled
 		}
 
@@ -1130,10 +1176,6 @@ static inline void inputUpdateGyro(void)
 				gyroYaw += gyroDeltaYaw;
 				gyroPitch += gyroDeltaPitch;
 				gyroRoll += gyroDeltaRoll;
-
-				sysLogPrintf(LOG_NOTE,
-						"Gyro Updated - Yaw: %f, Pitch: %f, Roll: %f | OffsetX: %f, OffsetY: %f",
-						gyroYaw, gyroPitch, gyroRoll, gyroOffsetX, gyroOffsetY);
 		}
 }
 
@@ -1564,12 +1606,12 @@ void inputSetMouseLockMode(s32 lockmode)
 
 s32 inputGyroIsEnabled(void)
 {
-		return gyroEnabled; // Returns the current state of gyro input (enabled or not)
+		return gyroEnabled;
 }
 
 void inputGyroEnable(s32 enabled)
 {
-		gyroEnabled = (enabled != 0); // Update the gyroEnabled state (true or false)
+		gyroEnabled = (enabled != 0);
 }
 
 enum gyroaxismode inputGetGyroAxisMode(void)
@@ -1584,43 +1626,30 @@ void inputSetGyroAxisMode(enum gyroaxismode mode)
 
 void applyGyroAxisMapping(float gyroData[3], f32* deltaX, f32* deltaY, f32* deltaZ)
 {
-		switch (inputGetGyroAxisMode()) { // Correct function call to retrieve the axis mode
+		switch (inputGetGyroAxisMode()) {
 		case GYRO_YAW:
 				*deltaX = -gyroData[1]; // Yaw for horizontal movement
 				*deltaY = -gyroData[0]; // Pitch for vertical movement
 				break;
 
 		case GYRO_ROLL:
-				*deltaX = gyroData[2]; // Roll for horizontal movement
+				*deltaX = gyroData[2];  // Roll for horizontal movement
 				*deltaY = -gyroData[0]; // Pitch for vertical movement
 				break;
 
 		case GYRO_LOCAL:
 		{
-				// Apply dead zone to prevent drift
-				if (fabsf(gyroData[0]) < 0.01f) gyroData[0] = 0.f;
-				if (fabsf(gyroData[1]) < 0.01f) gyroData[1] = 0.f;
-				if (fabsf(gyroData[2]) < 0.01f) gyroData[2] = 0.f;
-
-				// Check for NaN values before proceeding
-				if (isnan(gyroData[0]) || isnan(gyroData[1]) || isnan(gyroData[2])) {
-						*deltaX = 0.f;
-						*deltaY = 0.f;
-						return;
-				}
-
-				// Ensure yaw, pitch, and roll match GYRO_YAW and GYRO_ROLL behavior
-				float processedYaw = -gyroData[1];  // Yaw for horizontal movement
-				float processedRoll = gyroData[2];   // Roll for horizontal movement
-				float processedPitch = -gyroData[0]; // Pitch for vertical movement
+				// Process gyro axes: Yaw, Pitch, Roll
+        float processedYaw = -gyroData[1];
+        float processedPitch = -gyroData[0];
+        float processedRoll = -gyroData[2];	
 
 				// Apply Local Space transformation
 				Vector3 transformedGyro = TransformToLocalSpace(
 						processedYaw, processedPitch, processedRoll,
-						1.0f, 1.0f, 1.0f, 0.0f // Sensitivities remain constant
+						1.0f, 1.0f, 1.0f, 0.0f
 				);
 
-				// Assign transformed values, keeping them aligned with YAW & ROLL logic
 				*deltaX = transformedGyro.x;
 				*deltaY = transformedGyro.y;
 				*deltaZ = transformedGyro.z;
@@ -1629,33 +1658,17 @@ void applyGyroAxisMapping(float gyroData[3], f32* deltaX, f32* deltaY, f32* delt
 
 		case GYRO_PLAYER:
 		{
-				// Apply dead zone to prevent drift
-				if (fabsf(gyroData[0]) < 0.01f) gyroData[0] = 0.f;
-				if (fabsf(gyroData[1]) < 0.01f) gyroData[1] = 0.f;
-				if (fabsf(gyroData[2]) < 0.01f) gyroData[2] = 0.f;
-
-				// Check for NaN values before proceeding
-				if (isnan(gyroData[0]) || isnan(gyroData[1]) || isnan(gyroData[2])) {
-						*deltaX = 0.f;
-						*deltaY = 0.f;
-						return;
-				}
-
-				// Get gravity vector for Player Space transformations
-				Vector3 gravityVector = GetGravityVector();
-
-				// Ensure yaw, pitch, and roll match player-relative transformation
+				// Process gyro axes: Yaw, Pitch, Roll
 				float processedYaw = -gyroData[1];
-				float processedRoll = gyroData[2];
 				float processedPitch = -gyroData[0];
+				float processedRoll = -gyroData[2];
 
 				// Apply Player Space transformation with gravity alignment
 				Vector3 transformedGyro = TransformToPlayerSpace(
 						processedYaw, processedPitch, processedRoll,
-						gravityVector, 1.0f, 1.0f, 1.0f
+						GetGravityVector(), 1.0f, 1.0f, 1.0f
 				);
 
-				// Assign transformed values, ensuring proper Player Space movement
 				*deltaX = transformedGyro.x;
 				*deltaY = transformedGyro.y;
 				*deltaZ = transformedGyro.z;
@@ -1664,33 +1677,17 @@ void applyGyroAxisMapping(float gyroData[3], f32* deltaX, f32* deltaY, f32* delt
 
 		case GYRO_WORLD:
 		{
-				// Apply dead zone to prevent drift
-				if (fabsf(gyroData[0]) < 0.01f) gyroData[0] = 0.f;
-				if (fabsf(gyroData[1]) < 0.01f) gyroData[1] = 0.f;
-				if (fabsf(gyroData[2]) < 0.01f) gyroData[2] = 0.f;
-
-				// Check for NaN values before proceeding
-				if (isnan(gyroData[0]) || isnan(gyroData[1]) || isnan(gyroData[2])) {
-						*deltaX = 0.f;
-						*deltaY = 0.f;
-						return;
-				}
-
-				// Retrieve gravity vector for World Space alignment
-				Vector3 gravityVector = GetGravityVector();
-
-				// Process gyro inputs, ensuring global alignment
+				// Process gyro axes: Yaw, Pitch, Roll
 				float processedYaw = -gyroData[1];
-				float processedRoll = gyroData[2];
 				float processedPitch = -gyroData[0];
+				float processedRoll = -gyroData[2];
 
 				// Apply World Space transformation with gravity influence
 				Vector3 transformedGyro = TransformToWorldSpace(
 						processedYaw, processedPitch, processedRoll,
-						gravityVector, 1.0f, 1.0f, 1.0f
+						GetGravityVector(), 1.0f, 1.0f, 1.0f
 				);
 
-				// Assign transformed values, keeping them aligned with global world movement
 				*deltaX = transformedGyro.x;
 				*deltaY = transformedGyro.y;
 				*deltaZ = transformedGyro.z;
@@ -1698,8 +1695,9 @@ void applyGyroAxisMapping(float gyroData[3], f32* deltaX, f32* deltaY, f32* delt
 		break;
 
 		default:
-				*deltaX = 0.f; // Default to zero if mode is unrecognized
+				*deltaX = 0.f;
 				*deltaY = 0.f;
+				*deltaZ = 0.f;
 				break;
 		}
 }
@@ -1882,19 +1880,21 @@ void inputSetGyroActivationMode(s32 mode)
 
 void applyGyroActivationMode(f32* deltaX, f32* deltaY, f32* deltaZ, s32 activationMode)
 {
+		static bool gyroToggleState = false; 
+
 		switch (activationMode) {
 		case GYRO_ALWAYS_ON:
 				// Gyro input is always active; no changes needed
 				break;
 
 		case GYRO_TOGGLE:
-				// Toggle the gyro input state when CK_GYRO_MOD is pressed
-				if (inputKeyPressed(CK_GYRO_MOD)) {
-						g_GyroActivationMode = (g_GyroActivationMode == GYRO_TOGGLE) ? GYRO_ALWAYS_ON : GYRO_TOGGLE;
+				// Toggle gyro state only when CK_GYRO_MOD is pressed
+				if (inputKeyJustPressed(CK_GYRO_MOD)) { 
+						gyroToggleState = !gyroToggleState; 
 				}
 
-				// If gyro is not in "on" state, zero out input
-				if (g_GyroActivationMode != GYRO_ALWAYS_ON) {
+				// Zero out input only when gyro is toggled OFF
+				if (!gyroToggleState) {
 						if (deltaX) *deltaX = 0.f;
 						if (deltaY) *deltaY = 0.f;
 						if (deltaZ) *deltaZ = 0.f;
@@ -1902,7 +1902,7 @@ void applyGyroActivationMode(f32* deltaX, f32* deltaY, f32* deltaZ, s32 activati
 				break;
 
 		case GYRO_HOLD:
-				// Only allow gyro input while CK_GYRO_MOD is actively held down
+				// Activate gyro only while CK_GYRO_MOD is held down
 				if (!inputKeyPressed(CK_GYRO_MOD)) {
 						if (deltaX) *deltaX = 0.f;
 						if (deltaY) *deltaY = 0.f;
@@ -1911,7 +1911,7 @@ void applyGyroActivationMode(f32* deltaX, f32* deltaY, f32* deltaZ, s32 activati
 				break;
 
 		case GYRO_HOLD_INVERTED:
-				// Inverted hold: disable gyro input when CK_GYRO_MOD is held down
+				// Disable gyro when CK_GYRO_MOD is held down
 				if (inputKeyPressed(CK_GYRO_MOD)) {
 						if (deltaX) *deltaX = 0.f;
 						if (deltaY) *deltaY = 0.f;
@@ -1920,7 +1920,7 @@ void applyGyroActivationMode(f32* deltaX, f32* deltaY, f32* deltaZ, s32 activati
 				break;
 
 		default:
-				// Invalid activation mode; disable gyro input
+				// Invalid mode, disable gyro input
 				if (deltaX) *deltaX = 0.f;
 				if (deltaY) *deltaY = 0.f;
 				if (deltaZ) *deltaZ = 0.f;
@@ -1954,19 +1954,43 @@ void applyGyroThreshold(f32* deltaX, f32* deltaY, f32* deltaZ, f32 threshold)
 		bool isNintendoController = false;
 		if (pads[0]) {
 				SDL_GameControllerType controllerType = SDL_GameControllerGetType(pads[0]);
+#if SDL_VERSION_ATLEAST(2, 0, 14)
 				isNintendoController = (controllerType == SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_PRO ||
 						controllerType == SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_JOYCON_PAIR);
+#else
+				isNintendoController = (controllerType == SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_PRO);
+#endif
 		}
 
-		// Define dedicated deadzones per controller type
-		const f32 nintendoDeadzone = fmaxf(threshold * 0.85f, 0.07f);
-		const f32 baseDeadzone = fmaxf(threshold * 0.75f, 0.04f);
-		const f32 appliedDeadzone = isNintendoController ? nintendoDeadzone : baseDeadzone;
+		// Fine-tune deadzone values, but only apply if threshold is > 0
+		const f32 nintendoDeadzoneX = threshold > 0.f ? fmaxf(threshold * 0.82f, 0.05f) : 0.f;
+		const f32 nintendoDeadzoneY = threshold > 0.f ? fmaxf(threshold * 0.85f, 0.075f) : 0.f;
+		const f32 baseDeadzone = threshold > 0.f ? fmaxf(threshold * 0.75f, 0.04f) : 0.f;
 
-		// Apply minimum velocity threshold to prevent unintended movement
-		if (fabsf(*deltaX) < appliedDeadzone) *deltaX = 0.f;
-		if (fabsf(*deltaY) < appliedDeadzone) *deltaY = 0.f;
-		if (fabsf(*deltaZ) < appliedDeadzone) *deltaZ = 0.f;
+		// Apply different deadzone thresholds per axis
+		const f32 appliedDeadzoneX = isNintendoController ? nintendoDeadzoneX : baseDeadzone;
+		const f32 appliedDeadzoneY = isNintendoController ? nintendoDeadzoneY : baseDeadzone;
+		const f32 appliedDeadzoneZ = isNintendoController ? nintendoDeadzoneX : baseDeadzone;
+
+		// Soft Tiered Smoothing: Apply smoothing only to small movements
+		static f32 prevDeltaX = 0.f, prevDeltaY = 0.f, prevDeltaZ = 0.f;
+		const f32 smoothingFactor = 0.85f; // Adjust for desired responsiveness
+
+		if (threshold > 0.f) {
+				if (fabsf(*deltaX) < appliedDeadzoneX) *deltaX = 0.f;
+				else *deltaX = (*deltaX * smoothingFactor) + (prevDeltaX * (1.f - smoothingFactor));
+
+				if (fabsf(*deltaY) < appliedDeadzoneY) *deltaY = 0.f;
+				else *deltaY = (*deltaY * smoothingFactor) + (prevDeltaY * (1.f - smoothingFactor));
+
+				if (fabsf(*deltaZ) < appliedDeadzoneZ) *deltaZ = 0.f;
+				else *deltaZ = (*deltaZ * smoothingFactor) + (prevDeltaZ * (1.f - smoothingFactor));
+		}
+
+		// Store previous values for smoothing
+		prevDeltaX = *deltaX;
+		prevDeltaY = *deltaY;
+		prevDeltaZ = *deltaZ;
 }
 
 const char *inputGetContKeyName(u32 ck)
