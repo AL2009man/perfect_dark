@@ -2268,10 +2268,11 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 		}
 	}
 	else if (movedata.canmanualaim) {
+			// Adjust crosshair's position on screen
+			// when holding aim and moving stick
 			bgunSetAimType(0);
-
 #ifndef PLATFORM_N64
-			if (allowgcross) {
+			if (allowmcross) {
 					// Gyro is active, apply gyro movement FIRST
 					inputGyroGetScaledDeltaCrosshair(&movedata.gyrolookdx, &movedata.gyrolookdy);
 
