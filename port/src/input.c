@@ -720,87 +720,76 @@ static SDL_GameController* gyroController = NULL;
 
 void inputHandleGyroController()
 {
-	// Ensure previous controller is safely closed before initializing a new one
-	if (gyroController) {
-		closeGyroController();
-		gyroController = NULL;
-	}
+    // Safely close existing controller before initializing a new one
+    closeGyroController();
 
-	// Check available controllers
-	if (SDL_NumJoysticks() > 0) {
-		gyroController = SDL_GameControllerOpen(0);
+    // Exit early if no controllers are detected
+    if (SDL_NumJoysticks() <= 0) {
+        sysLogPrintf(LOG_WARNING, "No joysticks detected.");
+        return;
+    }
 
-		if (!gyroController) {
-			sysLogPrintf(LOG_WARNING, "Failed to initialize gyro controller.");
-			return;
-		}
+    // Attempt to open the first available controller
+    gyroController = SDL_GameControllerOpen(0);
+    if (!gyroController) {
+        sysLogPrintf(LOG_WARNING, "Failed to initialize gyro controller.");
+        return;
+    }
 
-		// Verify sensor availability
-		bool hasGyro = SDL_GameControllerHasSensor(gyroController, SDL_SENSOR_GYRO);
-		bool hasAccel = SDL_GameControllerHasSensor(gyroController, SDL_SENSOR_ACCEL);
+    // Check for gyro and accelerometer support
+    bool hasGyro = SDL_GameControllerHasSensor(gyroController, SDL_SENSOR_GYRO);
+    bool hasAccel = SDL_GameControllerHasSensor(gyroController, SDL_SENSOR_ACCEL);
 
-		if (!hasGyro && !hasAccel) {
-			sysLogPrintf(LOG_WARNING, "Controller does not support gyro or accelerometer. Closing.");
-			closeGyroController();
-			gyroController = NULL;
-			return;
-		}
+    // Close controller if it lacks necessary sensors
+    if (!hasGyro && !hasAccel) {
+        sysLogPrintf(LOG_WARNING, "Controller lacks gyro/accelerometer support.");
+        closeGyroController();
+        return;
+    }
 
-#if !SDL_VERSION_ATLEAST(2, 0, 14)
-		// Compatibility warning for older SDL versions
-		if (hasGyro) sysLogPrintf(LOG_WARNING, "SDL < 2.0.14 lacks full gyro support.");
-		if (hasAccel) sysLogPrintf(LOG_WARNING, "SDL < 2.0.14 lacks full accelerometer support.");
-#else
-		// Safely enable gyro and accelerometer sensors
-		if (hasGyro && SDL_GameControllerSetSensorEnabled(gyroController, SDL_SENSOR_GYRO, SDL_TRUE) != 0) {
-			sysLogPrintf(LOG_WARNING, "Failed to enable gyro sensor.");
-		}
+#if SDL_VERSION_ATLEAST(2, 0, 14)
+    // Enable sensors safely
+    if (hasGyro && SDL_GameControllerSetSensorEnabled(gyroController, SDL_SENSOR_GYRO, SDL_TRUE) != 0) {
+        sysLogPrintf(LOG_WARNING, "Failed to enable gyro sensor.");
+    }
 
-		if (hasAccel && SDL_GameControllerSetSensorEnabled(gyroController, SDL_SENSOR_ACCEL, SDL_TRUE) != 0) {
-			sysLogPrintf(LOG_WARNING, "Failed to enable accelerometer sensor.");
-		}
+    if (hasAccel && SDL_GameControllerSetSensorEnabled(gyroController, SDL_SENSOR_ACCEL, SDL_TRUE) != 0) {
+        sysLogPrintf(LOG_WARNING, "Failed to enable accelerometer sensor.");
+    }
 #endif
 
-		// Fetch sensor data safely (prevent invalid reads)
-		float sensorData[3] = { 0.f, 0.f, 0.f };
+    // Retrieve sensor data
+    float sensorData[3] = { 0.f, 0.f, 0.f };
 
-		if (hasGyro) {
-			if (SDL_GameControllerGetSensorData(gyroController, SDL_SENSOR_GYRO, sensorData, 3) != 0) {
-				sysLogPrintf(LOG_WARNING, "Failed to retrieve gyro data.");
-				gyroDeltaYaw = gyroDeltaPitch = gyroDeltaRoll = 0.f;
-			}
-			else {
-				gyroDeltaYaw = sensorData[0];
-				gyroDeltaPitch = sensorData[1];
-				gyroDeltaRoll = sensorData[2];
-			}
-		}
+    // Gyro data retrieval
+    if (hasGyro && SDL_GameControllerGetSensorData(gyroController, SDL_SENSOR_GYRO, sensorData, 3) == 0) {
+        gyroDeltaYaw = sensorData[0];
+        gyroDeltaPitch = sensorData[1];
+        gyroDeltaRoll = sensorData[2];
+    } else {
+        gyroDeltaYaw = gyroDeltaPitch = gyroDeltaRoll = 0.f;
+        sysLogPrintf(LOG_WARNING, "Failed to retrieve gyro data.");
+    }
 
-		if (hasAccel) {
-			if (SDL_GameControllerGetSensorData(gyroController, SDL_SENSOR_ACCEL, sensorData, 3) != 0) {
-				sysLogPrintf(LOG_WARNING, "Failed to retrieve accelerometer data.");
-				accelDeltaX = accelDeltaY = accelDeltaZ = 0.f;
-			}
-			else {
-				accelDeltaX = sensorData[0];
-				accelDeltaY = sensorData[1];
-				accelDeltaZ = sensorData[2];
-			}
-		}
-	}
-	else {
-		sysLogPrintf(LOG_WARNING, "No joysticks detected.");
-	}
+    // Accelerometer data retrieval
+    if (hasAccel && SDL_GameControllerGetSensorData(gyroController, SDL_SENSOR_ACCEL, sensorData, 3) == 0) {
+        accelDeltaX = sensorData[0];
+        accelDeltaY = sensorData[1];
+        accelDeltaZ = sensorData[2];
+    } else {
+        accelDeltaX = accelDeltaY = accelDeltaZ = 0.f;
+        sysLogPrintf(LOG_WARNING, "Failed to retrieve accelerometer data.");
+    }
 }
 
 // Function to clean up when a controller disconnects
 void closeGyroController()
 {
-	if (gyroController) {
-		SDL_GameControllerClose(gyroController);
-		gyroController = NULL;
-		sysLogPrintf(LOG_NOTE, "Gyro controller closed.");
-	}
+    if (gyroController) {
+        SDL_GameControllerClose(gyroController);
+        gyroController = NULL;
+        sysLogPrintf(LOG_NOTE, "Gyro controller closed.");
+    }
 }
 
 s32 inputInit(void)
@@ -1107,65 +1096,71 @@ void autoCalibrateGyro() {
 	gyroDeltaPitch -= gyroOffsetY * calibrationConfidence;
 }
 
-
 static inline void inputUpdateGyro(void)
 {
-	if (!gyroEnabled) {
-		sysLogPrintf(LOG_NOTE, "Gyro is disabled. Skipping update.");
-		return; // Exit if gyro is not enabled
-	}
+    if (!gyroEnabled) {
+        sysLogPrintf(LOG_NOTE, "Gyro is disabled. Skipping update.");
+        return;
+    }
 
-	// Handle gyro controller state (initialization, enabling, etc.)
-	inputHandleGyroController();
+    // Handle gyro controller initialization
+    inputHandleGyroController();
 
-	if (!gyroController) {
-		// No gyro controller detected—reset gyro values to prevent drift
-		gyroYaw = gyroPitch = gyroRoll = 0.f;
-		gyroDeltaYaw = gyroDeltaPitch = gyroDeltaRoll = 0.f;
-		gyroOffsetX = gyroOffsetY = 0.f;
+    // If the controller was unplugged, fully reset gyro values
+    if (!gyroController || SDL_GameControllerGetAttached(gyroController) == SDL_FALSE) {
+        sysLogPrintf(LOG_NOTE, "Gyro Reset: No controllers detected.");
 
-		sysLogPrintf(LOG_NOTE, "Gyro Reset: No controllers detected. Preventing drift.");
-		return;
-	}
+        gyroYaw = gyroPitch = gyroRoll = 0.f;
+        gyroDeltaYaw = gyroDeltaPitch = gyroDeltaRoll = 0.f;
+        gyroOffsetX = gyroOffsetY = 0.f;
+        gyroController = NULL; // Ensure it's cleared to prevent invalid references
 
-	// Retrieve gyro data
-	float gyroData[3] = { 0.f, 0.f, 0.f };
-	if (SDL_GameControllerGetSensorData(gyroController, SDL_SENSOR_GYRO, gyroData, 3) == 0) {
-		// Reset global gyro deltas before processing new input
-		gyroDeltaYaw = gyroDeltaPitch = gyroDeltaRoll = 0.f;
+        return;
+    }
 
-		f32 deltaX = 0.f, deltaY = 0.f, deltaZ = 0.f;
+    // Retrieve gyro data
+    float gyroData[3] = { 0.f, 0.f, 0.f };
+    if (SDL_GameControllerGetSensorData(gyroController, SDL_SENSOR_GYRO, gyroData, 3) != 0) {
+        sysLogPrintf(LOG_WARNING, "Failed to retrieve gyro data.");
 
-		// Apply gyro processing functions
-		applyGyroAxisMapping(gyroData, &deltaX, &deltaY, &deltaZ);
-		applyGyroAimMode(&deltaX, &deltaY, &deltaZ);
-		applyGyroActivationMode(&deltaX, &deltaY, &deltaZ, inputGetGyroActivationMode());
-		applyGyroThreshold(&deltaX, &deltaY, &deltaZ, inputGetGyroMinThreshold());
+        gyroDeltaYaw = gyroDeltaPitch = gyroDeltaRoll = 0.f; // Prevent unintended movement
+        return;
+    }
 
-		// Calculate acceleration magnitude using existing delta values
-		f32 accelMagnitude = sqrtf(accelDeltaX * accelDeltaX +
-			accelDeltaY * accelDeltaY +
-			accelDeltaZ * accelDeltaZ);
+    // Initialize deltas before processing
+    gyroDeltaYaw = gyroDeltaPitch = gyroDeltaRoll = 0.f;
 
-		// Perform auto-calibration if enabled and stillness is detected
-		if (inputGyroAutoCalibrationIsEnabled() && fabsf(accelMagnitude - 1.0f) < inputGetGyroMinThreshold()) {
-			autoCalibrateGyro();
-		}
+    f32 deltaX = -gyroData[1]; // Yaw
+    f32 deltaY = -gyroData[0]; // Pitch
+    f32 deltaZ = -gyroData[2]; // Roll
 
-		// Apply updated offsets after calibration
-		deltaX -= gyroOffsetX;
-		deltaY -= gyroOffsetY;
+    // Apply gyro processing functions
+    applyGyroAxisMapping(gyroData, &deltaX, &deltaY, &deltaZ);
+    applyGyroAimMode(&deltaX, &deltaY, &deltaZ);
+    applyGyroActivationMode(&deltaX, &deltaY, &deltaZ, inputGetGyroActivationMode());
+    applyGyroThreshold(&deltaX, &deltaY, &deltaZ, inputGetGyroMinThreshold());
 
-		// Store processed gyro deltas
-		gyroDeltaYaw = deltaX;
-		gyroDeltaPitch = deltaY;
-		gyroDeltaRoll = deltaZ;
+    // Check acceleration magnitude for stability
+    f32 accelMagnitude = sqrtf(accelDeltaX * accelDeltaX + accelDeltaY * accelDeltaY + accelDeltaZ * accelDeltaZ);
 
-		// Update final gyro orientation values
-		gyroYaw += gyroDeltaYaw;
-		gyroPitch += gyroDeltaPitch;
-		gyroRoll += gyroDeltaRoll;
-	}
+    // Auto-calibration for stillness detection
+    if (inputGyroAutoCalibrationIsEnabled() && fabsf(accelMagnitude - 1.0f) < inputGetGyroMinThreshold()) {
+        autoCalibrateGyro();
+    }
+
+    // Apply offsets post-calibration
+    deltaX -= gyroOffsetX;
+    deltaY -= gyroOffsetY;
+
+    // Store processed gyro deltas
+    gyroDeltaYaw = deltaX;
+    gyroDeltaPitch = deltaY;
+    gyroDeltaRoll = deltaZ;
+
+    // Update gyro orientation values
+    gyroYaw += gyroDeltaYaw;
+    gyroPitch += gyroDeltaPitch;
+    gyroRoll += gyroDeltaRoll;
 }
 
 void inputUpdate(void)
