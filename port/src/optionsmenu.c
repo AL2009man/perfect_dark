@@ -742,18 +742,6 @@ static MenuItemHandlerResult menuhandlerGyroMinThreshold(s32 operation, struct m
     return 0;
 }
 
-static MenuItemHandlerResult menuhandlerGyroAutoCalibrationEnabled(s32 operation, struct menuitem* item, union handlerdata* data)
-{
-		switch (operation) {
-		case MENUOP_GET:
-				return inputGyroAutoCalibrationIsEnabled();
-		case MENUOP_SET:
-				inputGyroAutoCalibrationEnable(data->checkbox.value);
-				break;
-		}
-		return 0; // Ensure proper return value
-}
-
 
 struct menuitem g_ExtendedGyroMenuItems[] = {
 		{
@@ -827,14 +815,6 @@ struct menuitem g_ExtendedGyroMenuItems[] = {
 				(uintptr_t)"Movement Threshold",
 				100,
 				menuhandlerGyroMinThreshold,
-		},
-		{
-				MENUITEMTYPE_CHECKBOX,
-				0,
-				MENUITEMFLAG_LITERAL_TEXT,
-				(uintptr_t)"Auto-Calibrate while Stationary",
-				0,
-				menuhandlerGyroAutoCalibrationEnabled,
 		},
 		{
 				MENUITEMTYPE_SEPARATOR,

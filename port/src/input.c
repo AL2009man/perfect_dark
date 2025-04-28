@@ -128,7 +128,6 @@ static s32 g_GyroAxisMode = GYRO_YAW;
 static s32 g_GyroAimMode = GYRO_AIM_MODE_BOTH;
 static f32 gyroMinThreshold = 0.07f;
 static s32 g_GyroActivationMode = GYRO_ALWAYS_ON;
-static s32 gyroAutoCalibration = 0;
 
 static s32 lastKey = 0;
 static char lastChar = 0;
@@ -1021,81 +1020,6 @@ static inline void inputUpdateMouse(void)
 	}
 }
 
-void autoCalibrateGyro() {
-	static f32 accumulatedOffsetX = 0.f;
-	static f32 accumulatedOffsetY = 0.f;
-	static s32 sampleCount = 0;
-	static s32 stationarySampleCount = 0;
-	static f32 calibrationConfidence = 0.f;
-	static f32 previousYaw = 0.f, previousPitch = 0.f;
-	static f32 previousOffsetX = 0.f, previousOffsetY = 0.f;
-
-	// Calculate acceleration magnitude using existing delta values
-	f32 accelMagnitude = sqrtf(accelDeltaX * accelDeltaX +
-		accelDeltaY * accelDeltaY +
-		accelDeltaZ * accelDeltaZ);
-
-	// If auto-calibration is disabled, reset offsets
-	if (!inputGyroAutoCalibrationIsEnabled()) {
-		gyroOffsetX = 0.f;
-		gyroOffsetY = 0.f;
-		sampleCount = 0;
-		calibrationConfidence = 0.f;
-		return;
-	}
-
-	// Validate gyro readings before processing
-	if (isnan(gyroDeltaYaw) || isinf(gyroDeltaYaw) || isnan(gyroDeltaPitch) || isinf(gyroDeltaPitch)) {
-		return; // Ignore invalid gyro data
-	}
-
-	// Detect stillness using rolling averages
-	f32 yawDifference = fabsf(gyroDeltaYaw - previousYaw);
-	f32 pitchDifference = fabsf(gyroDeltaPitch - previousPitch);
-	bool isStationary = yawDifference < 0.002f && pitchDifference < 0.002f;
-
-	previousYaw = gyroDeltaYaw;
-	previousPitch = gyroDeltaPitch;
-
-	// Count stationary samples for calibration adjustments
-	if (isStationary) {
-		stationarySampleCount++;
-	}
-	else {
-		stationarySampleCount = fmaxf(stationarySampleCount - 1, 0); // Allow slight movement without full reset
-	}
-
-	// Accumulate offsets based on confidence scaling
-	if (stationarySampleCount > 50) {
-		accumulatedOffsetX += gyroDeltaYaw * (1.0f - calibrationConfidence);
-		accumulatedOffsetY += gyroDeltaPitch * (1.0f - calibrationConfidence);
-		sampleCount++;
-
-		// Increase calibration confidence over time
-		calibrationConfidence = fminf(calibrationConfidence + 0.01f, 1.0f);
-	}
-
-	// Apply calibration offsets once enough steady samples are gathered
-	if (sampleCount >= 200) {
-		previousOffsetX = gyroOffsetX;
-		previousOffsetY = gyroOffsetY;
-
-		// Smoothly blend new calibration offsets with previous offsets to prevent sudden jumps
-		gyroOffsetX = (accumulatedOffsetX / sampleCount) * 0.9f + previousOffsetX * 0.1f;
-		gyroOffsetY = (accumulatedOffsetY / sampleCount) * 0.9f + previousOffsetY * 0.1f;
-
-		sampleCount = 0;
-		stationarySampleCount = 0;
-		calibrationConfidence = 1.0f;
-
-		printf("Gyro Auto-Calibration Completed! OffsetX: %.4f, OffsetY: %.4f\n", gyroOffsetX, gyroOffsetY);
-	}
-
-	// **Continuous drift correction with adaptive scaling**
-	gyroDeltaYaw -= gyroOffsetX * calibrationConfidence;
-	gyroDeltaPitch -= gyroOffsetY * calibrationConfidence;
-}
-
 static inline void inputUpdateGyro(void)
 {
     if (!gyroEnabled) {
@@ -1130,9 +1054,9 @@ static inline void inputUpdateGyro(void)
     // Initialize deltas before processing
     gyroDeltaYaw = gyroDeltaPitch = gyroDeltaRoll = 0.f;
 
-    f32 deltaX = -gyroData[1]; // Yaw
-    f32 deltaY = -gyroData[0]; // Pitch
-    f32 deltaZ = -gyroData[2]; // Roll
+    f32 deltaX = gyroData[1]; // Yaw
+    f32 deltaY = gyroData[0]; // Pitch
+    f32 deltaZ = gyroData[2]; // Roll
 
     // Apply gyro processing functions
     applyGyroAxisMapping(gyroData, &deltaX, &deltaY, &deltaZ);
@@ -1142,15 +1066,6 @@ static inline void inputUpdateGyro(void)
 
     // Check acceleration magnitude for stability
     f32 accelMagnitude = sqrtf(accelDeltaX * accelDeltaX + accelDeltaY * accelDeltaY + accelDeltaZ * accelDeltaZ);
-
-    // Auto-calibration for stillness detection
-    if (inputGyroAutoCalibrationIsEnabled() && fabsf(accelMagnitude - 1.0f) < inputGetGyroMinThreshold()) {
-        autoCalibrateGyro();
-    }
-
-    // Apply offsets post-calibration
-    deltaX -= gyroOffsetX;
-    deltaY -= gyroOffsetY;
 
     // Store processed gyro deltas
     gyroDeltaYaw = deltaX;
@@ -1617,58 +1532,55 @@ void applyGyroAxisMapping(float gyroData[3], f32* deltaX, f32* deltaY, f32* delt
 
 	case GYRO_LOCAL:
 	{
-		// Process gyro axes: Yaw, Pitch, Roll
-		float processedYaw = -gyroData[1];
-		float processedPitch = -gyroData[0];
-		float processedRoll = -gyroData[2];
+			float processedYaw = -gyroData[1];
+			float processedPitch = -gyroData[0];
+			float processedRoll = -gyroData[2];
 
-		// Apply Local Space transformation
-		Vector3 transformedGyro = TransformToLocalSpace(
-			processedYaw, processedPitch, processedRoll,
-			1.0f, 1.0f, 1.0f, 0.0f
-		);
+			// Apply Local Space transformation
+			Vector3 transformedGyro = TransformToLocalSpace(
+					processedYaw, processedPitch, processedRoll,
+					1.0f, 1.0f, 1.0f, 0.0f
+			);
 
-		*deltaX = transformedGyro.x;
-		*deltaY = transformedGyro.y;
-		*deltaZ = transformedGyro.z;
+			*deltaX = transformedGyro.x;
+			*deltaY = transformedGyro.y;
+			*deltaZ = transformedGyro.z;
 	}
 	break;
 
 	case GYRO_PLAYER:
 	{
-		// Process gyro axes: Yaw, Pitch, Roll
-		float processedYaw = -gyroData[1];
-		float processedPitch = -gyroData[0];
-		float processedRoll = -gyroData[2];
+			float processedYaw = -gyroData[1];
+			float processedPitch = -gyroData[0];
+			float processedRoll = -gyroData[2];
 
-		// Apply Player Space transformation with gravity alignment
-		Vector3 transformedGyro = TransformToPlayerSpace(
-			processedYaw, processedPitch, processedRoll,
-			GetGravityVector(), 1.0f, 1.0f, 1.0f
-		);
+			// Apply Player Space transformation with gravity alignment
+			Vector3 transformedGyro = TransformToPlayerSpace(
+					processedYaw, processedPitch, processedRoll,
+					GetGravityVector(), 1.0f, 1.0f, 1.0f
+			);
 
-		*deltaX = transformedGyro.x;
-		*deltaY = transformedGyro.y;
-		*deltaZ = transformedGyro.z;
+			*deltaX = transformedGyro.x;
+			*deltaY = transformedGyro.y;
+			*deltaZ = transformedGyro.z;
 	}
 	break;
 
 	case GYRO_WORLD:
 	{
-		// Process gyro axes: Yaw, Pitch, Roll
-		float processedYaw = -gyroData[1];
-		float processedPitch = -gyroData[0];
-		float processedRoll = -gyroData[2];
+			float processedYaw = -gyroData[1];
+			float processedPitch = -gyroData[0];
+			float processedRoll = -gyroData[2];
 
-		// Apply World Space transformation with gravity influence
-		Vector3 transformedGyro = TransformToWorldSpace(
-			processedYaw, processedPitch, processedRoll,
-			GetGravityVector(), 1.0f, 1.0f, 1.0f
-		);
+			// Apply World Space transformation with gravity influence
+			Vector3 transformedGyro = TransformToWorldSpace(
+					processedYaw, processedPitch, processedRoll,
+					GetGravityVector(), 1.0f, 1.0f, 1.0f
+			);
 
-		*deltaX = transformedGyro.x;
-		*deltaY = transformedGyro.y;
-		*deltaZ = transformedGyro.z;
+			*deltaX = transformedGyro.x;
+			*deltaY = transformedGyro.y;
+			*deltaZ = transformedGyro.z;
 	}
 	break;
 
@@ -1763,9 +1675,6 @@ void inputGyroSetSpeed(f32 x, f32 y)
 	// Set new sensitivity values
 	gyroSensX = x;
 	gyroSensY = y;
-
-	// Optional debugging log
-	printf("Gyro Speed Updated - X: %.2f, Y: %.2f\n", gyroSensX, gyroSensY);
 }
 
 f32 inputGyroGetSpeedX(void)
@@ -1821,9 +1730,6 @@ void inputGyroSetCrosshairSpeed(f32 x, f32 y)
 	// Set new crosshair sensitivity values
 	gyroAimSensX = x;
 	gyroAimSensY = y;
-
-	// Optional debugging log
-	printf("Gyro Crosshair Speed Updated - X: %.2f, Y: %.2f\n", gyroAimSensX, gyroAimSensY);
 }
 
 f32 inputGyroGetAimSpeedX(void)
@@ -1903,14 +1809,6 @@ void applyGyroActivationMode(f32* deltaX, f32* deltaY, f32* deltaZ, s32 activati
 		*deltaY = 0.f;
 		*deltaZ = 0.f;
 	}
-}
-
-s32 inputGyroAutoCalibrationIsEnabled(void) {
-	return gyroAutoCalibration; // Returns the current state of auto-calibration
-}
-
-void inputGyroAutoCalibrationEnable(s32 enabled) {
-	gyroAutoCalibration = (enabled != 0); // Toggles auto-calibration
 }
 
 f32 inputGetGyroMinThreshold(void)
@@ -2169,7 +2067,6 @@ PD_CONSTRUCTOR static void inputConfigInit(void)
 	configRegisterFloat("Input.gyroAimSensX", &gyroAimSensX, -10.f, 10.f);
 	configRegisterFloat("Input.gyroAimSensY", &gyroAimSensY, -10.f, 10.f);
 	configRegisterFloat("Input.gyroMinThreshold", &gyroMinThreshold, 0.f, 1.f);
-	configRegisterInt("Input.gyroAutoCalibration", &gyroAutoCalibration, 0, 1);
 	configRegisterInt("Input.FakeGamepads", &fakeControllers, 0, 4);
 	configRegisterInt("Input.FirstGamepadNum", &firstController, 0, 3);
 	configRegisterInt("Input.UseHIDAPI", &useHIDAPI, 0, 1);
