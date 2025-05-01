@@ -1519,77 +1519,77 @@ void inputSetGyroAxisMode(enum gyroaxismode mode)
 
 void applyGyroAxisMapping(float gyroData[3], f32* deltaX, f32* deltaY, f32* deltaZ)
 {
-	switch (inputGetGyroAxisMode()) {
-	case GYRO_YAW:
-		*deltaX = -gyroData[1]; // Yaw for horizontal movement
-		*deltaY = -gyroData[0]; // Pitch for vertical movement
+		switch (inputGetGyroAxisMode()) {
+		case GYRO_YAW:
+				*deltaX = -gyroData[1]; // Yaw for horizontal movement
+				*deltaY = -gyroData[0]; // Pitch for vertical movement
+				break;
+
+		case GYRO_ROLL:
+				*deltaX = gyroData[2];  // Roll for horizontal movement
+				*deltaY = -gyroData[0]; // Pitch for vertical movement
+				break;
+
+		case GYRO_LOCAL:
+		{
+				float processedYaw = -gyroData[1];
+				float processedPitch = -gyroData[0];
+				float processedRoll = -gyroData[2];
+
+				// Apply Local Space transformation
+				Vector3 transformedGyro = TransformToLocalSpace(
+						processedYaw, processedPitch, processedRoll,
+						0.0f
+				);
+
+				*deltaX = transformedGyro.x;
+				*deltaY = transformedGyro.y;
+				*deltaZ = transformedGyro.z;
+		}
 		break;
 
-	case GYRO_ROLL:
-		*deltaX = gyroData[2];  // Roll for horizontal movement
-		*deltaY = -gyroData[0]; // Pitch for vertical movement
+		case GYRO_PLAYER:
+		{
+				float processedYaw = -gyroData[1];
+				float processedPitch = -gyroData[0];
+				float processedRoll = -gyroData[2];
+
+				// Apply Player Space transformation with gravity alignment
+				Vector3 transformedGyro = TransformToPlayerSpace(
+						processedYaw, processedPitch, processedRoll,
+						GetGravityVector()
+				);
+
+				*deltaX = transformedGyro.x;
+				*deltaY = transformedGyro.y;
+				*deltaZ = transformedGyro.z;
+		}
 		break;
 
-	case GYRO_LOCAL:
-	{
-			float processedYaw = -gyroData[1];
-			float processedPitch = -gyroData[0];
-			float processedRoll = -gyroData[2];
+		case GYRO_WORLD:
+		{
+				float processedYaw = -gyroData[1];
+				float processedPitch = -gyroData[0];
+				float processedRoll = -gyroData[2];
 
-			// Apply Local Space transformation
-			Vector3 transformedGyro = TransformToLocalSpace(
-					processedYaw, processedPitch, processedRoll,
-					1.0f, 1.0f, 1.0f, 0.0f
-			);
+				// Apply World Space transformation with gravity influence
+				Vector3 transformedGyro = TransformToWorldSpace(
+						processedYaw, processedPitch, processedRoll,
+						GetGravityVector()
+				);
 
-			*deltaX = transformedGyro.x;
-			*deltaY = transformedGyro.y;
-			*deltaZ = transformedGyro.z;
-	}
-	break;
-
-	case GYRO_PLAYER:
-	{
-			float processedYaw = -gyroData[1];
-			float processedPitch = -gyroData[0];
-			float processedRoll = -gyroData[2];
-
-			// Apply Player Space transformation with gravity alignment
-			Vector3 transformedGyro = TransformToPlayerSpace(
-					processedYaw, processedPitch, processedRoll,
-					GetGravityVector(), 1.0f, 1.0f, 1.0f
-			);
-
-			*deltaX = transformedGyro.x;
-			*deltaY = transformedGyro.y;
-			*deltaZ = transformedGyro.z;
-	}
-	break;
-
-	case GYRO_WORLD:
-	{
-			float processedYaw = -gyroData[1];
-			float processedPitch = -gyroData[0];
-			float processedRoll = -gyroData[2];
-
-			// Apply World Space transformation with gravity influence
-			Vector3 transformedGyro = TransformToWorldSpace(
-					processedYaw, processedPitch, processedRoll,
-					GetGravityVector(), 1.0f, 1.0f, 1.0f
-			);
-
-			*deltaX = transformedGyro.x;
-			*deltaY = transformedGyro.y;
-			*deltaZ = transformedGyro.z;
-	}
-	break;
-
-	default:
-		*deltaX = 0.f;
-		*deltaY = 0.f;
-		*deltaZ = 0.f;
+				*deltaX = transformedGyro.x;
+				*deltaY = transformedGyro.y;
+				*deltaZ = transformedGyro.z;
+		}
 		break;
-	}
+
+		default:
+				*deltaX = 0.f;
+				*deltaY = 0.f;
+				*deltaZ = 0.f;
+				break;
+		}
 }
 
 s32 inputGetGyroAimMode(void)
