@@ -44,11 +44,31 @@ void artifactsTick(void)
 	schedIncrementFrontArtifacts();
 }
 
-u16 func0f13c574(f32 arg0)
+u16 floatToIntDepth(f32 arg0)
 {
+	/**
+	 * Method to convert a 32 bit floating point depth value
+	 * to the unsigned 16 bit integer depth format used by
+	 * the zbuffer available on the N64. The argument arg0
+	 * represents z normalized to [0, 1] * 32704.0f.
+	 *
+	 * It works by scaling the depth value up to a large
+	 * integer and applying different scaling factors
+	 * before scaling back down to an unsigned 16 bit 
+	 * integer. It is probably intended to reduce z-fighting
+	 * by adding more differentiation to distant z values.
+	 * The scaling is done using bitwise operations
+	 * to form the most & least significant bytes of the
+	 * resulting 16 bit integer, likely because bit shift
+	 * operations are faster than division.
+	 *
+	 * TO DO: figure why the output appears with a >> 2 shift.
+	 * It might be worth it to simplify some of the externally
+	 * applied scaling factors if it can match the N64 compilation.
+	 */
 	u32 value = arg0 * 8.0f;
-	u32 left;
-	u32 right = value;
+	u32 left; // forms the most significant byte of the final u16
+	u32 right = value; // forms the least significant byte of the final u16
 
 	if (value > 0x3f800) {
 		right = value & 0x7ff;
@@ -359,7 +379,7 @@ void artifactsCalculateGlaresForRoom(s32 roomnum)
 #ifndef PLATFORM_N64
 									artifact->unk02 = artifactTestLos(&spec, &g_BgRooms[roomnum].pos, xi, yi);
 #endif
-									artifact->unk04 = func0f13c574(f0) >> 2;
+									artifact->unk04 = floatToIntDepth(f0) >> 2;
 									artifact->unk08 = &g_ZbufPtr1[viGetWidth() * yi + xi];
 									artifact->light = &roomlights[i];
 									artifact->type = ARTIFACTTYPE_GLARE;
