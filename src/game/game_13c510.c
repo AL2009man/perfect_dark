@@ -23,6 +23,70 @@
 #include "game/prop.h"
 #endif
 
+/**
+ * Artifacts are points of interest in the z-buffer.
+ *
+ * They correspond to:
+ * - Individual circles in the lens flare effect from the sun.
+ * - Individual corners of each light fixture's box.
+ *
+ * The game needs to do line of sight checks to these points. The collision
+ * system would normally be used for line of sight checks, but it only works
+ * with basic geometric volumes and also doesn't take into account the player's
+ * gun. Instead, the checks are done by reading from the previous frame's
+ * z-buffer.
+ *
+ * Typically, the z-buffer would be read by the scheduler after a graphics frame
+ * is rendered, but this only works if the z-buffer is a complete image.
+ * PD draws the scene, then clears the z-buffer before drawing the player's gun,
+ * so the z-buffer at the end only contains the player's gun. To work around
+ * this, the GPU is given commands to read the z-buffer as a texture and copy
+ * depth values to a safe place before clearing it. Then once the frame is
+ * rendered, the scheduler compares the saved depths with the current z-buffer
+ * and updates the artifact, applying the minimum of the two depths.
+ *
+ * The scheduler maintains 3 arrays of artifacts, each referenced by indexes
+ * which rotate between them.
+ * - Artifacts are written by the main thread using the write index.
+ *   The write and front indexes are then incremented.
+ * - The same artifacts are updated by the scheduler using the pending index.
+ *   The pending index is then updated.
+ * - The artifacts are then rendered on a later frame using the front index.
+ *
+ * In each artifacts array, the first several slots are reserved for the sun
+ * flare artifacts. The quantity depends on the number of suns in the stage
+ * (Skedar Ruins has 3) and there are 8 artifacts per sun. The remaining slots
+ * are used for light fixture corners. The array is big enough to handle at
+ * least 90 lights on screen at a time.
+ *
+ * The initial state of the indexes are write=0, front=1, pending=0.
+ * These are set in sched_reset_artifacts.
+ *
+ * The detailed workflow is:
+ * - CPU: Light artifacts are determined and added to write artifacts (0) array
+ * - CPU: Constructs the gdl in this order:
+ *     - Render scene
+ *     - Copy relevant parts of z-buffer to write depths (0) array
+ *     - Clear z-buffer and render gun
+ *     - Render artifacts by reading from front artifacts (1) array
+ * - CPU: increments write (0 -> 1) and front (1 -> 2) indexes
+ * - GPU: Executes above task. g_ArtifactDepths0 now contains depths, and is
+ *       pointed to by pending.
+ * - Scheduler: Reads the z-buffer, which at this point only contains the gun
+ *       depth information, and updates the artifact with the minimum of the two
+ * - Scheduler: Increments pending (0 -> 1)
+ *
+ * It appears that the front index should be initialised to 2 instead, so that
+ * it's one frame behind the others rather than two frames behind.
+ *
+ * There's no doubt this went through several iterations before landing on this
+ * implementation. It's likely that this was implemented using a single and full
+ * z-buffer and it worked well until they decided to clear the z-buffer before
+ * rendering the gun. There is evidence in zbuf.c that they allocated a second
+ * z-buffer and swapped it. But when memory got too tight they had to change it
+ * to this texture read method.
+ */
+
 u8 *var800a41a0;
 u32 var800a41a4;
 u32 var800a41a8;
@@ -47,20 +111,18 @@ void artifactsTick(void)
 u16 floatToIntDepth(f32 arg0)
 {
 	/**
-	 * Method to convert a 32 bit floating point depth value
-	 * to the unsigned 16 bit integer depth format used by
-	 * the zbuffer available on the N64. The argument arg0
-	 * represents z normalized to [0, 1] * 32704.0f.
+	 * Method to convert a 32 bit floating point depth value to the
+	 * unsigned 16 bit integer format used by the zbuffer on the N64.
+	 * The argument arg0 represents z normalized to [0, 1] * 32704.0f.
 	 *
-	 * It works by scaling the depth value up to a large
-	 * integer and applying different scaling factors
-	 * before scaling back down to an unsigned 16 bit 
-	 * integer. It is probably intended to reduce z-fighting
-	 * by adding more differentiation to distant z values.
-	 * The scaling is done using bitwise operations
-	 * to form the most & least significant bytes of the
-	 * resulting 16 bit integer, likely because bit shift
-	 * operations are faster than division.
+	 * It works by converting the depth value to a large, unsigned 32 bit
+	 * integer before scaling back down to an unsigned 16 bit integer.
+	 * The scaling is done using bit shift operations on the most & least
+	 * significant bytes of the resulting 16 bit integer, likely because
+	 * bit shift operations are faster than division. The segmentation of
+	 * this calculation at values 0x3f800, 0x3f000, etc. is probably
+	 * intended to reduce z-fighting by adding more differentiation for
+	 * distant z values.
 	 *
 	 * TO DO: figure why the output appears with a >> 2 shift.
 	 * It might be worth it to simplify some of the externally
