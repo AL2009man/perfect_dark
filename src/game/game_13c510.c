@@ -439,14 +439,14 @@ void artifactsCalculateGlaresForRoom(s32 roomnum)
 
 								if (index < MAX_ARTIFACTS) {
 #ifndef PLATFORM_N64
-									artifact->unk02 = artifactTestLos(&spec, &g_BgRooms[roomnum].pos, xi, yi);
+									artifact->visiblelos = artifactTestLos(&spec, &g_BgRooms[roomnum].pos, xi, yi);
 #endif
-									artifact->unk04 = floatToIntDepth(f0) >> 2;
-									artifact->unk08 = &g_ZbufPtr1[viGetWidth() * yi + xi];
+									artifact->expecteddepth = floatToIntDepth(f0) >> 2;
+									artifact->zbufptr = &g_ZbufPtr1[viGetWidth() * yi + xi];
 									artifact->light = &roomlights[i];
 									artifact->type = ARTIFACTTYPE_GLARE;
-									artifact->unk0c.u16_2 = xi;
-									artifact->unk0c.u16_1 = yi;
+									artifact->screenx = xi;
+									artifact->screeny = yi;
 								}
 							}
 						}
@@ -457,7 +457,7 @@ void artifactsCalculateGlaresForRoom(s32 roomnum)
 	}
 }
 
-u8 func0f13d3c4(u8 arg0, u8 arg1)
+u8 artifactsClamp(u8 arg0, u8 arg1)
 {
 	if (arg1 >= arg0 + 7) {
 		return arg0 + 7;
@@ -505,18 +505,18 @@ Gfx *artifactsRenderGlaresForRoom(Gfx *gdl, s32 roomnum)
 	u16 min;
 	u16 max;
 	f32 lightop_cur_frac;
-	s32 t2;
+	s32 numgood;
 	struct light *light;
 	u8 *s3;
 	s32 k;
 	s32 count;
-	u16 t4;
+	u16 actualdepth;
 	f32 add;
 	s32 l;
 	f32 brightness;
-	s32 avg;
+	s32 tolerance;
 	f32 f0;
-	s32 v1;
+	s32 difference;
 	s32 r;
 	s32 g;
 	s32 b;
@@ -542,6 +542,12 @@ Gfx *artifactsRenderGlaresForRoom(Gfx *gdl, s32 roomnum)
 		struct light *light2 = artifacts[i].light;
 		count = 0;
 
+		/**
+		 * light arifacts are created from several, closely spaced
+		 * textures that give the appearance of a dynamic light glare
+		 * as the character moves. Loop to count all the sub-artifacts
+		 * in this light.
+		 */
 		for (j = i; j < MAX_ARTIFACTS && artifacts[j].type == ARTIFACTTYPE_GLARE && artifacts[j].light == light2; j++) {
 			count++;
 		}
@@ -552,51 +558,65 @@ Gfx *artifactsRenderGlaresForRoom(Gfx *gdl, s32 roomnum)
 			if (roomnum == light->roomnum) {
 				lightindex = ((uintptr_t)light - (uintptr_t)g_BgLightsFileData) / sizeof(struct light);
 				s3 = &var800a41a0[lightindex * 3];
-				t2 = 0;
+				numgood = 0;
 				min = 0xffff;
 				max = 0;
 
+				/**
+				 * loop to determine the min & max depth of
+				 * the sub-artifacts composing this room light.
+				 */
 				for (k = i; k < i + count; k++) {
-					if (artifacts[k].unk04 > max) {
-						max = artifacts[k].unk04;
+					if (artifacts[k].expecteddepth > max) {
+						max = artifacts[k].expecteddepth;
 					}
 
-					if (artifacts[k].unk04 < min) {
-						min = artifacts[k].unk04;
+					if (artifacts[k].expecteddepth < min) {
+						min = artifacts[k].expecteddepth;
 					}
 				}
 
-				avg = (max - min) >> 1;
+				/**
+				 * Define a depth tolerance from the min & max
+				 * depths of sub-artifacts for a given light.
+				 * This will be used to determine which light
+				 * artifacts are visible when comparing depth
+				 * values of lights to other items rendered
+				 * on screen. Without this, the lights would
+				 * constantly flicker due to z-fighting caused
+				 * by the low precision of the N64 depth.
+				 */
+				tolerance = (max - min) >> 1;
 
-				if (avg < 25) {
-					avg = 25;
+				if (tolerance < 25) {
+					tolerance = 25;
 				}
 
 				for (k = i; k < i + count; k++) {
-#ifdef PLATFORM_N64
-					u16 tmp;
-					t4 = (artifacts[k].unk02 & 0xfffc) >> 2;
-					tmp = artifacts[k].unk04;
+					u16 expecteddepth;
+					actualdepth = (artifacts[k].actualdepth & 0xfffc) >> 2;
+					expecteddepth = artifacts[k].expecteddepth;
 
-					if (tmp < t4) {
-						v1 = t4 - tmp;
+					if (expecteddepth < actualdepth) {
+						difference = actualdepth - expecteddepth;
 					} else {
-						v1 = tmp - t4;
+						difference = expecteddepth - actualdepth;
 					}
 
-					if (avg >= v1) {
-						t2++;
+#ifdef PLATFORM_N64
+					if (difference <= tolerance) {
+						numgood++;
 					}
 #else
-					t2 += artifacts[k].unk02;
+					numgood += artifacts[k].visiblelos;
 #endif
 
 					artifacts[k].type = ARTIFACTTYPE_FREE;
 				}
 
-				s3[0] = func0f13d3c4(s3[0], t2 * 2);
+				s3[0] = artifactsClamp(s3[0], numgood * 2);
 
-				if (t2 > 0) {
+				if (numgood > 0) {
 					brightness = viGetFovY() * 0.017453292f;
 					add = cosf(brightness) / sinf(brightness) * 14.6f;
 
