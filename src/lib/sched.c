@@ -19,6 +19,7 @@
 #include "lib/joy.h"
 #include "data.h"
 #include "types.h"
+#include <stdio.h> // remove after debugging
 
 /*
  * private typedefs and defines
@@ -533,6 +534,8 @@ void schedResetArtifacts(void)
 
 void schedUpdatePendingArtifacts(void)
 {
+	printf("\nsrc/lib/sched.c:schedUpdatePendingArtifacts()");
+	fflush(stdout);
 	struct artifact *artifacts = schedGetPendingArtifacts();
 	s32 i;
 
@@ -561,6 +564,8 @@ void schedUpdatePendingArtifacts(void)
 	g_SchedSpecialArtifactIndexes[g_SchedPendingArtifactsIndex] = 0;
 
 	schedIncrementPendingArtifacts();
+	printf("\n  done!");
+	fflush(stdout);
 }
 
 /**

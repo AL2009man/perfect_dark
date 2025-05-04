@@ -10,6 +10,7 @@
 #include "lib/memp.h"
 #include "data.h"
 #include "types.h"
+#include <stdio.h> // remove after debugging
 
 u32 g_ZbufWidth;
 u32 g_ZbufHeight;
@@ -125,7 +126,6 @@ Gfx *zbufConfigureRdp(Gfx *gdl)
  */
 Gfx *zbufClear(Gfx *gdl)
 {
-#ifdef PLATFORM_N64
 	s32 left;
 	s32 right;
 
@@ -149,7 +149,7 @@ Gfx *zbufClear(Gfx *gdl)
 
 	gDPFillRectangle(gdl++, left, 0, right, playerGetFbHeight() - 1);
 	gDPPipeSync(gdl++);
-#else
+#ifndef PLATFORM_N64
 	gDPClearDepthEXT(gdl++);
 #endif
 
@@ -188,6 +188,8 @@ Gfx *zbufSaveArtifactDepths(Gfx *gdl)
 	u16 *zbufrow;
 	s32 i;
 
+	printf("\nsrc/game/zbuf.c:zbufSaveArtifactDepths()");
+	fflush(stdout);
 	viGetBackBuffer();
 	samples = zbufGetArtifactsCfb(g_SchedWriteArtifactsIndex);
 	g_SchedSpecialArtifactIndexes[g_SchedWriteArtifactsIndex] = 1;
@@ -253,5 +255,7 @@ Gfx *zbufSaveArtifactDepths(Gfx *gdl)
 
 	if (samples);
 
+	printf("\n done!");
+	fflush(stdout);
 	return gdl;
 }

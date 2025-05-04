@@ -57,6 +57,7 @@
 #include "game/stagetable.h"
 #include "video.h"
 #include "platform.h"
+#include <stdio.h> // remove after debugging
 #endif
 
 #define GUNLOADSTATE_FLUX     0
@@ -10938,6 +10939,8 @@ glabel var7f1aca90
 // Mismatch: Goal uses different codegen for accessing vertices
 void bgunRender(Gfx **gdlptr)
 {
+	printf("\nsrc/game/bondgun.c:bgunRender()");
+	fflush(stdout);
 	Gfx *gdl = *gdlptr;
 	struct modelrenderdata renderdata = {NULL, true, 3}; // 10c
 	struct player *player;
@@ -11190,6 +11193,8 @@ void bgunRender(Gfx **gdlptr)
 			viGetViewLeft() + viGetViewWidth(), viGetViewTop() + viGetViewHeight());
 
 	*gdlptr = gdl;
+	printf("\n done!");
+	fflush(stdout);
 }
 #endif
 
