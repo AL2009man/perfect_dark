@@ -469,7 +469,7 @@ static inline void inputInitAllControllers(void)
 
 	numJoysticks = SDL_NumJoysticks();
 
-	connectedMask = 1; // always report first controller as connected
+	connectedMask = 0; // Initialize connectedMask to 0
 
 	// first try to assign the controllers that we had last time
 	// we're still free to check by device index before any controller device events fire
@@ -480,6 +480,7 @@ static inline void inputInitAllControllers(void)
 				// using the full assign function in case user sets same index for several players
 				if (inputTryController(cidx, jidx)) {
 					// success
+					connectedMask |= (1 << cidx); // Set bit if successfully assigned
 					continue;
 				}
 			}
@@ -493,16 +494,15 @@ static inline void inputInitAllControllers(void)
 		if (SDL_IsGameController(jidx) && inputControllerGetIndexByDeviceIndex(jidx) < 0) {
 			for (s32 cidx = firstController; cidx < INPUT_MAX_CONTROLLERS; ++cidx) {
 				if (inputTryController(cidx, jidx)) {
-					break;
+					connectedMask |= (1 << cidx); // Set bit if successfully assigned
+					break; // Move to the next joystick once assigned
 				}
 			}
 		}
 	}
 
-	const s32 overrideMask = (1 << fakeControllers) - 1;
-	if (overrideMask) {
-		connectedMask = overrideMask;
-	}
+	// Removed the fakeControllers override logic
+	// The connectedMask now accurately reflects successfully opened controllers.
 }
 
 static int inputEventFilter(void *data, SDL_Event *event)
@@ -1829,7 +1829,7 @@ void applyGyroThreshold(f32* deltaX, f32* deltaY, f32* deltaZ, f32 threshold)
 	bool isNintendoController = false;
 	if (pads[0]) {
 		SDL_GameControllerType controllerType = SDL_GameControllerGetType(pads[0]);
-#if SDL_VERSION_ATLEAST(2, 0, 14)
+#if SDL_VERSION_ATLEAST(2, 0, 15) 
 		isNintendoController = (controllerType == SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_PRO ||
 			controllerType == SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_JOYCON_PAIR);
 #else

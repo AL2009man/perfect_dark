@@ -795,54 +795,46 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 
 	// Handle Mouse Input
 	if (allowmlook) {
-			inputMouseGetScaledDelta(&movedata.freelookdx, &movedata.freelookdy);
-			allowmcross = (PLAYER_EXTCFG().mouseaimmode == MOUSEAIM_CLASSIC) &&
-					(movedata.freelookdx || movedata.freelookdy || g_Vars.currentplayer->swivelpos[0] || g_Vars.currentplayer->swivelpos[1]);
-			if (movedata.invertpitch) {
-					movedata.freelookdy = -movedata.freelookdy;
-			}
+		inputMouseGetScaledDelta(&movedata.freelookdx, &movedata.freelookdy);
+		allowmcross = (PLAYER_EXTCFG().mouseaimmode == MOUSEAIM_CLASSIC) &&
+			(movedata.freelookdx || movedata.freelookdy || g_Vars.currentplayer->swivelpos[0] || g_Vars.currentplayer->swivelpos[1]);
+		if (movedata.invertpitch) {
+			movedata.freelookdy = -movedata.freelookdy;
+		}
 	}
 
 	// Handle Gyro Input
 	if (allowgyro) {
-			f32 gyroCamDx = 0.f, gyroCamDy = 0.f, gyroCamDz = 0.f;
-			f32 gyroCrossDx = 0.f, gyroCrossDy = 0.f;
+		f32 gyroCamDx = 0.f, gyroCamDy = 0.f, gyroCamDz = 0.f;
+		f32 gyroCrossDx = 0.f, gyroCrossDy = 0.f;
 
-			// Apply gyro activator logic for freelook (camera movement)
-			if (inputGetGyroAimMode() == GYRO_AIM_MODE_CAMERA || inputGetGyroAimMode() == GYRO_AIM_MODE_BOTH) {
-					inputGyroGetScaledDelta(&gyroCamDx, &gyroCamDy, &gyroCamDz);
-					movedata.gyrolookdx += gyroCamDx;
-					movedata.gyrolookdy += gyroCamDy;
+		if (inputGetGyroAimMode() == GYRO_AIM_MODE_CAMERA || inputGetGyroAimMode() == GYRO_AIM_MODE_BOTH) {
+			inputGyroGetScaledDelta(&gyroCamDx, &gyroCamDy, &gyroCamDz);
+			movedata.gyrolookdx += gyroCamDx;
+			movedata.gyrolookdy += gyroCamDy;
+		}
+
+		if (inputGetGyroAimMode() == GYRO_AIM_MODE_CROSSHAIR || inputGetGyroAimMode() == GYRO_AIM_MODE_BOTH) {
+			inputGyroGetScaledDeltaCrosshair(&gyroCrossDx, &gyroCrossDy);
+			if (g_Vars.currentplayer) {
+				g_Vars.currentplayer->swivelpos[0] += gyroCrossDx;
+				g_Vars.currentplayer->swivelpos[1] += gyroCrossDy;
 			}
+			allowmcross = allowmcross || (gyroCrossDx || gyroCrossDy);
+		}
 
-			// Apply gyro crosshair movement separately
-			if (inputGetGyroAimMode() == GYRO_AIM_MODE_CROSSHAIR || inputGetGyroAimMode() == GYRO_AIM_MODE_BOTH) {
-					inputGyroGetScaledDeltaCrosshair(&gyroCrossDx, &gyroCrossDy);
-					g_Vars.currentplayer->swivelpos[0] += gyroCrossDx;
-					g_Vars.currentplayer->swivelpos[1] += gyroCrossDy;
+		if (movedata.invertpitch) {
+			movedata.gyrolookdy = -movedata.gyrolookdy;
+		}
 
-					// Ensure activation logic considers gyro input
-					allowmcross = allowmcross || (gyroCrossDx || gyroCrossDy);
-			}
-
-			// Apply pitch inversion correctly
-			if (movedata.invertpitch) {
-					movedata.gyrolookdy = -movedata.gyrolookdy;
-					gyroCamDy = -gyroCamDy;
-					gyroCrossDy = -gyroCrossDy;
-			}
-
-			// Apply scaled gyrolook movement
-			fVar25 += movedata.gyrolookdx * gyroscale;
-			fVar25 += movedata.gyrolookdy * gyroscale;
+		fVar25 += movedata.gyrolookdx * gyroscale;
+		fVar25 += movedata.gyrolookdy * gyroscale;
 	}
 
-
-	// Always pause with ESC key
-	if (allowc1buttons && g_Vars.currentplayer->isdead == false && g_Vars.currentplayer->pausemode == PAUSEMODE_UNPAUSED) {
-			if (inputKeyJustPressed(VK_ESCAPE)) {
-					c1buttonsthisframe |= START_BUTTON;
-			}
+	if (allowc1buttons && g_Vars.currentplayer && !g_Vars.currentplayer->isdead && g_Vars.currentplayer->pausemode == PAUSEMODE_UNPAUSED) {
+		if (inputKeyJustPressed(VK_ESCAPE)) {
+			c1buttonsthisframe |= START_BUTTON;
+		}
 	}
 
 #endif
