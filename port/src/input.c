@@ -1825,27 +1825,13 @@ void applyGyroThreshold(f32* deltaX, f32* deltaY, f32* deltaZ, f32 threshold)
 {
 	if (!deltaX || !deltaY || !deltaZ) return;
 
-	// Detect if the active controller is a Nintendo Switch controller
-	bool isNintendoController = false;
-	if (pads[0]) {
-		SDL_GameControllerType controllerType = SDL_GameControllerGetType(pads[0]);
-#if SDL_VERSION_ATLEAST(2, 0, 15) 
-		isNintendoController = (controllerType == SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_PRO ||
-			controllerType == SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_JOYCON_PAIR);
-#else
-		isNintendoController = (controllerType == SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_PRO);
-#endif
-	}
-
 	// Fine-tune deadzone values, but only apply if threshold is > 0
-	const f32 nintendoDeadzoneX = threshold > 0.f ? fmaxf(threshold * 0.82f, 0.05f) : 0.f;
-	const f32 nintendoDeadzoneY = threshold > 0.f ? fmaxf(threshold * 0.85f, 0.075f) : 0.f;
 	const f32 baseDeadzone = threshold > 0.f ? fmaxf(threshold * 0.75f, 0.04f) : 0.f;
 
 	// Apply different deadzone thresholds per axis
-	const f32 appliedDeadzoneX = isNintendoController ? nintendoDeadzoneX : baseDeadzone;
-	const f32 appliedDeadzoneY = isNintendoController ? nintendoDeadzoneY : baseDeadzone;
-	const f32 appliedDeadzoneZ = isNintendoController ? nintendoDeadzoneX : baseDeadzone;
+	const f32 appliedDeadzoneX = baseDeadzone;
+	const f32 appliedDeadzoneY = baseDeadzone;
+	const f32 appliedDeadzoneZ = baseDeadzone;
 
 	// Soft Tiered Smoothing: Apply smoothing only to small movements
 	static f32 prevDeltaX = 0.f, prevDeltaY = 0.f, prevDeltaZ = 0.f;
