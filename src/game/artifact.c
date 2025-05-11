@@ -595,6 +595,7 @@ Gfx *artifactsRenderGlaresForRoom(Gfx *gdl, s32 roomnum)
 				}
 
 				for (k = i; k < i + count; k++) {
+#ifdef PLATFORM_N64
 					u16 expecteddepth;
 					actualdepth = (artifacts[k].actualdepth & 0xfffc) >> 2;
 					expecteddepth = artifacts[k].expecteddepth;
@@ -605,7 +606,6 @@ Gfx *artifactsRenderGlaresForRoom(Gfx *gdl, s32 roomnum)
 						difference = expecteddepth - actualdepth;
 					}
 
-#ifdef PLATFORM_N64
 					if (difference <= tolerance) {
 						numgood++;
 					}
