@@ -10,7 +10,6 @@
 #include "lib/memp.h"
 #include "data.h"
 #include "types.h"
-#include <stdio.h> // remove after debugging
 
 u32 g_ZbufWidth;
 u32 g_ZbufHeight;
@@ -126,6 +125,7 @@ Gfx *zbufConfigureRdp(Gfx *gdl)
  */
 Gfx *zbufClear(Gfx *gdl)
 {
+#ifdef PLATFORM_N64
 	s32 left;
 	s32 right;
 
@@ -149,7 +149,7 @@ Gfx *zbufClear(Gfx *gdl)
 
 	gDPFillRectangle(gdl++, left, 0, right, playerGetFbHeight() - 1);
 	gDPPipeSync(gdl++);
-#ifndef PLATFORM_N64
+#else
 	gDPClearDepthEXT(gdl++);
 #endif
 
@@ -177,6 +177,14 @@ u16 *zbufGetArtifactsCfb(s32 index)
 	return addr;
 }
 
+/**
+ * This method is designed to save artifact depths
+ * prior to drawing the hands and weapon on-screen
+ * since drawing them requires clearing the zbuffer
+ * to avoid clipping the gun model on floors and walls.
+ *
+ * TODO: determine if this works with the PC port
+ */
 Gfx *zbufSaveArtifactDepths(Gfx *gdl)
 {
 	struct artifact *artifacts = schedGetWriteArtifacts();
@@ -188,8 +196,6 @@ Gfx *zbufSaveArtifactDepths(Gfx *gdl)
 	u16 *zbufrow;
 	s32 i;
 
-	printf("\nsrc/game/zbuf.c:zbufSaveArtifactDepths()");
-	fflush(stdout);
 	viGetBackBuffer();
 	samples = zbufGetArtifactsCfb(g_SchedWriteArtifactsIndex);
 	g_SchedSpecialArtifactIndexes[g_SchedWriteArtifactsIndex] = 1;
@@ -255,7 +261,5 @@ Gfx *zbufSaveArtifactDepths(Gfx *gdl)
 
 	if (samples);
 
-	printf("\n done!");
-	fflush(stdout);
 	return gdl;
 }

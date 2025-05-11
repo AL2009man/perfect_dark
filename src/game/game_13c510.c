@@ -21,7 +21,6 @@
 #include "lib/lib_17ce0.h"
 #include "game/player.h"
 #include "game/prop.h"
-#include <stdio.h> // remove after debugging
 #endif
 
 /**
@@ -109,7 +108,7 @@ void artifactsTick(void)
 	schedIncrementFrontArtifacts();
 }
 
-u16 floatToIntDepth(f32 arg0)
+u16 floatToN64Depth(f32 arg0)
 {
 	/**
 	 * Method to convert a 32 bit floating point depth value to the
@@ -124,10 +123,6 @@ u16 floatToIntDepth(f32 arg0)
 	 * this calculation at values 0x3f800, 0x3f000, etc. is probably
 	 * intended to reduce z-fighting by adding more differentiation for
 	 * distant z values.
-	 *
-	 * TO DO: figure why the output appears with a >> 2 shift.
-	 * It might be worth it to simplify some of the externally
-	 * applied scaling factors if it can match the N64 compilation.
 	 */
 	u32 value = arg0 * 8.0f;
 	u32 left; // forms the most significant byte of the final u16
@@ -215,9 +210,6 @@ bool artifactTestLos(struct coord *spec, struct coord *roompos, s32 xi, s32 yi)
 
 void artifactsCalculateGlaresForRoom(s32 roomnum)
 {
-	printf("\nsrc/game/game_13c510.c:artifactsCalculateGlaresForRoom(%d)", roomnum);
-	fflush(stdout);
-
 	s32 i;
 	s32 j;
 	s32 k;
@@ -445,7 +437,13 @@ void artifactsCalculateGlaresForRoom(s32 roomnum)
 #ifndef PLATFORM_N64
 									artifact->visiblelos = artifactTestLos(&spec, &g_BgRooms[roomnum].pos, xi, yi);
 #endif
-									artifact->expecteddepth = floatToIntDepth(f0) >> 2;
+									/**
+									 * the game performs artifact depth comparison using
+									 * the original N64 depth values divided by 4, which
+									 * is accomplished by bit shifting the N64 depth value
+									 * to the right using >> 2
+									 */
+									artifact->expecteddepth = floatToN64Depth(f0) >> 2;
 									artifact->zbufptr = &g_ZbufPtr1[viGetWidth() * yi + xi];
 									artifact->light = &roomlights[i];
 									artifact->type = ARTIFACTTYPE_GLARE;
@@ -459,8 +457,6 @@ void artifactsCalculateGlaresForRoom(s32 roomnum)
 			}
 		}
 	}
-    printf("\n  done!");
-    fflush(stdout);
 }
 
 u8 artifactsClamp(u8 arg0, u8 arg1)
@@ -478,9 +474,6 @@ u8 artifactsClamp(u8 arg0, u8 arg1)
 
 Gfx *artifactsConfigureForGlares(Gfx *gdl)
 {
-	printf("\nsrc/game/game_13c510.c:artifactsConfigureForGlares()");
-	fflush(stdout);
-
 	struct stagetableentry *stage = stageGetCurrent();
 
 	texSelect(&gdl, &g_TexLightGlareConfigs[stage->light_type], 4, 0, 2, 1, NULL);
@@ -495,8 +488,6 @@ Gfx *artifactsConfigureForGlares(Gfx *gdl)
 	gDPSetAlphaDither(gdl++, G_AD_PATTERN);
 	gDPSetTexturePersp(gdl++, G_TP_NONE);
 
-	printf("\n  done!");
-	fflush(stdout);
 	return gdl;
 }
 
@@ -509,9 +500,6 @@ Gfx *artifactsUnconfigureForGlares(Gfx *gdl)
 
 Gfx *artifactsRenderGlaresForRoom(Gfx *gdl, s32 roomnum)
 {
-	printf("\nsrc/game/game_13c510.c:artifactsRenderGlaresForRoom(%d)", roomnum);
-	fflush(stdout);
-
 	s32 i;
 	s32 j;
 	s32 lightindex;
@@ -754,7 +742,5 @@ Gfx *artifactsRenderGlaresForRoom(Gfx *gdl, s32 roomnum)
 		}
 	}
 
-	printf("\n  done!");
-	fflush(stdout);
 	return gdl;
 }
