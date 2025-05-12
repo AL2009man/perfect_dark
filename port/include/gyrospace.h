@@ -2,7 +2,7 @@
  * =======================================================================
  *
  * Gyro Space to Play - A plug-and-play Gyro Space Transformer code
- * Version 0.8.5
+ * Version 0.8.6
  *
  * Provides functionality for transforming gyro inputs into Local Space,
  * Player Space, and World Space, while handling sensitivity adjustments,
@@ -16,55 +16,20 @@
  * =======================================================================
  */
 
- #ifndef GYROSPACE_HPP
- #define GYROSPACE_HPP
+#ifndef GYROSPACE_HPP
+#define GYROSPACE_HPP
  
- #ifdef __cplusplus
- #include <cmath>
- #include <cstdio>
- #include <cstdbool>
- #include <cstdint>
- extern "C" {
- #else
- #include "math.h"
- #include "stdbool.h"
- #include "stdint.h"
- #endif
- 
-// Ensure s32 and u32 are correctly defined
-#ifndef s32
-    #define s32 int32_t
-#endif
+#include <math.h>
+#include <stdbool.h>
+#include <stdint.h>
 
-#ifndef u32
-    #define u32 uint32_t
-#endif
-
-// Define boolean types
-#ifndef bool
-    #define bool s32
-#endif
-
-#ifndef ubool
-    #define ubool u32
+#ifdef __cplusplus
+extern "C" {
 #endif
 
 // Define a small epsilon if not already defined
 #ifndef EPSILON
     #define EPSILON 1e-5
-#endif
-
-// Debugging and Logging
-#ifdef ENABLE_GYROSPACE_DEBUG_LOGS
-    #ifdef __cplusplus
-        #include <iostream>
-        #define GYROSPACE_DEBUG_LOG(fmt, ...) std::cout << fmt
-    #else
-        #include <stdio.h>
-        #define GYROSPACE_DEBUG_LOG(fmt, ...) printf(fmt, ##__VA_ARGS__)
-    #endif
-#else
-    #define GYROSPACE_DEBUG_LOG(fmt, ...)
 #endif
 
 // Type Definitions
@@ -79,8 +44,8 @@ typedef struct {
 // Utility Functions
 
 /** Clamps a value between min and max. */
-static inline float clamp(float value, float min, float max) {
-    return (value > max) ? max : (value < min) ? min : value;
+static inline float clamp(float value, float minVal, float maxVal) {
+    return (value > maxVal) ? maxVal : (value < minVal) ? minVal : value;
 }
 
 /** Creates a new Vector3. */
@@ -287,35 +252,17 @@ Vector3 TransformWithDynamicOrientation(float yaw_input, float pitch_input, floa
   * These functions transform gyro inputs into different spaces (Local, Player, World)
   * while handling sensitivity adjustments and gravity alignment.
   */
- 
- 
-// C wrapper for gyro transformation functions, ensuring compatibility with both C and C++.
-#ifdef __cplusplus
-extern "C" {
-#endif
 
-    Vector3 TransformToLocalSpace(float yaw, float pitch, float roll, float coupling_factor);
-    Vector3 TransformToPlayerSpace(float yaw, float pitch, float roll, Vector3 gravity_vector);
-    Vector3 TransformToWorldSpace(float yaw, float pitch, float roll, Vector3 gravity_vector);
-
-#ifdef __cplusplus
-}
-#endif
-
- /**
-  * Transforms gyro inputs to Local Space.
-  *
-  * Converts raw gyro input into direct motion scaling.
-  * Preserves natural gyro responsiveness for intuitive movement.
-  */
-Vector3 TransformToLocalSpace(float yaw, float pitch, float roll, float couplingFactor) {
-    // Adjust roll to compensate for yaw–roll coupling.
-    // The rollCompensation factor reduces the influence of roll.
-    float rollCompensation = 0.85f;
-    float adjustedRoll = (roll * rollCompensation) - (yaw * couplingFactor);
+/* Transforms gyro inputs to Local Space.
+ *
+ * Converts raw gyro input into direct motion scaling.
+ * Preserves natural gyro responsiveness for intuitive movement.
+ */
+static inline Vector3 TransformToLocalSpace(float yaw, float pitch, float roll, float couplingFactor) {
+    // Adjust roll to compensate for yaw–roll coupling, accounting for Natural Sensitivity Scale.
+    float adjustedRoll = (roll * 0.85f) - (yaw * couplingFactor);
     
     // Combine the inputs into a local gyro vector.
-    // Here, yaw is reduced by the corrected roll and pitch remains unchanged.
     Vector3 localGyro = Vec3_New(yaw - adjustedRoll, pitch, adjustedRoll);
     
     return localGyro;
@@ -325,7 +272,7 @@ Vector3 TransformToLocalSpace(float yaw, float pitch, float roll, float coupling
   * Transforms gyro inputs to Player Space.
   * Adjusts motion relative to the player's perspective while ensuring gravity alignment.
   */
-Vector3 TransformToPlayerSpace(float yaw, float pitch, float roll, Vector3 gravity) {
+static inline Vector3 TransformToPlayerSpace(float yaw, float pitch, float roll, Vector3 gravity) {
     // Validate and normalize the gravity vector.
     if (Vec3_IsZero(gravity))
         gravity = Vec3_New(0.0f, 1.0f, 0.0f);
@@ -355,7 +302,7 @@ Vector3 TransformToPlayerSpace(float yaw, float pitch, float roll, Vector3 gravi
   * Transforms gyro inputs to World Space.
   * Aligns input with the game world while maintaining spatial consistency.
   */
-Vector3 TransformToWorldSpace(float yaw, float pitch, float roll, Vector3 gravity) {
+static inline Vector3 TransformToWorldSpace(float yaw, float pitch, float roll, Vector3 gravity) {
     // Validate and normalize gravity.
     if (Vec3_IsZero(gravity)) {
         gravity = Vec3_New(0.0f, 1.0f, 0.0f);
@@ -386,8 +333,8 @@ Vector3 TransformToWorldSpace(float yaw, float pitch, float roll, Vector3 gravit
     return worldGyro;
 }
  
- #ifdef __cplusplus
- }
- #endif
+#ifdef __cplusplus
+}
+#endif
  
- #endif // GYROSPACE_H
+#endif // GYROSPACE_HPP
