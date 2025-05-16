@@ -267,6 +267,7 @@ void inputSetDefaultKeyBinds(s32 cidx, s32 n64mode)
 		{ CK_C_L,    SDL_CONTROLLER_BUTTON_DPAD_LEFT     },
 		{ CK_ACCEPT, SDL_CONTROLLER_BUTTON_A             },
 		{ CK_CANCEL, SDL_CONTROLLER_BUTTON_B             },
+		{ CK_GYRO_MOD, SDL_CONTROLLER_BUTTON_RIGHTSTICK  },
 		{ CK_8000,   SDL_CONTROLLER_BUTTON_LEFTSTICK     },
 	};
 
@@ -1763,52 +1764,44 @@ void inputSetGyroActivationMode(s32 mode)
 }
 
 void applyGyroActivationMode(f32* deltaX, f32* deltaY, f32* deltaZ, s32 activationMode) {
-	static bool gyroToggleState = true; // Default to gyro being active
-	bool gyroActive = false;
+		static bool gyroToggleState = true;
+		bool gyroActive = false;
 
-	// Ensure valid pointers
-	if (!deltaX || !deltaY || !deltaZ) {
-		return;
-	}
-
-	// Handle activation modes
-	switch (activationMode) {
-	case GYRO_ALWAYS_ON:
-		// Gyro is always active
-		gyroActive = true;
-		break;
-
-	case GYRO_TOGGLE:
-		// Toggle gyro state when CK_GYRO_MOD is pressed
-		if (inputKeyJustPressed(CK_GYRO_MOD)) {
-			gyroToggleState = !gyroToggleState;
+		// Use inputBindPressed(0, CK_GYRO_MOD) for player 1
+		int gyroModPressed = inputBindPressed(0, CK_GYRO_MOD);
+		int gyroModJustPressed = 0;
+		static int prevGyroMod = 0;
+		if (gyroModPressed && !prevGyroMod) {
+				gyroModJustPressed = 1;
 		}
-		gyroActive = gyroToggleState;
-		break;
+		prevGyroMod = gyroModPressed;
 
-	case GYRO_HOLD:
-		// Gyro is active only while CK_GYRO_MOD is held down
-		gyroActive = inputKeyPressed(CK_GYRO_MOD);
-		break;
+		switch (activationMode) {
+		case GYRO_ALWAYS_ON:
+				gyroActive = true;
+				break;
+		case GYRO_TOGGLE:
+				if (gyroModJustPressed) {
+						gyroToggleState = !gyroToggleState;
+				}
+				gyroActive = gyroToggleState;
+				break;
+		case GYRO_HOLD:
+				gyroActive = gyroModPressed;
+				break;
+		case GYRO_HOLD_INVERTED:
+				gyroActive = !gyroModPressed;
+				break;
+		default:
+				gyroActive = false;
+				break;
+		}
 
-	case GYRO_HOLD_INVERTED:
-		// Gyro is disabled while CK_GYRO_MOD is held down
-		gyroActive = !inputKeyPressed(CK_GYRO_MOD);
-		break;
-
-	default:
-		// Invalid mode, disable gyro
-		gyroActive = false;
-		break;
-	}
-
-	// Apply gyro state
-	if (!gyroActive) {
-		// Zero out input if gyro is inactive
-		*deltaX = 0.f;
-		*deltaY = 0.f;
-		*deltaZ = 0.f;
-	}
+		if (!gyroActive) {
+				*deltaX = 0.f;
+				*deltaY = 0.f;
+				*deltaZ = 0.f;
+		}
 }
 
 f32 inputGetGyroMinThreshold(void)
