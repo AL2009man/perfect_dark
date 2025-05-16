@@ -300,7 +300,7 @@ void applyGyroAxisMapping(float gyroData[3], f32* deltaX, f32* deltaY, f32* delt
 // Gyro Activation Mode Management
 s32 inputGetGyroActivationMode(void);
 void inputSetGyroActivationMode(s32 mode);
-void applyGyroActivationMode(f32* deltaX, f32* deltaY, f32* deltaZ, s32 activationMode);
+void applyGyroActivationMode(f32* deltaX, f32* deltaY, f32* deltaZ, s32 activationMode, s32 idx);
 
 // Gyro Crosshair Sensitivity Management
 void inputGyroGetCrosshairSpeed(f32* x, f32* y);

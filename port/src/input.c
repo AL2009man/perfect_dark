@@ -1062,7 +1062,7 @@ static inline void inputUpdateGyro(void)
     // Apply gyro processing functions
     applyGyroAxisMapping(gyroData, &deltaX, &deltaY, &deltaZ);
     applyGyroAimMode(&deltaX, &deltaY, &deltaZ);
-    applyGyroActivationMode(&deltaX, &deltaY, &deltaZ, inputGetGyroActivationMode());
+    applyGyroActivationMode(&deltaX, &deltaY, &deltaZ, inputGetGyroActivationMode(), 0);
     applyGyroThreshold(&deltaX, &deltaY, &deltaZ, inputGetGyroMinThreshold());
 
     // Check acceleration magnitude for stability
@@ -1763,18 +1763,18 @@ void inputSetGyroActivationMode(s32 mode)
 	g_GyroActivationMode = mode;
 }
 
-void applyGyroActivationMode(f32* deltaX, f32* deltaY, f32* deltaZ, s32 activationMode) {
-		static bool gyroToggleState = true;
+void applyGyroActivationMode(f32* deltaX, f32* deltaY, f32* deltaZ, s32 activationMode, s32 idx) {
+		static bool gyroToggleState[INPUT_MAX_CONTROLLERS] = { true, true, true, true };
 		bool gyroActive = false;
 
-		// Use inputBindPressed(0, CK_GYRO_MOD) for player 1
-		int gyroModPressed = inputBindPressed(0, CK_GYRO_MOD);
+		int gyroModPressed = inputBindPressed(idx, CK_GYRO_MOD);
 		int gyroModJustPressed = 0;
-		static int prevGyroMod = 0;
-		if (gyroModPressed && !prevGyroMod) {
+		static int prevGyroMod[INPUT_MAX_CONTROLLERS] = { 0 };
+
+		if (gyroModPressed && !prevGyroMod[idx]) {
 				gyroModJustPressed = 1;
 		}
-		prevGyroMod = gyroModPressed;
+		prevGyroMod[idx] = gyroModPressed;
 
 		switch (activationMode) {
 		case GYRO_ALWAYS_ON:
@@ -1782,9 +1782,9 @@ void applyGyroActivationMode(f32* deltaX, f32* deltaY, f32* deltaZ, s32 activati
 				break;
 		case GYRO_TOGGLE:
 				if (gyroModJustPressed) {
-						gyroToggleState = !gyroToggleState;
+						gyroToggleState[idx] = !gyroToggleState[idx];
 				}
-				gyroActive = gyroToggleState;
+				gyroActive = gyroToggleState[idx];
 				break;
 		case GYRO_HOLD:
 				gyroActive = gyroModPressed;
