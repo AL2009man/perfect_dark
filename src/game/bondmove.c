@@ -326,98 +326,112 @@ void bmoveUpdateSpeedTheta(void)
 	}
 }
 
-f32 bmoveGetSpeedVertaLimit(f32 value){
-    if(value > 0){
-        return(value * -0.7f);
-    }
-    if(value < 0){
-        return(-value * 0.7f);
-    }
-    return 0;
+f32 bmoveGetSpeedVertaLimit(f32 value)
+{
+		if (value > 0) {
+				return(value * -0.7f);
+		}
+		if (value < 0) {
+				return(-value * 0.7f);
+		}
+		return 0;
 }
 
-void bmoveUpdateSpeedVerta(f32 value){
-    f32 mult = 1.0f;
-    f32 limit = bmoveGetSpeedVertaLimit(value);
-    
-    if(value > 0){
-        if(g_Vars.currentplayer->speedverta > 0){
-            g_Vars.currentplayer->speedverta -= 0.05f * g_Vars.lvupdate60freal * mult;
-        }else{
-            g_Vars.currentplayer->speedverta -= 0.0125f * g_Vars.lvupdate60freal * mult;
-        }
-        if(g_Vars.currentplayer->speedverta < limit){
-            g_Vars.currentplayer->speedverta = limit;
-        }
-    }else if(value < 0){
-        if(g_Vars.currentplayer->speedverta < 0){
-            g_Vars.currentplayer->speedverta += 0.05f * g_Vars.lvupdate60freal * mult;
-        }else{
-            g_Vars.currentplayer->speedverta += 0.0125f * g_Vars.lvupdate60freal * mult;
-        }
-        if(g_Vars.currentplayer->speedverta > limit){
-            g_Vars.currentplayer->speedverta = limit;
-        }
-    }else{
-        if(g_Vars.currentplayer->speedverta > limit){
-            g_Vars.currentplayer->speedverta -= 0.05f * g_Vars.lvupdate60freal * mult;
-            if(g_Vars.currentplayer->speedverta < limit){
-                g_Vars.currentplayer->speedverta = limit;
-            }
-        }else{
-            g_Vars.currentplayer->speedverta += 0.05f * g_Vars.lvupdate60freal * mult;
-            if(g_Vars.currentplayer->speedverta > limit){
-                g_Vars.currentplayer->speedverta = limit;
-            }
-        }
-    }
+void bmoveUpdateSpeedVerta(f32 value)
+{
+		f32 mult = 1.0f;
+		f32 limit = bmoveGetSpeedVertaLimit(value);
+
+		if (value > 0) {
+				if (g_Vars.currentplayer->speedverta > 0) {
+						g_Vars.currentplayer->speedverta -= 0.05f * g_Vars.lvupdate60freal * mult;
+				}
+				else {
+						g_Vars.currentplayer->speedverta -= 0.0125f * g_Vars.lvupdate60freal * mult;
+				}
+				if (g_Vars.currentplayer->speedverta < limit) {
+						g_Vars.currentplayer->speedverta = limit;
+				}
+		}
+		else if (value < 0) {
+				if (g_Vars.currentplayer->speedverta < 0) {
+						g_Vars.currentplayer->speedverta += 0.05f * g_Vars.lvupdate60freal * mult;
+				}
+				else {
+						g_Vars.currentplayer->speedverta += 0.0125f * g_Vars.lvupdate60freal * mult;
+				}
+				if (g_Vars.currentplayer->speedverta > limit) {
+						g_Vars.currentplayer->speedverta = limit;
+				}
+		}
+		else {
+				if (g_Vars.currentplayer->speedverta > limit) {
+						g_Vars.currentplayer->speedverta -= 0.05f * g_Vars.lvupdate60freal * mult;
+						if (g_Vars.currentplayer->speedverta < limit) {
+								g_Vars.currentplayer->speedverta = limit;
+						}
+				}
+				else {
+						g_Vars.currentplayer->speedverta += 0.05f * g_Vars.lvupdate60freal * mult;
+						if (g_Vars.currentplayer->speedverta > limit) {
+								g_Vars.currentplayer->speedverta = limit;
+						}
+				}
+		}
 }
 
-f32 bmoveGetSpeedThetaControlLimit(f32 value){
-    if(value > 0){
-        return(value * -0.7f);
-    }
-    if(value < 0){
-        return(-value * 0.7f);
-    }
-    return 0;
+f32 bmoveGetSpeedThetaControlLimit(f32 value)
+{
+		if (value > 0) {
+				return(value * -0.7f);
+		}
+		if (value < 0) {
+				return(-value * 0.7f);
+		}
+		return 0;
 }
 
-void bmoveUpdateSpeedThetaControl(f32 value){
-    f32 mult = 1.0f;
-    f32 limit = bmoveGetSpeedThetaControlLimit(value);
-    
-    if(value > 0){
-        if(g_Vars.currentplayer->speedthetacontrol > 0){
-            g_Vars.currentplayer->speedthetacontrol -= 0.05f * g_Vars.lvupdate60freal * mult;
-        }else{
-            g_Vars.currentplayer->speedthetacontrol -= 0.0125f * g_Vars.lvupdate60freal * mult;
-        }
-        if(g_Vars.currentplayer->speedthetacontrol < limit){
-            g_Vars.currentplayer->speedthetacontrol = limit;
-        }
-    }else if(value < 0){
-        if(g_Vars.currentplayer->speedthetacontrol < 0.0f){
-            g_Vars.currentplayer->speedthetacontrol += 0.05f * g_Vars.lvupdate60freal * mult;
-        }else{
-            g_Vars.currentplayer->speedthetacontrol += 0.0125f * g_Vars.lvupdate60freal * mult;
-        }
-        if(g_Vars.currentplayer->speedthetacontrol > limit){
-            g_Vars.currentplayer->speedthetacontrol = limit;
-        }
-    }else{
-        if(g_Vars.currentplayer->speedthetacontrol > limit){
-            g_Vars.currentplayer->speedthetacontrol -= 0.05f * g_Vars.lvupdate60freal * mult;
-            if(g_Vars.currentplayer->speedthetacontrol < limit){
-                g_Vars.currentplayer->speedthetacontrol = limit;
-            }
-        }else{
-            g_Vars.currentplayer->speedthetacontrol += 0.05f * g_Vars.lvupdate60freal * mult;
-            if(g_Vars.currentplayer->speedthetacontrol > limit){
-                g_Vars.currentplayer->speedthetacontrol = limit;
-            }
-        }
-    }
+void bmoveUpdateSpeedThetaControl(f32 value)
+{
+		f32 mult = 1.0f;
+		f32 limit = bmoveGetSpeedThetaControlLimit(value);
+
+		if (value > 0) {
+				if (g_Vars.currentplayer->speedthetacontrol > 0) {
+						g_Vars.currentplayer->speedthetacontrol -= 0.05f * g_Vars.lvupdate60freal * mult;
+				}
+				else {
+						g_Vars.currentplayer->speedthetacontrol -= 0.0125f * g_Vars.lvupdate60freal * mult;
+				}
+				if (g_Vars.currentplayer->speedthetacontrol < limit) {
+						g_Vars.currentplayer->speedthetacontrol = limit;
+				}
+		}
+		else if (value < 0) {
+				if (g_Vars.currentplayer->speedthetacontrol < 0.0f) {
+						g_Vars.currentplayer->speedthetacontrol += 0.05f * g_Vars.lvupdate60freal * mult;
+				}
+				else {
+						g_Vars.currentplayer->speedthetacontrol += 0.0125f * g_Vars.lvupdate60freal * mult;
+				}
+				if (g_Vars.currentplayer->speedthetacontrol > limit) {
+						g_Vars.currentplayer->speedthetacontrol = limit;
+				}
+		}
+		else {
+				if (g_Vars.currentplayer->speedthetacontrol > limit) {
+						g_Vars.currentplayer->speedthetacontrol -= 0.05f * g_Vars.lvupdate60freal * mult;
+						if (g_Vars.currentplayer->speedthetacontrol < limit) {
+								g_Vars.currentplayer->speedthetacontrol = limit;
+						}
+				}
+				else {
+						g_Vars.currentplayer->speedthetacontrol += 0.05f * g_Vars.lvupdate60freal * mult;
+						if (g_Vars.currentplayer->speedthetacontrol > limit) {
+								g_Vars.currentplayer->speedthetacontrol = limit;
+						}
+				}
+		}
 }
 
 
@@ -2017,7 +2031,7 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 			}
 		} else {
 			if (movedata.cannaturalpitch) {
-				tmp = 1.0f;
+					tmp = 1.0f;
 				fVar25 = movedata.analogpitch / 70.0f;
 
 				if (fVar25 > 1) {
