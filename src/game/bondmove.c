@@ -326,115 +326,100 @@ void bmoveUpdateSpeedTheta(void)
 	}
 }
 
-f32 bmoveGetSpeedVertaLimit(f32 value)
-{
-    if (value > 0) {
-        return (value * -0.7f);
+f32 bmoveGetSpeedVertaLimit(f32 value){
+    if(value > 0){
+        return(value * -0.7f);
     }
-
-    if (value < 0) {
-        return (-value * 0.7f);
+    if(value < 0){
+        return(-value * 0.7f);
     }
-
     return 0;
 }
 
-void bmoveUpdateSpeedVerta(f32 value)
-{
+void bmoveUpdateSpeedVerta(f32 value){
     f32 mult = 1.0f;
     f32 limit = bmoveGetSpeedVertaLimit(value);
-
-    if (value > 0) {
-        if (g_Vars.currentplayer->speedverta > 0) {
+    
+    if(value > 0){
+        if(g_Vars.currentplayer->speedverta > 0){
             g_Vars.currentplayer->speedverta -= 0.05f * g_Vars.lvupdate60freal * mult;
-        } else {
+        }else{
             g_Vars.currentplayer->speedverta -= 0.0125f * g_Vars.lvupdate60freal * mult;
         }
-
-        if (g_Vars.currentplayer->speedverta < limit) {
+        if(g_Vars.currentplayer->speedverta < limit){
             g_Vars.currentplayer->speedverta = limit;
         }
-    } else if (value < 0) {
-        if (g_Vars.currentplayer->speedverta < 0) {
+    }else if(value < 0){
+        if(g_Vars.currentplayer->speedverta < 0){
             g_Vars.currentplayer->speedverta += 0.05f * g_Vars.lvupdate60freal * mult;
-        } else {
+        }else{
             g_Vars.currentplayer->speedverta += 0.0125f * g_Vars.lvupdate60freal * mult;
         }
-
-        if (g_Vars.currentplayer->speedverta > limit) {
+        if(g_Vars.currentplayer->speedverta > limit){
             g_Vars.currentplayer->speedverta = limit;
         }
-    } else {
-        if (g_Vars.currentplayer->speedverta > limit) {
+    }else{
+        if(g_Vars.currentplayer->speedverta > limit){
             g_Vars.currentplayer->speedverta -= 0.05f * g_Vars.lvupdate60freal * mult;
-
-            if (g_Vars.currentplayer->speedverta < limit) {
+            if(g_Vars.currentplayer->speedverta < limit){
                 g_Vars.currentplayer->speedverta = limit;
             }
-        } else {
+        }else{
             g_Vars.currentplayer->speedverta += 0.05f * g_Vars.lvupdate60freal * mult;
-
-            if (g_Vars.currentplayer->speedverta > limit) {
+            if(g_Vars.currentplayer->speedverta > limit){
                 g_Vars.currentplayer->speedverta = limit;
             }
         }
     }
 }
 
-f32 bmoveGetSpeedThetaControlLimit(f32 value)
-{
-    if (value > 0) {
-        return (value * -0.7f);
+f32 bmoveGetSpeedThetaControlLimit(f32 value){
+    if(value > 0){
+        return(value * -0.7f);
     }
-
-    if (value < 0) {
-        return (-value * 0.7f);
+    if(value < 0){
+        return(-value * 0.7f);
     }
-
     return 0;
 }
 
-void bmoveUpdateSpeedThetaControl(f32 value)
-{
+void bmoveUpdateSpeedThetaControl(f32 value){
     f32 mult = 1.0f;
     f32 limit = bmoveGetSpeedThetaControlLimit(value);
-
-    if (value > 0) {
-        if (g_Vars.currentplayer->speedthetacontrol > 0) {
+    
+    if(value > 0){
+        if(g_Vars.currentplayer->speedthetacontrol > 0){
             g_Vars.currentplayer->speedthetacontrol -= 0.05f * g_Vars.lvupdate60freal * mult;
-        } else {
+        }else{
             g_Vars.currentplayer->speedthetacontrol -= 0.0125f * g_Vars.lvupdate60freal * mult;
         }
-
-        if (g_Vars.currentplayer->speedthetacontrol < limit) {
+        if(g_Vars.currentplayer->speedthetacontrol < limit){
             g_Vars.currentplayer->speedthetacontrol = limit;
         }
-    } else if (value < 0) {
-        if (g_Vars.currentplayer->speedthetacontrol < 0.0f) {
+    }else if(value < 0){
+        if(g_Vars.currentplayer->speedthetacontrol < 0.0f){
             g_Vars.currentplayer->speedthetacontrol += 0.05f * g_Vars.lvupdate60freal * mult;
-        } else {
+        }else{
             g_Vars.currentplayer->speedthetacontrol += 0.0125f * g_Vars.lvupdate60freal * mult;
         }
-
-        if (g_Vars.currentplayer->speedthetacontrol > limit) {
+        if(g_Vars.currentplayer->speedthetacontrol > limit){
             g_Vars.currentplayer->speedthetacontrol = limit;
         }
-    } else {
-        if (g_Vars.currentplayer->speedthetacontrol > limit) {
+    }else{
+        if(g_Vars.currentplayer->speedthetacontrol > limit){
             g_Vars.currentplayer->speedthetacontrol -= 0.05f * g_Vars.lvupdate60freal * mult;
-
-            if (g_Vars.currentplayer->speedthetacontrol < limit) {
+            if(g_Vars.currentplayer->speedthetacontrol < limit){
                 g_Vars.currentplayer->speedthetacontrol = limit;
             }
-        } else {
+        }else{
             g_Vars.currentplayer->speedthetacontrol += 0.05f * g_Vars.lvupdate60freal * mult;
-
-            if (g_Vars.currentplayer->speedthetacontrol > limit) {
+            if(g_Vars.currentplayer->speedthetacontrol > limit){
                 g_Vars.currentplayer->speedthetacontrol = limit;
             }
         }
     }
 }
+
 
 /**
  * Calculate the lookahead angle.
