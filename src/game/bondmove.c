@@ -2031,7 +2031,7 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 			}
 		} else {
 			if (movedata.cannaturalpitch) {
-					tmp = 1.0f;
+				tmp = 1.0f;
 				fVar25 = movedata.analogpitch / 70.0f;
 
 				if (fVar25 > 1) {
