@@ -766,6 +766,10 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 	numsamples = joyGetNumSamples();
 	bmoveResetMoveData(&movedata);
 
+	// Reset gyro deltas to zero at the start of each frame
+	movedata.gyrolookdx = 0.0f;
+	movedata.gyrolookdy = 0.0f;
+
 	if (c1stickx < -5) {
 		movedata.c1stickxsafe = c1stickx + 5;
 	} else if (c1stickx > 5) {
@@ -805,8 +809,8 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 
 	// Handle Gyro Input
 	if (allowgyro) {
-		f32 gyroCamDx = 0.f, gyroCamDy = 0.f, gyroCamDz = 0.f;
-		f32 gyroCrossDx = 0.f, gyroCrossDy = 0.f;
+		float gyroCamDx = 0.f, gyroCamDy = 0.f, gyroCamDz = 0.f;
+		float gyroCrossDx = 0.f, gyroCrossDy = 0.f;
 
 		if (inputGetGyroAimMode() == GYRO_AIM_MODE_CAMERA || inputGetGyroAimMode() == GYRO_AIM_MODE_BOTH) {
 			inputGyroGetScaledDelta(&gyroCamDx, &gyroCamDy, &gyroCamDz);
@@ -827,17 +831,22 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 			movedata.gyrolookdy = -movedata.gyrolookdy;
 		}
 
+		// Clamp gyro input to prevent runaway camera movement
+		if (movedata.gyrolookdx < -10.0f) movedata.gyrolookdx = -10.0f;
+		if (movedata.gyrolookdx >  10.0f) movedata.gyrolookdx =  10.0f;
+		if (movedata.gyrolookdy < -10.0f) movedata.gyrolookdy = -10.0f;
+		if (movedata.gyrolookdy >  10.0f) movedata.gyrolookdy =  10.0f;
+
 		fVar25 += movedata.gyrolookdx * gyroscale;
 		fVar25 += movedata.gyrolookdy * gyroscale;
 	}
+#endif
 
 	if (allowc1buttons && g_Vars.currentplayer && !g_Vars.currentplayer->isdead && g_Vars.currentplayer->pausemode == PAUSEMODE_UNPAUSED) {
 		if (inputKeyJustPressed(VK_ESCAPE)) {
 			c1buttonsthisframe |= START_BUTTON;
 		}
 	}
-
-#endif
 
 	// Pausing
 	if (g_Vars.currentplayer->isdead == false) {
