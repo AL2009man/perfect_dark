@@ -470,7 +470,7 @@ static inline void inputInitAllControllers(void)
 
 	numJoysticks = SDL_NumJoysticks();
 
-	connectedMask = 0; // Initialize connectedMask to 0
+	connectedMask = 1; // always report first controller as connected
 
 	// first try to assign the controllers that we had last time
 	// we're still free to check by device index before any controller device events fire
@@ -481,7 +481,6 @@ static inline void inputInitAllControllers(void)
 				// using the full assign function in case user sets same index for several players
 				if (inputTryController(cidx, jidx)) {
 					// success
-					connectedMask |= (1 << cidx); // Set bit if successfully assigned
 					continue;
 				}
 			}
@@ -495,15 +494,16 @@ static inline void inputInitAllControllers(void)
 		if (SDL_IsGameController(jidx) && inputControllerGetIndexByDeviceIndex(jidx) < 0) {
 			for (s32 cidx = firstController; cidx < INPUT_MAX_CONTROLLERS; ++cidx) {
 				if (inputTryController(cidx, jidx)) {
-					connectedMask |= (1 << cidx); // Set bit if successfully assigned
-					break; // Move to the next joystick once assigned
+					break;
 				}
 			}
 		}
 	}
 
-	// Removed the fakeControllers override logic
-	// The connectedMask now accurately reflects successfully opened controllers.
+	const s32 overrideMask = (1 << fakeControllers) - 1;
+	if (overrideMask) {
+		connectedMask = overrideMask;
+	}
 }
 
 static int inputEventFilter(void *data, SDL_Event *event)
