@@ -610,13 +610,13 @@ static MenuItemHandlerResult menuhandlerGyroAimMode(s32 operation, struct menuit
 		return 0;
 }
 
-static MenuItemHandlerResult menuhandlerGyroActivationMode(s32 operation, struct menuitem* item, union handlerdata* data)
+static MenuItemHandlerResult menuhandlerGyroModifier(s32 operation, struct menuitem* item, union handlerdata* data)
 {
 		static const char* opts[] = {
 				"Always On",
 				"Toggle",
-				"Hold",
-				"Hold (Inverted)"
+				"Enable while Held",
+				"Disabled while Held"
 		};
 
 		switch (operation) {
@@ -626,10 +626,10 @@ static MenuItemHandlerResult menuhandlerGyroActivationMode(s32 operation, struct
 		case MENUOP_GETOPTIONTEXT:
 				return (intptr_t)opts[data->dropdown.value];
 		case MENUOP_SET:
-				inputSetGyroActivationMode(data->dropdown.value);
+				inputSetGyroModifier(data->dropdown.value);
 				break;
 		case MENUOP_GETSELECTEDINDEX:
-				data->dropdown.value = inputGetGyroActivationMode();
+				data->dropdown.value = inputGetGyroModifier();
 		}
 
 		return 0;
@@ -764,9 +764,9 @@ struct menuitem g_ExtendedGyroMenuItems[] = {
 				MENUITEMTYPE_DROPDOWN,
 				0,
 				MENUITEMFLAG_LITERAL_TEXT,
-				(uintptr_t)"Gyro Activation",
+				(uintptr_t)"Gyro Modifier",
 				0,
-				menuhandlerGyroActivationMode,
+				menuhandlerGyroModifier,
 		},
 		{
 				MENUITEMTYPE_DROPDOWN,

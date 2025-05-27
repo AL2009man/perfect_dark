@@ -36,8 +36,8 @@
 // Define gyro modes
 #define GYRO_ALWAYS_ON 0
 #define GYRO_TOGGLE 1
-#define GYRO_HOLD 2
-#define GYRO_HOLD_INVERTED 3
+#define GYRO_ENABLE_HELD 2
+#define GYRO_DISABLE_HELD 3
 
 #define GYRO_AXIS_YAW 0
 #define GYRO_AXIS_ROLL 1
@@ -127,7 +127,7 @@ static f32 gyroAimSensY = 5.0f;
 static s32 g_GyroAxisMode = GYRO_YAW;
 static s32 g_GyroAimMode = GYRO_AIM_MODE_BOTH;
 static f32 gyroMinThreshold = 0.07f;
-static s32 g_GyroActivationMode = GYRO_ALWAYS_ON;
+static s32 g_GyroModifier = GYRO_DISABLE_HELD;
 
 static s32 lastKey = 0;
 static char lastChar = 0;
@@ -1062,7 +1062,7 @@ static inline void inputUpdateGyro(void)
     // Apply gyro processing functions
     applyGyroAxisMapping(gyroData, &deltaX, &deltaY, &deltaZ);
     applyGyroAimMode(&deltaX, &deltaY, &deltaZ);
-    applyGyroActivationMode(&deltaX, &deltaY, &deltaZ, inputGetGyroActivationMode(), 0);
+    applyGyroModifier(&deltaX, &deltaY, &deltaZ, inputGetGyroModifier(), 0);
     applyGyroThreshold(&deltaX, &deltaY, &deltaZ, inputGetGyroMinThreshold());
 
     // Check acceleration magnitude for stability
@@ -1753,17 +1753,17 @@ void inputGyroSetAimSpeedY(f32 y)
 	gyroAimSensY = y;
 }
 
-s32 inputGetGyroActivationMode(void)
+s32 inputGetGyroModifier(void)
 {
-	return g_GyroActivationMode;
+	return g_GyroModifier;
 }
 
-void inputSetGyroActivationMode(s32 mode)
+void inputSetGyroModifier(s32 mode)
 {
-	g_GyroActivationMode = mode;
+	g_GyroModifier = mode;
 }
 
-void applyGyroActivationMode(f32* deltaX, f32* deltaY, f32* deltaZ, s32 activationMode, s32 idx) {
+void applyGyroModifier(f32* deltaX, f32* deltaY, f32* deltaZ, s32 activationMode, s32 idx) {
 		static bool gyroToggleState[INPUT_MAX_CONTROLLERS] = { true, true, true, true };
 		bool gyroActive = false;
 
@@ -1786,10 +1786,10 @@ void applyGyroActivationMode(f32* deltaX, f32* deltaY, f32* deltaZ, s32 activati
 				}
 				gyroActive = gyroToggleState[idx];
 				break;
-		case GYRO_HOLD:
+		case GYRO_ENABLE_HELD:
 				gyroActive = gyroModPressed;
 				break;
-		case GYRO_HOLD_INVERTED:
+		case GYRO_DISABLE_HELD:
 				gyroActive = !gyroModPressed;
 				break;
 		default:
@@ -2040,7 +2040,7 @@ PD_CONSTRUCTOR static void inputConfigInit(void)
 	configRegisterInt("Input.GyroEnabled", &gyroEnabled, 0, 1);
 	configRegisterInt("Input.GyroAxisMode", &g_GyroAxisMode, GYRO_AXIS_YAW, GYRO_AXIS_WORLD);
 	configRegisterInt("Input.GyroAimMode", &g_GyroAimMode, GYRO_AIM_MODE_CAMERA, GYRO_AIM_MODE_BOTH);
-	configRegisterInt("Input.GyroActivationMode", &g_GyroActivationMode, GYRO_ALWAYS_ON, GYRO_HOLD_INVERTED);
+	configRegisterInt("Input.GyroModifier", &g_GyroModifier, GYRO_ALWAYS_ON, GYRO_DISABLE_HELD);
 	configRegisterFloat("Input.gyroSpeedX", &gyroSensX, -10.f, 10.f);
 	configRegisterFloat("Input.gyroSpeedY", &gyroSensY, -10.f, 10.f);
 	configRegisterFloat("Input.gyroAimSensX", &gyroAimSensX, -10.f, 10.f);
