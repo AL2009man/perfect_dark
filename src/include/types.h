@@ -3295,7 +3295,7 @@ struct menuitemdata_dropdown {
 };
 
 struct menuitemdata_keyboard {
-	char string[11];
+	char string[MPSETUP_MAXNAME+1];
 	s8 col;
 	s8 row;
 	u8 capslock : 1;      // Pressed A on caps button
@@ -3494,17 +3494,19 @@ struct audioconfig {
 
 struct artifact {
 	u16 type;
-	u16 unk02;
-	u16 unk04;
-	u16 unk06;
-	u16 *unk08;
+	u16 actualdepth;
+	u16 expecteddepth;
+	u16 *zbufptr;
+#ifndef PLATFORM_N64
+	u16 visiblelos;
+#endif
 	union {
-		u16 *u16p;
+		u16 *depthptr;
 		struct {
-			u16 u16_1;
-			u16 u16_2;
+			u16 screeny;
+			u16 screenx;
 		};
-	} unk0c;
+	};
 	struct light *light;
 };
 
@@ -3774,6 +3776,7 @@ struct menudata_main {
 struct menudata_mpsetup {
 	u32 slotindex;
 	u32 slotcount;
+	u8 showpresets;
 	u32 unke24;
 };
 
@@ -3982,13 +3985,14 @@ struct menu {
 	union {
 		struct menudata_endscreen endscreen;
 		struct menudata_main main;
-		struct menudata_mpsetup mpsetup;
 		struct menudata_mppause mppause;
 		struct menudata_mpend mpend;
 		struct menudata_filemgr fm;
 		struct menudata_main4mb main4mb;
 		struct menudata_training training;
 	};
+
+	struct menudata_mpsetup mpsetup;
 };
 
 struct gamefile {
@@ -4080,7 +4084,7 @@ struct missionconfig {
 };
 
 struct mpsetup {
-	/*0x800acb88*/ char name[12];
+	/*0x800acb88*/ char name[MPSETUP_MAXNAME+1];
 	/*0x800acb94*/ u32 options;
 	/*0x800acb98*/ u8 scenario;
 	/*0x800acb99*/ u8 stagenum;
@@ -4783,8 +4787,8 @@ struct menudata_5d8 {
 struct menudata {
 	/*0x000*/ s32 count;
 	/*0x004*/ s32 root;
-	/*0x008*/ s32 unk008; // also a menuroot constant
-	/*0x00c*/ struct menudialogdef *unk00c;
+	/*0x008*/ s32 prevmenuroot; // also a menuroot constant
+	/*0x00c*/ struct menudialogdef *prevmenudialog;
 	/*0x010*/ f32 unk010;
 	/*0x014*/ u8 bg;
 	/*0x015*/ u8 nextbg;
@@ -4798,7 +4802,7 @@ struct menudata {
 	/*0x5d5*/ u8 usezbuf : 1;
 	/*0x5d5*/ u8 unk5d5_04 : 1;
 	/*0x5d5*/ u8 unk5d5_05 : 1;
-	/*0x5d5*/ u8 unk5d5_06 : 1;
+	/*0x5d5*/ u8 isdialogopen : 1;
 	/*0x5d5*/ u8 unk5d5_07 : 1;
 	/*0x5d5*/ u8 unk5d5_08 : 1;
 	/*0x5d8*/ struct menudata_5d8 unk5d8[12];
@@ -6154,6 +6158,17 @@ struct extplayerconfig {
 	u32 crosshairsize;
 	s32 crosshairhealth;
 	s32 usereloads;
+};
+
+struct setupblock {
+	u8 bytes[MPSETUP_BLOCKSIZE];
+};
+
+struct mpsetupfile {
+	u8 version;
+	u8 defaultsetup;
+	u8 numsetups;
+	struct setupblock setups[MPSETUP_MAXSETUPS];
 };
 
 #endif
