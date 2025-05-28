@@ -123,6 +123,10 @@ static f32 gyroSensX = 2.5f;
 static f32 gyroSensY = 2.5f;
 static f32 gyroAimSensX = 5.0f;
 static f32 gyroAimSensY = 5.0f;
+static s32 gyroInvertX = 0;
+static s32 gyroInvertY = 0;
+static s32 gyroAimInvertX = 0;
+static s32 gyroAimInvertY = 0;
 
 static s32 g_GyroAxisMode = GYRO_YAW;
 static s32 g_GyroAimMode = GYRO_AIM_MODE_BOTH;
@@ -1626,7 +1630,9 @@ void inputGyroGetScaledDelta(f32* dx, f32* dy, f32* dz)
 		// Ensure values aren't NaN before applying scaling
 		if (!isnan(gyroDeltaYaw) && !isnan(gyroDeltaPitch) && !isnan(gyroDeltaRoll)) {
 			gdx = gyroSensX * ((f32)gyroDeltaYaw / 0.3f) * 0.022f;
+			if (gyroInvertX) gdx = -gdx;
 			gdy = gyroSensY * ((f32)gyroDeltaPitch / 0.3f) * 0.022f;
+			if (gyroInvertY) gdy = -gdy;
 			gdz = gyroSensY * ((f32)gyroDeltaRoll / 0.3f) * 0.022f;
 
 			// Prevent excessive movement spikes (adjust if needed)
@@ -1650,7 +1656,9 @@ void inputGyroGetAbsScaledDelta(f32* dx, f32* dy, f32* dz)
 	if (gyroEnabled) {
 		// Apply absolute scaling to mimic mouse behavior
 		gdx = fabsf(gyroSensX) * ((f32)gyroDeltaYaw / 0.3f) * 0.022f;
+		if (gyroInvertX) gdx = -gdx;
 		gdy = fabsf(gyroSensY) * ((f32)gyroDeltaPitch / 0.3f) * 0.022f;
+		if (gyroInvertY) gdy = -gdy;
 		gdz = fabsf(gyroSensY) * ((f32)gyroDeltaRoll / 0.3f) * 0.022f;
 
 		// Clamp values for stability
@@ -1711,7 +1719,9 @@ void inputGyroGetScaledDeltaCrosshair(f32* dx, f32* dy)
 
 		// Apply sensitivity scaling (consistent with mouse scaling method)
 		gdx *= gyroAimSensX / 100.0f; // Horizontal sensitivity scaling
+		if (gyroAimInvertX) gdx = -gdx;
 		gdy *= gyroAimSensY / 100.0f; // Vertical sensitivity scaling
+		if (gyroAimInvertY) gdy = -gdy;
 	}
 
 	// Assign scaled deltas to output variables
@@ -1751,6 +1761,46 @@ f32 inputGyroGetAimSpeedY(void)
 void inputGyroSetAimSpeedY(f32 y)
 {
 	gyroAimSensY = y;
+}
+
+s32 inputGyroInvertXIsEnabled(void)
+{
+		return gyroInvertX;
+}
+
+void inputGyroInvertXEnable(s32 enabled)
+{
+		gyroInvertX = (enabled != 0);
+}
+
+s32 inputGyroInvertYIsEnabled(void)
+{
+		return gyroInvertY;
+}
+
+void inputGyroInvertYEnable(s32 enabled)
+{
+		gyroInvertY = (enabled != 0);
+}
+
+s32 inputGyroAimInvertXIsEnabled(void)
+{
+		return gyroAimInvertX;
+}
+
+void inputGyroAimInvertXEnable(s32 enabled)
+{
+		gyroAimInvertX = (enabled != 0);
+}
+
+s32 inputGyroAimInvertYIsEnabled(void)
+{
+		return gyroAimInvertY;
+}
+
+void inputGyroAimInvertYEnable(s32 enabled)
+{
+		gyroAimInvertY = (enabled != 0);
 }
 
 s32 inputGetGyroModifier(void)
@@ -2045,6 +2095,10 @@ PD_CONSTRUCTOR static void inputConfigInit(void)
 	configRegisterFloat("Input.gyroSpeedY", &gyroSensY, -10.f, 10.f);
 	configRegisterFloat("Input.gyroAimSensX", &gyroAimSensX, -10.f, 10.f);
 	configRegisterFloat("Input.gyroAimSensY", &gyroAimSensY, -10.f, 10.f);
+	configRegisterInt("Input.gyroInvertX", &gyroInvertX, 0, 1);
+	configRegisterInt("Input.gyroInvertY", &gyroInvertY, 0, 1);
+	configRegisterInt("Input.gyroAimInvertX", &gyroAimInvertX, 0, 1);
+	configRegisterInt("Input.gyroAimInvertY", &gyroAimInvertY, 0, 1);
 	configRegisterFloat("Input.gyroMinThreshold", &gyroMinThreshold, 0.f, 1.f);
 	configRegisterInt("Input.FakeGamepads", &fakeControllers, 0, 4);
 	configRegisterInt("Input.FirstGamepadNum", &firstController, 0, 3);

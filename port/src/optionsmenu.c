@@ -693,6 +693,30 @@ static MenuItemHandlerResult menuhandlerGyroSensitivityY(s32 operation, struct m
 		return 0;
 }
 
+static MenuItemHandlerResult menuhandlerGyroInvertX(s32 operation, struct menuitem* item, union handlerdata* data)
+{
+		switch (operation) {
+		case MENUOP_GET:
+				return inputGyroInvertXIsEnabled();
+		case MENUOP_SET:
+				inputGyroInvertXEnable(data->checkbox.value);
+				break;
+		}
+		return 0;
+}
+
+static MenuItemHandlerResult menuhandlerGyroInvertY(s32 operation, struct menuitem* item, union handlerdata* data)
+{
+		switch (operation) {
+		case MENUOP_GET:
+				return inputGyroInvertYIsEnabled();
+		case MENUOP_SET:
+				inputGyroInvertYEnable(data->checkbox.value);
+				break;
+		}
+		return 0;
+}
+
 static MenuItemHandlerResult menuhandlerGyroCrosshairSpeedX(s32 operation, struct menuitem* item, union handlerdata* data)
 {
 		switch (operation) {
@@ -720,6 +744,30 @@ static MenuItemHandlerResult menuhandlerGyroCrosshairSpeedY(s32 operation, struc
 				break;
 		case MENUOP_GETSLIDERLABEL:
 				sprintf(data->slider.label, "%.2f", inputGyroGetAimSpeedY());
+				break;
+		}
+		return 0;
+}
+
+static MenuItemHandlerResult menuhandlerGyroAimInvertX(s32 operation, struct menuitem* item, union handlerdata* data)
+{
+		switch (operation) {
+		case MENUOP_GET:
+				return inputGyroAimInvertXIsEnabled();
+		case MENUOP_SET:
+				inputGyroAimInvertXEnable(data->checkbox.value);
+				break;
+		}
+		return 0;
+}
+
+static MenuItemHandlerResult menuhandlerGyroAimInvertY(s32 operation, struct menuitem* item, union handlerdata* data)
+{
+		switch (operation) {
+		case MENUOP_GET:
+				return inputGyroAimInvertYIsEnabled();
+		case MENUOP_SET:
+				inputGyroAimInvertYEnable(data->checkbox.value);
 				break;
 		}
 		return 0;
@@ -793,6 +841,22 @@ struct menuitem g_ExtendedGyroMenuItems[] = {
 				menuhandlerGyroSensitivityY,
 		},
 		{
+				MENUITEMTYPE_CHECKBOX,
+				0,
+				MENUITEMFLAG_LITERAL_TEXT,
+				(uintptr_t)"Invert Gyro Speed X",
+				0,
+				menuhandlerGyroInvertX,
+		},
+		{
+				MENUITEMTYPE_CHECKBOX,
+				0,
+				MENUITEMFLAG_LITERAL_TEXT,
+				(uintptr_t)"Invert Gyro Speed Y",
+				0,
+				menuhandlerGyroInvertY,
+		},
+		{
 				MENUITEMTYPE_SLIDER,
 				0,
 				MENUITEMFLAG_LITERAL_TEXT | MENUITEMFLAG_SLIDER_WIDE,
@@ -807,6 +871,22 @@ struct menuitem g_ExtendedGyroMenuItems[] = {
 				(uintptr_t)"Gyro Crosshair Speed Y",
 				1000,
 				menuhandlerGyroCrosshairSpeedY,
+		},
+		{
+				MENUITEMTYPE_CHECKBOX,
+				0,
+				MENUITEMFLAG_LITERAL_TEXT,
+				(uintptr_t)"Invert Gyro Crosshair Speed X",
+				0,
+				menuhandlerGyroAimInvertX,
+		},
+		{
+				MENUITEMTYPE_CHECKBOX,
+				0,
+				MENUITEMFLAG_LITERAL_TEXT,
+				(uintptr_t)"Invert Gyro Crosshair Speed Y",
+				0,
+				menuhandlerGyroAimInvertY,
 		},
 		{
 				MENUITEMTYPE_SLIDER,
