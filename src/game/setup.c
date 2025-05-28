@@ -1590,7 +1590,7 @@ void setupCreateProps(s32 stagenum)
 					// dont skip doors that are locked or are lift doors
 					bool skipdoor = nodoors && g_Vars.normmplayerisrunning && door->keyflags == 0 && door->extra1 == 0;
 					if (!skipdoor && withobjs && (obj->flags2 & diffflag) == 0) {
-						setupCreateDoor((struct doorobj *) obj, index);
+						setupCreateDoor(door, index);
 					}
 					break;
 				}
