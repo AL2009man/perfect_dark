@@ -125,8 +125,8 @@ enum mouselockmode {
 enum gyroactivation {
 		GYRO_ALWAYS_ON = 0,
 		GYRO_TOGGLE = 1,
-		GYRO_HOLD = 2,
-		GYRO_HOLD_INVERTED = 3
+		GYRO_ENABLE_HELD = 2,
+		GYRO_DISABLE_HELD = 3
 };
 
 enum gyroaxismode {
