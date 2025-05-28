@@ -13,6 +13,8 @@
  * Points are awarded to each player in the hill at the time that it is won.
  */
 
+extern struct menudialogdef g_ExtGameOptionsMenuDialog;
+
 MenuItemHandlerResult menuhandlerMpHillTime(s32 operation, struct menuitem *item, union handlerdata *data)
 {
 	switch (operation) {
@@ -79,40 +81,6 @@ struct menuitem g_KohOptionsMenuItems[] = {
 		MPOPTION_NOAUTOAIM,
 		menuhandlerMpCheckboxOption,
 	},
-#ifndef PLATFORM_N64
-	{
-		MENUITEMTYPE_CHECKBOX,
-		0,
-		MENUITEMFLAG_LOCKABLEMINOR | MENUITEMFLAG_LITERAL_TEXT,
-		(uintptr_t)"Start Armed",
-		MPOPTION_SPAWNWITHWEAPON,
-		menuhandlerMpCheckboxOption,
-	},
-	{
-		MENUITEMTYPE_CHECKBOX,
-		0,
-		MENUITEMFLAG_LOCKABLEMINOR | MENUITEMFLAG_LITERAL_TEXT,
-		(uintptr_t)"No Drug Blur",
-		MPOPTION_NODRUGBLUR,
-		menuhandlerMpCheckboxOption,
-	},
-	{
-		MENUITEMTYPE_CHECKBOX,
-		0,
-		MENUITEMFLAG_LOCKABLEMINOR,
-		L_OPTIONS_257, // "Friendly Fire"
-		MPOPTION_FRIENDLYFIRE,
-		menuhandlerMpDisplayTeam,
-	},
-	{
-		MENUITEMTYPE_CHECKBOX,
-		0,
-		MENUITEMFLAG_LOCKABLEMINOR | MENUITEMFLAG_LITERAL_TEXT,
-		(uintptr_t)"No Player on Radar",
-		MPOPTION_NOPLAYERONRADAR,
-		menuhandlerMpCheckboxOption,
-	},
-#endif
 	{
 		MENUITEMTYPE_CHECKBOX,
 		0,
@@ -178,17 +146,18 @@ struct menudialogdef g_KohOptionsMenuDialog = {
 	g_KohOptionsMenuItems,
 	mpOptionsMenuDialog,
 	MENUDIALOGFLAG_MPLOCKABLE,
-	NULL,
+	&g_ExtGameOptionsMenuDialog,
 };
 
-void kohReadSave(struct savebuffer *buffer)
+void kohReadSave(struct savebuffer *buffer, u8 version)
 {
-	g_Vars.mphilltime = savebufferReadBits(buffer, 8);
+	u8 sz = version > 0 ? 32 : 8;
+	g_Vars.mphilltime = savebufferReadBits(buffer, sz);
 }
 
 void kohWriteSave(struct savebuffer *buffer)
 {
-	savebufferOr(buffer, g_Vars.mphilltime, 8);
+	savebufferOr(buffer, g_Vars.mphilltime, 32);
 }
 
 void kohInit(void)
