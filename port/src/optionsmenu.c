@@ -616,7 +616,7 @@ static MenuItemHandlerResult menuhandlerGyroModifier(s32 operation, struct menui
 				"Always On",
 				"Toggle",
 				"Enable while Held",
-				"Disabled while Held"
+				"Disable while Held"
 		};
 
 		switch (operation) {
