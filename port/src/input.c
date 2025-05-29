@@ -2131,8 +2131,8 @@ PD_CONSTRUCTOR static void inputConfigInit(void)
 	configRegisterInt("Input.GyroAxisMode", &g_GyroAxisMode, GYRO_AXIS_YAW, GYRO_AXIS_WORLD);
 	configRegisterInt("Input.GyroAimMode", &g_GyroAimMode, GYRO_AIM_MODE_CAMERA, GYRO_AIM_MODE_BOTH);
 	configRegisterInt("Input.GyroModifier", &g_GyroModifier, GYRO_ALWAYS_ON, GYRO_DISABLE_HELD);
-	configRegisterFloat("Input.gyroSpeedX", &gyroSensX, -10.f, 10.f);
-	configRegisterFloat("Input.gyroSpeedY", &gyroSensY, -10.f, 10.f);
+	configRegisterFloat("Input.gyroSpeedX", &gyroSensX, -30.f, 30.f);
+	configRegisterFloat("Input.gyroSpeedY", &gyroSensY, -30.f, 30.f);
 	configRegisterFloat("Input.gyroAimSensX", &gyroAimSensX, -10.f, 10.f);
 	configRegisterFloat("Input.gyroAimSensY", &gyroAimSensY, -10.f, 10.f);
 	configRegisterFloat("Input.gyroVHMixer", &gyroVHMixer, -1.0f, 1.0f);
