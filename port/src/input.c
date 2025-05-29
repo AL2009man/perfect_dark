@@ -1281,8 +1281,8 @@ void inputMouseGetScaledDeltaCrosshair(f32* dx, f32* dy)
 {
 		f32 mdx = 0.f, mdy = 0.f;
 		if (mouseLocked) {
-				mdx = mouseAimSensX * ((f32)mouseDX / 50.0f) * 0.022f;
-				mdy = mouseAimSensY * ((f32)mouseDY / 50.0f) * 0.022f;
+				mdx = mouseDX * (0.022f / 50.0f) * mouseAimSensY;
+				mdy = mouseDY * (0.022f / 50.0f) * mouseAimSensY;
 		}
 		if (dx) *dx = mdx;
 		if (dy) *dy = mdy;
