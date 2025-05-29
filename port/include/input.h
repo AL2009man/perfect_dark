@@ -269,7 +269,6 @@ void inputGyroGetRawDelta(s32* dx, s32* dy, s32* dz);
 
 // Scaled Gyro Movement Retrieval
 void inputGyroGetScaledDelta(f32* dx, f32* dy, f32* dz);
-void inputGyroGetAbsScaledDelta(f32* dx, f32* dy, f32* dz);
 
 // Gyro Crosshair Movement Retrieval & Adjustment
 void inputGyroGetScaledDeltaCrosshair(f32* dx, f32* dy);

@@ -1674,31 +1674,6 @@ void inputGyroGetScaledDelta(f32* dx, f32* dy, f32* dz)
 	applyGyroVHMixer(dx, dy);
 }
 
-void inputGyroGetAbsScaledDelta(f32* dx, f32* dy, f32* dz)
-{
-	if (!dx || !dy || !dz) return; // Safety check
-
-	f32 gdx = 0.f, gdy = 0.f, gdz = 0.f;
-
-	if (gyroEnabled) {
-		// Apply absolute scaling to mimic mouse behavior
-		gdx = fabsf(gyroSensX) * ((f32)gyroDeltaYaw / 0.3f) * 0.022f;
-		if (gyroInvertX) gdx = -gdx;
-		gdy = fabsf(gyroSensY) * ((f32)gyroDeltaPitch / 0.3f) * 0.022f;
-		if (gyroInvertY) gdy = -gdy;
-		gdz = fabsf(gyroSensY) * ((f32)gyroDeltaRoll / 0.3f) * 0.022f;
-
-		// Clamp values for stability
-		gdx = fminf(fmaxf(gdx, -2.0f), 2.0f);
-		gdy = fminf(fmaxf(gdy, -2.0f), 2.0f);
-		gdz = fminf(fmaxf(gdz, -2.0f), 2.0f);
-	}
-
-	*dx = gdx;
-	*dy = gdy;
-	*dz = gdz;
-}
-
 void inputGyroGetSpeed(f32* x, f32* y)
 {
 	// Return current sensitivity values
