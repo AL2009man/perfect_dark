@@ -25,15 +25,20 @@
 #define DEFAULT_DEADZONE 4096
 #define DEFAULT_DEADZONE_RY 6144
 
+// Camera Radiants Scaling
+// The angle of the camera in radians per dot, based upon id tech/source engine's camera values.
+// This is used to convert camera and crosshair radiant into a dot.
 #define CAMERA_ANGLE (0.022f) // radians per dot
 
-// These values are used to convert input movements into camera angles
+// Camera Pixels Scaling
+// These values are used to convert input movements into camera/crosshair pixels
 #define MOUSE_DOTS_PER_PIXEL (3.5f) // Mouse sensitivity in degrees per pixel
 #define MOUSE_CROSSHAIR_DOTS_PER_PIXEL (35.0f) // Mouse crosshair sensitivity in degrees per pixel
 
-// Final scaling factors
-#define MOUSE_ANGLE_PER_DOT (CAMERA_ANGLE / MOUSE_DOTS_PER_PIXEL) // Degrees per Mouse pixel
-#define MOUSE_CROSSHAIR_ANGLE_PER_DOT (CAMERA_ANGLE / MOUSE_CROSSHAIR_DOTS_PER_PIXEL) // Degrees per Mouse crosshair pixel
+// Cameraa Angles per Dot Results
+// After applying the scaling factors, this will give us the angle per dot desirable.
+#define MOUSE_ANGLE_PER_DOT (CAMERA_ANGLE / MOUSE_DOTS_PER_PIXEL) // Degrees per pixel
+#define MOUSE_CROSSHAIR_ANGLE_PER_DOT (CAMERA_ANGLE / MOUSE_CROSSHAIR_DOTS_PER_PIXEL) // Degrees per pixel when using crosshair
 
 #define WHEEL_UP_MASK SDL_BUTTON(VK_MOUSE_WHEEL_UP - VK_MOUSE_BEGIN + 1)
 #define WHEEL_DN_MASK SDL_BUTTON(VK_MOUSE_WHEEL_DN - VK_MOUSE_BEGIN + 1)
