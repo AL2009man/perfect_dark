@@ -90,6 +90,8 @@ static s32 mouseShowCursor = 1;
 
 static f32 mouseSensX = 2.5f;
 static f32 mouseSensY = 2.5f;
+static f32 mouseAimSensX = 1.0f;
+static f32 mouseAimSensY = 1.0f;
 
 static s32 lastKey = 0;
 static char lastChar = 0;
@@ -1275,6 +1277,31 @@ void inputMouseSetSpeed(f32 x, f32 y)
 	mouseSensY = y;
 }
 
+void inputMouseGetScaledDeltaCrosshair(f32* dx, f32* dy)
+{
+		f32 mdx = 0.f, mdy = 0.f;
+
+		if (mouseLocked) {
+				mdx = mouseAimSensX * (f32)mouseDX / 100.0f;
+				mdy = mouseAimSensY * (f32)mouseDY / 100.0f;
+		}
+
+		if (dx) *dx = mdx;
+		if (dy) *dy = mdy;
+}
+
+void inputMouseGetAimSpeed(f32* x, f32* y)
+{
+		if (x) *x = mouseAimSensX;
+		if (y) *y = mouseAimSensY;
+}
+
+void inputMouseSetAimSpeed(f32 x, f32 y)
+{
+		mouseAimSensX = x;
+		mouseAimSensY = y;
+}
+
 s32 inputMouseIsEnabled(void)
 {
 	return mouseEnabled;
@@ -1511,6 +1538,8 @@ PD_CONSTRUCTOR static void inputConfigInit(void)
 	configRegisterInt("Input.MouseLockMode", &mouseLockMode, MLOCK_OFF, MLOCK_AUTO);
 	configRegisterFloat("Input.MouseSpeedX", &mouseSensX, -10.f, 10.f);
 	configRegisterFloat("Input.MouseSpeedY", &mouseSensY, -10.f, 10.f);
+	configRegisterFloat("Input.MouseAimSpeedX", &mouseAimSensX, -10.f, 10.f);
+	configRegisterFloat("Input.MouseAimSpeedY", &mouseAimSensY, -10.f, 10.f);
 	configRegisterInt("Input.FakeGamepads", &fakeControllers, 0, 4);
 	configRegisterInt("Input.FirstGamepadNum", &firstController, 0, 3);
 	configRegisterInt("Input.UseHIDAPI", &useHIDAPI, 0, 1);
