@@ -2206,14 +2206,10 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 #ifndef PLATFORM_N64
 		if (allowmcross) {
 				// joystick is inactive, move crosshair using the mouse
-				const f32 xcoeff = 320.f / 1080.f;
-				const f32 ycoeff = 240.f / 1080.f;
 				f32 dx, dy;
 				inputMouseGetScaledDeltaCrosshair(&dx, &dy);
-				const f32 xscale = (aimSpeedX * xcoeff) / g_Vars.currentplayer->aspect;
-				const f32 yscale = aimSpeedY * ycoeff;
-				f32 x = g_Vars.currentplayer->swivelpos[0] + movedata.freelookdx * xscale;
-				f32 y = g_Vars.currentplayer->swivelpos[1] + movedata.freelookdy * yscale;
+				f32 x = g_Vars.currentplayer->swivelpos[0] + dx;
+				f32 y = g_Vars.currentplayer->swivelpos[1] + dy;
 				x = (x < -1.f) ? -1.f : ((x > 1.f) ? 1.f : x);
 				y = (y < -1.f) ? -1.f : ((y > 1.f) ? 1.f : y);
 				g_Vars.currentplayer->swivelpos[0] = x;

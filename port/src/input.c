@@ -90,8 +90,8 @@ static s32 mouseShowCursor = 1;
 
 static f32 mouseSensX = 2.5f;
 static f32 mouseSensY = 2.5f;
-static f32 mouseAimSensX = 1.0f;
-static f32 mouseAimSensY = 1.0f;
+static f32 mouseAimSensX = 5.0f;
+static f32 mouseAimSensY = 5.0f;
 
 static s32 lastKey = 0;
 static char lastChar = 0;
@@ -1280,12 +1280,10 @@ void inputMouseSetSpeed(f32 x, f32 y)
 void inputMouseGetScaledDeltaCrosshair(f32* dx, f32* dy)
 {
 		f32 mdx = 0.f, mdy = 0.f;
-
 		if (mouseLocked) {
-				mdx = mouseAimSensX * (f32)mouseDX / 100.0f;
-				mdy = mouseAimSensY * (f32)mouseDY / 100.0f;
+				mdx = mouseAimSensX * ((f32)mouseDX / 50.0f) * 0.022f;
+				mdy = mouseAimSensY * ((f32)mouseDY / 50.0f) * 0.022f;
 		}
-
 		if (dx) *dx = mdx;
 		if (dy) *dy = mdy;
 }
@@ -1536,8 +1534,8 @@ PD_CONSTRUCTOR static void inputConfigInit(void)
 {
 	configRegisterInt("Input.MouseEnabled", &mouseEnabled, 0, 1);
 	configRegisterInt("Input.MouseLockMode", &mouseLockMode, MLOCK_OFF, MLOCK_AUTO);
-	configRegisterFloat("Input.MouseSpeedX", &mouseSensX, -10.f, 10.f);
-	configRegisterFloat("Input.MouseSpeedY", &mouseSensY, -10.f, 10.f);
+	configRegisterFloat("Input.MouseSpeedX", &mouseSensX, -30.f, 30.f);
+	configRegisterFloat("Input.MouseSpeedY", &mouseSensY, -30.f, 30.f);
 	configRegisterFloat("Input.MouseAimSpeedX", &mouseAimSensX, -10.f, 10.f);
 	configRegisterFloat("Input.MouseAimSpeedY", &mouseAimSensY, -10.f, 10.f);
 	configRegisterInt("Input.FakeGamepads", &fakeControllers, 0, 4);
