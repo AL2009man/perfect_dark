@@ -25,6 +25,16 @@
 #define DEFAULT_DEADZONE 4096
 #define DEFAULT_DEADZONE_RY 6144
 
+#define CAMERA_ANGLE (0.022f) // radians per dot
+
+// These values are used to convert input movements into camera angles
+#define MOUSE_DOTS_PER_PIXEL (3.5f) // Mouse sensitivity in degrees per pixel
+#define MOUSE_CROSSHAIR_DOTS_PER_PIXEL (35.0f) // Mouse crosshair sensitivity in degrees per pixel
+
+// Final scaling factors
+#define MOUSE_ANGLE_PER_DOT (CAMERA_ANGLE / MOUSE_DOTS_PER_PIXEL) // Degrees per Mouse pixel
+#define MOUSE_CROSSHAIR_ANGLE_PER_DOT (CAMERA_ANGLE / MOUSE_CROSSHAIR_DOTS_PER_PIXEL) // Degrees per Mouse crosshair pixel
+
 #define WHEEL_UP_MASK SDL_BUTTON(VK_MOUSE_WHEEL_UP - VK_MOUSE_BEGIN + 1)
 #define WHEEL_DN_MASK SDL_BUTTON(VK_MOUSE_WHEEL_DN - VK_MOUSE_BEGIN + 1)
 
@@ -90,8 +100,8 @@ static s32 mouseShowCursor = 1;
 
 static f32 mouseSensX = 2.5f;
 static f32 mouseSensY = 2.5f;
-static f32 mouseAimSensX = 3.5f;
-static f32 mouseAimSensY = 3.5f;
+static f32 mouseAimSensX = 2.5f;
+static f32 mouseAimSensY = 2.5f;
 
 static s32 lastKey = 0;
 static char lastChar = 0;
@@ -1246,8 +1256,8 @@ void inputMouseGetScaledDelta(f32* dx, f32* dy)
 		f32 mdx = 0.f, mdy = 0.f;
 
 		if (mouseLocked) {
-				mdx = mouseDX * (0.022f / 3.5f) * mouseSensX;
-				mdy = mouseDY * (0.022f / 3.5f) * mouseSensY;
+				mdx = mouseDX * MOUSE_ANGLE_PER_DOT * mouseSensX;
+				mdy = mouseDY * MOUSE_ANGLE_PER_DOT * mouseSensY;
 		}
 		if (dx) *dx = mdx;
 		if (dy) *dy = mdy;
@@ -1258,8 +1268,8 @@ void inputMouseGetAbsScaledDelta(f32* dx, f32* dy)
 		f32 mdx = 0.f, mdy = 0.f;
 
 		if (mouseLocked) {
-				mdx = fabsf(mouseDX) * (0.022f / 3.5f) * fabsf(mouseSensX);
-				mdy = fabsf(mouseDY) * (0.022f / 3.5f) * fabsf(mouseSensY);
+				mdx = fabsf(mouseDX) * MOUSE_ANGLE_PER_DOT * fabsf(mouseSensX);
+				mdy = fabsf(mouseDY) * MOUSE_ANGLE_PER_DOT * fabsf(mouseSensY);
 		}
 		if (dx) *dx = mdx;
 		if (dy) *dy = mdy;
@@ -1281,8 +1291,8 @@ void inputMouseGetScaledDeltaCrosshair(f32* dx, f32* dy)
 {
 		f32 mdx = 0.f, mdy = 0.f;
 		if (mouseLocked) {
-				mdx = mouseDX * (0.022f / 35.0f) * mouseAimSensY;
-				mdy = mouseDY * (0.022f / 35.0f) * mouseAimSensY;
+				mdx = mouseDX * MOUSE_CROSSHAIR_ANGLE_PER_DOT * mouseAimSensY;
+				mdy = mouseDY * MOUSE_CROSSHAIR_ANGLE_PER_DOT * mouseAimSensY;
 		}
 		if (dx) *dx = mdx;
 		if (dy) *dy = mdy;
@@ -1534,8 +1544,8 @@ PD_CONSTRUCTOR static void inputConfigInit(void)
 {
 	configRegisterInt("Input.MouseEnabled", &mouseEnabled, 0, 1);
 	configRegisterInt("Input.MouseLockMode", &mouseLockMode, MLOCK_OFF, MLOCK_AUTO);
-	configRegisterFloat("Input.MouseSpeedX", &mouseSensX, -30.f, 30.f);
-	configRegisterFloat("Input.MouseSpeedY", &mouseSensY, -30.f, 30.f);
+	configRegisterFloat("Input.MouseSpeedX", &mouseSensX, -10.f, 10.f);
+	configRegisterFloat("Input.MouseSpeedY", &mouseSensY, -10.f, 10.f);
 	configRegisterFloat("Input.MouseAimSpeedX", &mouseAimSensX, -10.f, 10.f);
 	configRegisterFloat("Input.MouseAimSpeedY", &mouseAimSensY, -10.f, 10.f);
 	configRegisterInt("Input.FakeGamepads", &fakeControllers, 0, 4);
