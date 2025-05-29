@@ -27,19 +27,17 @@
 #define DEFAULT_DEADZONE 4096
 #define DEFAULT_DEADZONE_RY 6144
 
-// Camera angle
 #define CAMERA_ANGLE (0.022f) // radians per dot
 
-// These values are used to convert mouse/gyro movements into camera angles
-
-#define MOUSE_DOTS_PER_PIXEL (3.5f) // Moue sensitivity in degrees per pixel
+// These values are used to convert input movements into camera angles
+#define MOUSE_DOTS_PER_PIXEL (3.5f) // Mouse sensitivity in degrees per pixel
 #define GYRO_DOTS_PER_PIXEL (0.3f) // Gyro sensitivity in degrees per pixel
-#define GYRO_CROSSHAIR_DOTS_PER_PIXEL (30.0f) // Gyro crosshair sensitivity in degrees per pixel
+#define GYRO_CROSSHAIR_DOTS_PER_PIXEL (1.0f) // Gyro crosshair sensitivity in degrees per pixel
 
 // Final scaling factors
 #define MOUSE_ANGLE_PER_DOT (CAMERA_ANGLE / MOUSE_DOTS_PER_PIXEL) // Degrees per pixel
-#define GYRO_ANGLE_PER_DOT (CAMERA_ANGLE / GYRO_DOTS_PER_PIXEL) // Degrees per pixel
-#define GYRO_CROSSHAIR_ANGLE_PER_DOT  (CAMERA_ANGLE / GYRO_CROSSHAIR_DOTS_PER_PIXEL) // Degrees per pixel
+#define GYRO_ANGLE_PER_DOT (CAMERA_ANGLE / GYRO_DOTS_PER_PIXEL) // Gyro Angles per Mouse pixel
+#define GYRO_CROSSHAIR_ANGLE_PER_DOT  (CAMERA_ANGLE / GYRO_CROSSHAIR_DOTS_PER_PIXEL) // Gyro Angles per Mouse pixel when using crosshair
 
 #define WHEEL_UP_MASK SDL_BUTTON(VK_MOUSE_WHEEL_UP - VK_MOUSE_BEGIN + 1)
 #define WHEEL_DN_MASK SDL_BUTTON(VK_MOUSE_WHEEL_DN - VK_MOUSE_BEGIN + 1)
@@ -135,8 +133,8 @@ static f32 accelDeltaZ = 0.f;
 
 static f32 gyroSensX = 2.5f;
 static f32 gyroSensY = 2.5f;
-static f32 gyroAimSensX = 3.0f;
-static f32 gyroAimSensY = 3.0f;
+static f32 gyroAimSensX = 2.5f;
+static f32 gyroAimSensY = 2.5f;
 static f32 gyroVHMixer = 0.0f;
 static s32 gyroInvertX = 0;
 static s32 gyroInvertY = 0;
