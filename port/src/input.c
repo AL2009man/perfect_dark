@@ -121,8 +121,8 @@ static f32 accelDeltaZ = 0.f;
 
 static f32 gyroSensX = 2.5f;
 static f32 gyroSensY = 2.5f;
-static f32 gyroAimSensX = 5.0f;
-static f32 gyroAimSensY = 5.0f;
+static f32 gyroAimSensX = 3.5f;
+static f32 gyroAimSensY = 3.5f;
 static f32 gyroVHMixer = 0.0f;
 static s32 gyroInvertX = 0;
 static s32 gyroInvertY = 0;
@@ -1653,11 +1653,11 @@ void inputGyroGetScaledDelta(f32* dx, f32* dy, f32* dz)
 	if (gyroEnabled) {
 		// Ensure values aren't NaN before applying scaling
 		if (!isnan(gyroDeltaYaw) && !isnan(gyroDeltaPitch) && !isnan(gyroDeltaRoll)) {
-			gdx = gyroSensX * ((f32)gyroDeltaYaw / 0.3f) * 0.022f;
+			gdx = gyroDeltaYaw * (0.022f / 0.3f) * gyroSensX;
 			if (gyroInvertX) gdx = -gdx;
-			gdy = gyroSensY * ((f32)gyroDeltaPitch / 0.3f) * 0.022f;
+			gdy = gyroDeltaPitch * (0.022f / 0.3f) * gyroSensY;
 			if (gyroInvertY) gdy = -gdy;
-			gdz = gyroSensY * ((f32)gyroDeltaRoll / 0.3f) * 0.022f;
+			gdz = gyroDeltaRoll * (0.022f / 0.3f) * gyroSensY;
 
 			// Prevent excessive movement spikes (adjust if needed)
 			gdx = fminf(fmaxf(gdx, -2.0f), 2.0f);
@@ -1708,7 +1708,6 @@ void inputGyroSetSpeedY(f32 y)
 	gyroSensY = y; // Set new vertical sensitivity
 }
 
-
 void inputGyroGetScaledDeltaCrosshair(f32* dx, f32* dy)
 {
 	// Default deltas to zero
@@ -1719,10 +1718,10 @@ void inputGyroGetScaledDeltaCrosshair(f32* dx, f32* dy)
 		gdx = (f32)gyroDeltaYaw;
 		gdy = (f32)gyroDeltaPitch;
 
-		// Apply sensitivity scaling (consistent with mouse scaling method)
-		gdx *= gyroAimSensX / 100.0f; // Horizontal sensitivity scaling
+		// Apply sensitivity scaling
+		gdx = gyroDeltaYaw * (0.022f) * gyroAimSensX;
 		if (gyroAimInvertX) gdx = -gdx;
-		gdy *= gyroAimSensY / 100.0f; // Vertical sensitivity scaling
+		gdy = gyroDeltaPitch * (0.022f) * gyroAimSensY;
 		if (gyroAimInvertY) gdy = -gdy;
 	}
 
