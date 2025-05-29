@@ -773,6 +773,22 @@ static MenuItemHandlerResult menuhandlerGyroAimInvertY(s32 operation, struct men
 		return 0;
 }
 
+static MenuItemHandlerResult menuhandlerGyroVHMixer(s32 operation, struct menuitem* item, union handlerdata* data)
+{
+		switch (operation) {
+		case MENUOP_GETSLIDER:
+				data->slider.value = (inputGetGyroVHMixer() + 1.0f) * 100.0f;
+				break;
+		case MENUOP_SET:
+				inputSetGyroVHMixer((float)data->slider.value / 100.0f - 1.0f);
+				break;
+		case MENUOP_GETSLIDERLABEL:
+				sprintf(data->slider.label, "%d%%", (int)data->slider.value - 100);
+				break;
+		}
+		return 0;
+}
+
 static MenuItemHandlerResult menuhandlerGyroMinThreshold(s32 operation, struct menuitem* item, union handlerdata* data)
 {
     switch (operation) {
@@ -844,7 +860,7 @@ struct menuitem g_ExtendedGyroMenuItems[] = {
 				MENUITEMTYPE_CHECKBOX,
 				0,
 				MENUITEMFLAG_LITERAL_TEXT,
-				(uintptr_t)"Invert Gyro Speed X",
+				(uintptr_t)"Invert Speed X",
 				0,
 				menuhandlerGyroInvertX,
 		},
@@ -852,7 +868,7 @@ struct menuitem g_ExtendedGyroMenuItems[] = {
 				MENUITEMTYPE_CHECKBOX,
 				0,
 				MENUITEMFLAG_LITERAL_TEXT,
-				(uintptr_t)"Invert Gyro Speed Y",
+				(uintptr_t)"Invert Speed Y",
 				0,
 				menuhandlerGyroInvertY,
 		},
@@ -876,7 +892,7 @@ struct menuitem g_ExtendedGyroMenuItems[] = {
 				MENUITEMTYPE_CHECKBOX,
 				0,
 				MENUITEMFLAG_LITERAL_TEXT,
-				(uintptr_t)"Invert Gyro Crosshair Speed X",
+				(uintptr_t)"Invert Crosshair X",
 				0,
 				menuhandlerGyroAimInvertX,
 		},
@@ -884,9 +900,17 @@ struct menuitem g_ExtendedGyroMenuItems[] = {
 				MENUITEMTYPE_CHECKBOX,
 				0,
 				MENUITEMFLAG_LITERAL_TEXT,
-				(uintptr_t)"Invert Gyro Crosshair Speed Y",
+				(uintptr_t)"Invert Crosshair Y",
 				0,
 				menuhandlerGyroAimInvertY,
+		},
+		{
+				MENUITEMTYPE_SLIDER,
+				0,
+				MENUITEMFLAG_LITERAL_TEXT | MENUITEMFLAG_SLIDER_WIDE,
+				(uintptr_t)"Gyro X/Y Output Mixer",
+				200,
+				menuhandlerGyroVHMixer,
 		},
 		{
 				MENUITEMTYPE_SLIDER,

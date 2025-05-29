@@ -123,6 +123,7 @@ static f32 gyroSensX = 2.5f;
 static f32 gyroSensY = 2.5f;
 static f32 gyroAimSensX = 5.0f;
 static f32 gyroAimSensY = 5.0f;
+static f32 gyroVHMixer = 0.0f;
 static s32 gyroInvertX = 0;
 static s32 gyroInvertY = 0;
 static s32 gyroAimInvertX = 0;
@@ -1620,6 +1621,29 @@ void inputGyroGetRawDelta(s32* dx, s32* dy, s32* dz)
 	if (dz) *dz = (s32)gyroDeltaRoll;
 }
 
+static inline void applyGyroVHMixer(f32* dx, f32* dy) {
+		// Clamp mixer value for safety
+		float mix = fminf(fmaxf(gyroVHMixer, -1.0f), 1.0f);
+
+		// Calculate scale factors
+		float hScale = 1.0f - fmaxf(0.0f, mix); // Reduce horizontal as mix increases
+		float vScale = 1.0f + fminf(0.0f, mix); // Reduce vertical as mix decreases
+
+		// At mix = 0, both are 1.0 (no change)
+		// At mix = -1, hScale = 2.0, vScale = 1.0 (vertical minimized)
+		// At mix = +1, hScale = 1.0, vScale = 2.0 (horizontal minimized)
+
+		// Normalize so the sum is always 2.0 (optional, for consistent feel)
+		float norm = hScale + vScale;
+		if (norm > 0.0f) {
+				hScale /= norm / 2.0f;
+				vScale /= norm / 2.0f;
+		}
+
+		*dx *= hScale;
+		*dy *= vScale;
+}
+
 void inputGyroGetScaledDelta(f32* dx, f32* dy, f32* dz)
 {
 	if (!dx || !dy || !dz) return; // Safety check
@@ -1645,6 +1669,9 @@ void inputGyroGetScaledDelta(f32* dx, f32* dy, f32* dz)
 	*dx = gdx;
 	*dy = gdy;
 	*dz = gdz;
+
+	// Apply VH mixer to camera gyro
+	applyGyroVHMixer(dx, dy);
 }
 
 void inputGyroGetAbsScaledDelta(f32* dx, f32* dy, f32* dz)
@@ -1727,6 +1754,9 @@ void inputGyroGetScaledDeltaCrosshair(f32* dx, f32* dy)
 	// Assign scaled deltas to output variables
 	if (dx) *dx = gdx;
 	if (dy) *dy = gdy;
+
+	// Apply VH mixer to crosshair gyro
+	if (dx && dy) applyGyroVHMixer(dx, dy);
 }
 
 void inputGyroGetCrosshairSpeed(f32* x, f32* y)
@@ -1801,6 +1831,16 @@ s32 inputGyroAimInvertYIsEnabled(void)
 void inputGyroAimInvertYEnable(s32 enabled)
 {
 		gyroAimInvertY = (enabled != 0);
+}
+
+f32 inputGetGyroVHMixer(void) {
+		return gyroVHMixer;
+}
+
+void inputSetGyroVHMixer(f32 value) {
+		if (value < -1.0f) value = -1.0f;
+		if (value > 1.0f) value = 1.0f;
+		gyroVHMixer = value;
 }
 
 s32 inputGetGyroModifier(void)
@@ -2095,6 +2135,7 @@ PD_CONSTRUCTOR static void inputConfigInit(void)
 	configRegisterFloat("Input.gyroSpeedY", &gyroSensY, -10.f, 10.f);
 	configRegisterFloat("Input.gyroAimSensX", &gyroAimSensX, -10.f, 10.f);
 	configRegisterFloat("Input.gyroAimSensY", &gyroAimSensY, -10.f, 10.f);
+	configRegisterFloat("Input.gyroVHMixer", &gyroVHMixer, -1.0f, 1.0f);
 	configRegisterInt("Input.gyroInvertX", &gyroInvertX, 0, 1);
 	configRegisterInt("Input.gyroInvertY", &gyroInvertY, 0, 1);
 	configRegisterInt("Input.gyroAimInvertX", &gyroAimInvertX, 0, 1);

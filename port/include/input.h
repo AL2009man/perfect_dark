@@ -260,6 +260,10 @@ void closeGyroController(void);
 s32 inputGyroIsEnabled(void);
 void inputGyroEnable(s32 enabled);
 
+// Gyro Vertical/Horizon Mixer Adjustment
+f32 inputGetGyroVHMixer(void);
+void inputSetGyroVHMixer(f32 value);
+
 // Raw Gyro Movement Retrieval
 void inputGyroGetRawDelta(s32* dx, s32* dy, s32* dz);
 
