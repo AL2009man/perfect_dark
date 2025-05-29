@@ -27,14 +27,19 @@
 #define DEFAULT_DEADZONE 4096
 #define DEFAULT_DEADZONE_RY 6144
 
+// Camera Radiants Scaling
+// The angle of the camera in radians per dot, based upon id tech/source engine's camera values.
+// This is used to convert camera and crosshair radiant into a dot.
 #define CAMERA_ANGLE (0.022f) // radians per dot
 
-// These values are used to convert input movements into camera angles
+// Camera Pixels Scaling
+// These values are used to convert input movements into camera/crosshair pixels
 #define MOUSE_DOTS_PER_PIXEL (3.5f) // Mouse sensitivity in degrees per pixel
 #define GYRO_DOTS_PER_PIXEL (0.3f) // Gyro sensitivity in degrees per pixel
 #define GYRO_CROSSHAIR_DOTS_PER_PIXEL (1.0f) // Gyro crosshair sensitivity in degrees per pixel
 
-// Final scaling factors
+// Cameraa Angles per Dot Results
+// After applying the scaling factors, this will give us the angle per dot desirable.
 #define MOUSE_ANGLE_PER_DOT (CAMERA_ANGLE / MOUSE_DOTS_PER_PIXEL) // Degrees per pixel
 #define GYRO_ANGLE_PER_DOT (CAMERA_ANGLE / GYRO_DOTS_PER_PIXEL) // Gyro Angles per Mouse pixel
 #define GYRO_CROSSHAIR_ANGLE_PER_DOT  (CAMERA_ANGLE / GYRO_CROSSHAIR_DOTS_PER_PIXEL) // Gyro Angles per Mouse pixel when using crosshair
