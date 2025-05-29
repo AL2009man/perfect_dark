@@ -90,8 +90,8 @@ static s32 mouseShowCursor = 1;
 
 static f32 mouseSensX = 2.5f;
 static f32 mouseSensY = 2.5f;
-static f32 mouseAimSensX = 5.0f;
-static f32 mouseAimSensY = 5.0f;
+static f32 mouseAimSensX = 3.5f;
+static f32 mouseAimSensY = 3.5f;
 
 static s32 lastKey = 0;
 static char lastChar = 0;
@@ -1281,8 +1281,8 @@ void inputMouseGetScaledDeltaCrosshair(f32* dx, f32* dy)
 {
 		f32 mdx = 0.f, mdy = 0.f;
 		if (mouseLocked) {
-				mdx = mouseDX * (0.022f / 50.0f) * mouseAimSensY;
-				mdy = mouseDY * (0.022f / 50.0f) * mouseAimSensY;
+				mdx = mouseDX * (0.022f / 35.0f) * mouseAimSensY;
+				mdy = mouseDY * (0.022f / 35.0f) * mouseAimSensY;
 		}
 		if (dx) *dx = mdx;
 		if (dy) *dy = mdy;
