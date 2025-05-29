@@ -845,7 +845,7 @@ struct menuitem g_ExtendedGyroMenuItems[] = {
 				0,
 				MENUITEMFLAG_LITERAL_TEXT | MENUITEMFLAG_SLIDER_WIDE,
 				(uintptr_t)"Gyro Speed X",
-				1000,
+				3000,
 				menuhandlerGyroSensitivityX,
 		},
 		{
@@ -853,7 +853,7 @@ struct menuitem g_ExtendedGyroMenuItems[] = {
 				0,
 				MENUITEMFLAG_LITERAL_TEXT | MENUITEMFLAG_SLIDER_WIDE,
 				(uintptr_t)"Gyro Speed Y",
-				1000,
+				3000,
 				menuhandlerGyroSensitivityY,
 		},
 		{
