@@ -27,44 +27,31 @@
 #define DEFAULT_DEADZONE 4096
 #define DEFAULT_DEADZONE_RY 6144
 
-// Camera Radiants Scaling
-// The angle of the camera in radians per dot, based upon id tech/source engine's camera values.
-// This is used to convert camera and crosshair radiant into a dot.
-#define CAMERA_ANGLE (0.022f) // radians per dot
-
-// Camera Pixels Scaling
-// These values are used to convert input movements into camera/crosshair pixels
-#define MOUSE_DOTS_PER_PIXEL (3.5f) // Mouse sensitivity in degrees per pixel
-#define GYRO_DOTS_PER_PIXEL (0.3f) // Gyro sensitivity in degrees per pixel
-#define GYRO_CROSSHAIR_DOTS_PER_PIXEL (1.0f) // Gyro crosshair sensitivity in degrees per pixel
-
-// Cameraa Angles per Dot Results
-// After applying the scaling factors, this will give us the angle per dot desirable.
-#define MOUSE_ANGLE_PER_DOT (CAMERA_ANGLE / MOUSE_DOTS_PER_PIXEL) // Degrees per pixel
-#define GYRO_ANGLE_PER_DOT (CAMERA_ANGLE / GYRO_DOTS_PER_PIXEL) // Gyro Angles per Mouse pixel
-#define GYRO_CROSSHAIR_ANGLE_PER_DOT  (CAMERA_ANGLE / GYRO_CROSSHAIR_DOTS_PER_PIXEL) // Gyro Angles per Mouse pixel when using crosshair
-
 #define WHEEL_UP_MASK SDL_BUTTON(VK_MOUSE_WHEEL_UP - VK_MOUSE_BEGIN + 1)
 #define WHEEL_DN_MASK SDL_BUTTON(VK_MOUSE_WHEEL_DN - VK_MOUSE_BEGIN + 1)
 
 #define CURSOR_HIDE_THRESHOLD 1
 #define CURSOR_HIDE_TIME 3000000 // us
 
-// Define gyro modes
-#define GYRO_ALWAYS_ON 0 
-#define GYRO_TOGGLE 1
-#define GYRO_ENABLE_HELD 2
-#define GYRO_DISABLE_HELD 3
+// Define gyro modifier modes
+#define GYRO_ALWAYS_ON 0 // Gyro is always enabled, regardless of button state
+#define GYRO_TOGGLE 1 // Gyro is toggled on/off with a button press
+#define GYRO_ENABLE_HELD 2 // Gyro is enabled while a button is held down
+#define GYRO_DISABLE_HELD 3 // Gyro is disabled while a button is held down
 
-#define GYRO_AXIS_YAW 0 
-#define GYRO_AXIS_ROLL 1 
-#define GYRO_AXIS_LOCAL 2
-#define GYRO_AXIS_PLAYER 3 
-#define GYRO_AXIS_WORLD 4
+// Define gyro axis modes
+// Gyro Space and Play header (gyrospace.h) will be ultilized to handle Gyro Space and Play functionality
+// https://github.com/AL2009man/GyroSpace-and-Play
+#define GYRO_AXIS_YAW 0	// Gyro controls yaw axis (turn)
+#define GYRO_AXIS_ROLL 1 // Gyro controls roll axis (lean)
+#define GYRO_AXIS_LOCAL 2 // Gyro controls local space orientation
+#define GYRO_AXIS_PLAYER 3 // Gyro controls player space orientation
+#define GYRO_AXIS_WORLD 4 // Gyro controls world space orientation
 
-#define GYRO_AIM_MODE_CAMERA 0
-#define GYRO_AIM_MODE_CROSSHAIR 1
-#define GYRO_AIM_MODE_BOTH 2
+// Define gyro aim modes
+#define GYRO_AIM_MODE_CAMERA 0 // Gyro controls camera movement
+#define GYRO_AIM_MODE_CROSSHAIR 1 // Gyro controls crosshair movement
+#define GYRO_AIM_MODE_BOTH 2 // Gyro controls both camera and crosshair movement
 
 static SDL_GameController *pads[INPUT_MAX_CONTROLLERS];
 
@@ -1443,10 +1430,9 @@ void inputMouseGetRawDelta(s32 *dx, s32 *dy)
 void inputMouseGetScaledDelta(f32* dx, f32* dy)
 {
 		f32 mdx = 0.f, mdy = 0.f;
-
 		if (mouseLocked) {
-				mdx = mouseDX * MOUSE_ANGLE_PER_DOT * mouseSensX;
-				mdy = mouseDY * MOUSE_ANGLE_PER_DOT * mouseSensY;
+				mdx = mouseDX * (0.022f / 3.5f) * mouseSensX;
+				mdy = mouseDY * (0.022f / 3.5f) * mouseSensY;
 		}
 		if (dx) *dx = mdx;
 		if (dy) *dy = mdy;
@@ -1455,10 +1441,9 @@ void inputMouseGetScaledDelta(f32* dx, f32* dy)
 void inputMouseGetAbsScaledDelta(f32* dx, f32* dy)
 {
 		f32 mdx = 0.f, mdy = 0.f;
-
 		if (mouseLocked) {
-				mdx = fabsf(mouseDX) * MOUSE_ANGLE_PER_DOT * fabsf(mouseSensX);
-				mdy = fabsf(mouseDY) * MOUSE_ANGLE_PER_DOT * fabsf(mouseSensY);
+				mdx = fabsf(mouseDX) * (0.022f / 3.5f) * fabsf(mouseSensX);
+				mdy = fabsf(mouseDY) * (0.022f / 3.5f) * fabsf(mouseSensY);
 		}
 		if (dx) *dx = mdx;
 		if (dy) *dy = mdy;
@@ -1672,11 +1657,11 @@ void inputGyroGetScaledDelta(f32* dx, f32* dy, f32* dz)
 	if (gyroEnabled) {
 		// Ensure values aren't NaN before applying scaling
 		if (!isnan(gyroDeltaYaw) && !isnan(gyroDeltaPitch) && !isnan(gyroDeltaRoll)) {
-			gdx = gyroDeltaYaw * GYRO_ANGLE_PER_DOT * gyroSensX;
+			gdx = gyroDeltaYaw * (0.022f / 0.3f) * gyroSensX;
 			if (gyroInvertX) gdx = -gdx;
-			gdy = gyroDeltaPitch * GYRO_ANGLE_PER_DOT * gyroSensY;
+			gdy = gyroDeltaPitch * (0.022f / 0.3f) * gyroSensY;
 			if (gyroInvertY) gdy = -gdy;
-			gdz = gyroDeltaRoll * GYRO_ANGLE_PER_DOT * gyroSensY;
+			gdz = gyroDeltaRoll * (0.022f / 0.3f) * gyroSensY;
 
 			// Prevent excessive movement spikes (adjust if needed)
 			gdx = fminf(fmaxf(gdx, -2.0f), 2.0f);
@@ -1738,9 +1723,9 @@ void inputGyroGetScaledDeltaCrosshair(f32* dx, f32* dy)
 		gdy = (f32)gyroDeltaPitch;
 
 		// Apply sensitivity scaling
-		gdx = gyroDeltaYaw * GYRO_CROSSHAIR_ANGLE_PER_DOT * gyroAimSensX;
+		gdx = gyroDeltaYaw * (0.022f / 1.0f) * gyroAimSensX;
 		if (gyroAimInvertX) gdx = -gdx;
-		gdy = gyroDeltaPitch * GYRO_CROSSHAIR_ANGLE_PER_DOT * gyroAimSensY;
+		gdy = gyroDeltaPitch * (0.022f / 1.0f) * gyroAimSensY;
 		if (gyroAimInvertY) gdy = -gdy;
 	}
 
