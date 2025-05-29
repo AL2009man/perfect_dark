@@ -2735,8 +2735,8 @@ MenuItemHandlerResult filemgrChooseAgentListMenuHandler(s32 operation, struct me
 				filemgrSaveOrLoad(&g_GameFileGuid, FILEOP_LOAD_GAME, 0);
 
                 // load the setup file when loading the agent
-                mpsetupCopyAllFromPak();
-                mpsetupLoadCurrentFile();
+				mpsetupCopyAllFromPak();
+				mpsetupLoadCurrentFile();
 			}
 		}
 		break;
