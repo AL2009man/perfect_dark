@@ -1244,8 +1244,8 @@ void inputMouseGetScaledDelta(f32* dx, f32* dy)
 		f32 mdx = 0.f, mdy = 0.f;
 
 		if (mouseLocked) {
-				mdx = mouseSensX * ((f32)mouseDX / 3.5f) * 0.022f;
-				mdy = mouseSensY * ((f32)mouseDY / 3.5f) * 0.022f;
+				mdx = mouseDX * (0.022f / 3.5f) * mouseSensX;
+				mdy = mouseDY * (0.022f / 3.5f) * mouseSensY;
 		}
 		if (dx) *dx = mdx;
 		if (dy) *dy = mdy;
@@ -1256,8 +1256,8 @@ void inputMouseGetAbsScaledDelta(f32* dx, f32* dy)
 		f32 mdx = 0.f, mdy = 0.f;
 
 		if (mouseLocked) {
-				mdx = fabsf(mouseSensX) * ((f32)mouseDX / 3.5f) * 0.022f;
-				mdy = fabsf(mouseSensY) * ((f32)mouseDY / 3.5f) * 0.022f;
+				mdx = fabsf(mouseDX) * (0.022f / 3.5f) * fabsf(mouseSensX);
+				mdy = fabsf(mouseDY) * (0.022f / 3.5f) * fabsf(mouseSensY);
 		}
 		if (dx) *dx = mdx;
 		if (dy) *dy = mdy;
@@ -1509,8 +1509,8 @@ PD_CONSTRUCTOR static void inputConfigInit(void)
 {
 	configRegisterInt("Input.MouseEnabled", &mouseEnabled, 0, 1);
 	configRegisterInt("Input.MouseLockMode", &mouseLockMode, MLOCK_OFF, MLOCK_AUTO);
-	configRegisterFloat("Input.MouseSpeedX", &mouseSensX, -10.f, 10.f);
-	configRegisterFloat("Input.MouseSpeedY", &mouseSensY, -10.f, 10.f);
+	configRegisterFloat("Input.MouseSpeedX", &mouseSensX, -30.f, 30.f);
+	configRegisterFloat("Input.MouseSpeedY", &mouseSensY, -30.f, 30.f);
 	configRegisterInt("Input.FakeGamepads", &fakeControllers, 0, 4);
 	configRegisterInt("Input.FirstGamepadNum", &firstController, 0, 3);
 	configRegisterInt("Input.UseHIDAPI", &useHIDAPI, 0, 1);
