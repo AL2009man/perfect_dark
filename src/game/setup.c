@@ -1560,7 +1560,9 @@ void setupCreateProps(s32 stagenum)
 			botmgrRemoveAll();
 			index = 0;
 
-			if (g_MpSetup.options & MPOPTION_NODOORS) {
+            bool nodoors = (g_MpSetup.options & MPOPTION_NODOORS) != 0;
+            
+			if (nodoors) {
 				setupMarkLiftDoors();
 			}
 
@@ -1586,7 +1588,6 @@ void setupCreateProps(s32 stagenum)
 					break;
 				case OBJTYPE_DOOR: {
 					struct doorobj *door = (struct doorobj *) obj;
-					bool nodoors = (g_MpSetup.options & MPOPTION_NODOORS) != 0;
 					// dont skip doors that are locked or are lift doors
 					bool skipdoor = nodoors && g_Vars.normmplayerisrunning && door->keyflags == 0 && door->extra1 == 0;
 					if (!skipdoor && withobjs && (obj->flags2 & diffflag) == 0) {
