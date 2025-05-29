@@ -187,6 +187,7 @@ add_compile_options(
   -Wno-unused-but-set-variable
   -Wno-unused-value
   -Wno-unused-variable
+  -fdiagnostics-color=always
 )
 
 # C specific flags
