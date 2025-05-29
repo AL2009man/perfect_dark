@@ -25,21 +25,6 @@
 #define DEFAULT_DEADZONE 4096
 #define DEFAULT_DEADZONE_RY 6144
 
-// Camera Radiants Scaling
-// The angle of the camera in radians per dot, based upon id tech/source engine's camera values.
-// This is used to convert camera and crosshair radiant into a dot.
-#define CAMERA_ANGLE (0.022f) // radians per dot
-
-// Camera Pixels Scaling
-// These values are used to convert input movements into camera/crosshair pixels
-#define MOUSE_DOTS_PER_PIXEL (3.5f) // Mouse sensitivity in degrees per pixel
-#define MOUSE_CROSSHAIR_DOTS_PER_PIXEL (35.0f) // Mouse crosshair sensitivity in degrees per pixel
-
-// Cameraa Angles per Dot Results
-// After applying the scaling factors, this will give us the angle per dot desirable.
-#define MOUSE_ANGLE_PER_DOT (CAMERA_ANGLE / MOUSE_DOTS_PER_PIXEL) // Degrees per pixel
-#define MOUSE_CROSSHAIR_ANGLE_PER_DOT (CAMERA_ANGLE / MOUSE_CROSSHAIR_DOTS_PER_PIXEL) // Degrees per pixel when using crosshair
-
 #define WHEEL_UP_MASK SDL_BUTTON(VK_MOUSE_WHEEL_UP - VK_MOUSE_BEGIN + 1)
 #define WHEEL_DN_MASK SDL_BUTTON(VK_MOUSE_WHEEL_DN - VK_MOUSE_BEGIN + 1)
 
@@ -1261,8 +1246,8 @@ void inputMouseGetScaledDelta(f32* dx, f32* dy)
 		f32 mdx = 0.f, mdy = 0.f;
 
 		if (mouseLocked) {
-				mdx = mouseDX * MOUSE_ANGLE_PER_DOT * mouseSensX;
-				mdy = mouseDY * MOUSE_ANGLE_PER_DOT * mouseSensY;
+				mdx = mouseSensX * ((f32)mouseDX / 3.5f) * 0.022f;
+				mdy = mouseSensY * ((f32)mouseDY / 3.5f) * 0.022f;
 		}
 		if (dx) *dx = mdx;
 		if (dy) *dy = mdy;
@@ -1273,8 +1258,8 @@ void inputMouseGetAbsScaledDelta(f32* dx, f32* dy)
 		f32 mdx = 0.f, mdy = 0.f;
 
 		if (mouseLocked) {
-				mdx = fabsf(mouseDX) * MOUSE_ANGLE_PER_DOT * fabsf(mouseSensX);
-				mdy = fabsf(mouseDY) * MOUSE_ANGLE_PER_DOT * fabsf(mouseSensY);
+				mdx = fabsf(mouseSensX) * ((f32)mouseDX / 3.5f) * 0.022f;
+				mdy = fabsf(mouseSensY) * ((f32)mouseDY / 3.5f) * 0.022f;
 		}
 		if (dx) *dx = mdx;
 		if (dy) *dy = mdy;
@@ -1296,8 +1281,8 @@ void inputMouseGetScaledDeltaCrosshair(f32* dx, f32* dy)
 {
 		f32 mdx = 0.f, mdy = 0.f;
 		if (mouseLocked) {
-				mdx = mouseDX * MOUSE_CROSSHAIR_ANGLE_PER_DOT * mouseAimSensY;
-				mdy = mouseDY * MOUSE_CROSSHAIR_ANGLE_PER_DOT * mouseAimSensY;
+				mdx = mouseDX * (0.022f / 35.0f) * mouseAimSensY;
+				mdy = mouseDY * (0.022f / 35.0f) * mouseAimSensY;
 		}
 		if (dx) *dx = mdx;
 		if (dy) *dy = mdy;
@@ -1549,8 +1534,8 @@ PD_CONSTRUCTOR static void inputConfigInit(void)
 {
 	configRegisterInt("Input.MouseEnabled", &mouseEnabled, 0, 1);
 	configRegisterInt("Input.MouseLockMode", &mouseLockMode, MLOCK_OFF, MLOCK_AUTO);
-	configRegisterFloat("Input.MouseSpeedX", &mouseSensX, -10.f, 10.f);
-	configRegisterFloat("Input.MouseSpeedY", &mouseSensY, -10.f, 10.f);
+	configRegisterFloat("Input.MouseSpeedX", &mouseSensX, -30.f, 30.f);
+	configRegisterFloat("Input.MouseSpeedY", &mouseSensY, -30.f, 30.f);
 	configRegisterFloat("Input.MouseAimSpeedX", &mouseAimSensX, -10.f, 10.f);
 	configRegisterFloat("Input.MouseAimSpeedY", &mouseAimSensY, -10.f, 10.f);
 	configRegisterInt("Input.FakeGamepads", &fakeControllers, 0, 4);
