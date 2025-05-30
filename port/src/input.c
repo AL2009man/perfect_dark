@@ -68,6 +68,20 @@ static SDL_GameController *pads[INPUT_MAX_CONTROLLERS];
 	.swapSticks = 1, \
 	.deviceIndex = -1, \
 	.cancelCButtons = 0, \
+  .gyroEnabled = 1, \
+  .gyroAxisMode = GYRO_AXIS_YAW, \
+  .gyroAimMode = GYRO_AIM_MODE_BOTH, \
+  .gyroModifier = GYRO_DISABLE_HELD, \
+  .gyroSensX = 2.5f, \
+  .gyroSensY = 2.5f, \
+  .gyroAimSensX = 2.5f, \
+  .gyroAimSensY = 2.5f, \
+  .gyroVHMixer = 0.0f, \
+  .gyroInvertX = 0, \
+  .gyroInvertY = 0, \
+  .gyroAimInvertX = 0, \
+  .gyroAimInvertY = 0, \
+  .gyroMinThreshold = 0.07f, \
 }
 
 static struct controllercfg {
@@ -76,10 +90,25 @@ static struct controllercfg {
 	u32 axisMap[2][2];
 	f32 sens[4];
 	s32 deadzone[4];
+	s32 gyroSensorActive;
 	s32 stickCButtons;
 	s32 swapSticks;
 	s32 deviceIndex;
 	s32 cancelCButtons;
+	s32 gyroEnabled;
+	s32 gyroAxisMode;
+	s32 gyroAimMode;
+	s32 gyroModifier;
+	f32 gyroSensX;
+	f32 gyroSensY;
+	f32 gyroAimSensX;
+	f32 gyroAimSensY;
+	f32 gyroVHMixer;
+	s32 gyroInvertX;
+	s32 gyroInvertY;
+	s32 gyroAimInvertX;
+	s32 gyroAimInvertY;
+	f32 gyroMinThreshold;
 } padsCfg[INPUT_MAX_CONTROLLERS] = {
 	CONTROLLERCFG_DEFAULT,
 	CONTROLLERCFG_DEFAULT,
@@ -113,30 +142,14 @@ static s32 mouseShowCursor = 1;
 static f32 mouseSensX = 2.5f;
 static f32 mouseSensY = 2.5f;
 
-static s32 gyroEnabled = 1;
-static f32 gyroYaw, gyroPitch, gyroRoll;
-static f32 gyroDeltaYaw, gyroDeltaPitch, gyroDeltaRoll;
+static f32 gyroYaw[INPUT_MAX_CONTROLLERS], gyroPitch[INPUT_MAX_CONTROLLERS], gyroRoll[INPUT_MAX_CONTROLLERS];
+static f32 gyroDeltaYaw[INPUT_MAX_CONTROLLERS], gyroDeltaPitch[INPUT_MAX_CONTROLLERS], gyroDeltaRoll[INPUT_MAX_CONTROLLERS];
 
 static f32 gyroOffsetX = 0.f;
 static f32 gyroOffsetY = 0.f;
 static f32 accelDeltaX = 0.f;
 static f32 accelDeltaY = 0.f;
 static f32 accelDeltaZ = 0.f;
-
-static f32 gyroSensX = 2.5f;
-static f32 gyroSensY = 2.5f;
-static f32 gyroAimSensX = 2.5f;
-static f32 gyroAimSensY = 2.5f;
-static f32 gyroVHMixer = 0.0f;
-static s32 gyroInvertX = 0;
-static s32 gyroInvertY = 0;
-static s32 gyroAimInvertX = 0;
-static s32 gyroAimInvertY = 0;
-
-static s32 g_GyroAxisMode = GYRO_YAW;
-static s32 g_GyroAimMode = GYRO_AIM_MODE_BOTH;
-static f32 gyroMinThreshold = 0.07f;
-static s32 g_GyroModifier = GYRO_DISABLE_HELD;
 
 static s32 lastKey = 0;
 static char lastChar = 0;
@@ -395,6 +408,20 @@ static inline void inputInitController(const s32 cidx, const s32 jidx)
 		SDL_JoystickGetGUIDString(guid, guidStr, sizeof(guidStr));
 		sysLogPrintf(LOG_NOTE, "input: GUID for controller %d: %s", jidx, guidStr);
 	}
+
+	padsCfg[cidx].gyroSensorActive = 0;
+#if SDL_VERSION_ATLEAST(2, 0, 14)
+	if (SDL_GameControllerHasSensor(pads[cidx], SDL_SENSOR_GYRO)) {
+		if (SDL_GameControllerSetSensorEnabled(pads[cidx], SDL_SENSOR_GYRO, SDL_TRUE) == 0) {
+			padsCfg[cidx].gyroSensorActive = 1;
+			sysLogPrintf(LOG_NOTE, "input: Gyro sensor enabled for controller %d", cidx);
+		} else {
+			sysLogPrintf(LOG_WARNING, "input: Failed to enable gyro sensor for controller %d", cidx);
+		}
+	} else {
+		sysLogPrintf(LOG_NOTE, "input: Controller %d does not support gyro sensor", cidx);
+	}
+#endif
 }
 
 static inline void inputCloseController(const s32 cidx)
@@ -724,46 +751,31 @@ static inline void inputLoadBinds(void)
 	}
 }
 
-// Declare gyro controller globally
-static SDL_GameController* gyroController = NULL;
-
-void inputHandleGyroController()
+void inputHandleGyroController(s32 cidx)
 {
-    // Safely close existing controller before initializing a new one
-    closeGyroController();
-
-    // Exit early if no controllers are detected
-    if (SDL_NumJoysticks() <= 0) {
-        sysLogPrintf(LOG_WARNING, "No joysticks detected.");
-        return;
-    }
-
-    // Attempt to open the first available controller
-    gyroController = SDL_GameControllerOpen(0);
-    if (!gyroController) {
-        sysLogPrintf(LOG_WARNING, "Failed to initialize gyro controller.");
+    // Close and reopen the controller if needed
+    if (!pads[cidx]) {
+        sysLogPrintf(LOG_WARNING, "No controller assigned to index %d.", cidx);
         return;
     }
 
     // Check for gyro and accelerometer support
-    bool hasGyro = SDL_GameControllerHasSensor(gyroController, SDL_SENSOR_GYRO);
-    bool hasAccel = SDL_GameControllerHasSensor(gyroController, SDL_SENSOR_ACCEL);
+    bool hasGyro = SDL_GameControllerHasSensor(pads[cidx], SDL_SENSOR_GYRO);
+    bool hasAccel = SDL_GameControllerHasSensor(pads[cidx], SDL_SENSOR_ACCEL);
 
-    // Close controller if it lacks necessary sensors
     if (!hasGyro && !hasAccel) {
-        sysLogPrintf(LOG_WARNING, "Controller lacks gyro/accelerometer support.");
-        closeGyroController();
+        sysLogPrintf(LOG_WARNING, "Controller %d lacks gyro/accelerometer support.", cidx);
         return;
     }
 
 #if SDL_VERSION_ATLEAST(2, 0, 14)
     // Enable sensors safely
-    if (hasGyro && SDL_GameControllerSetSensorEnabled(gyroController, SDL_SENSOR_GYRO, SDL_TRUE) != 0) {
-        sysLogPrintf(LOG_WARNING, "Failed to enable gyro sensor.");
+    if (hasGyro && SDL_GameControllerSetSensorEnabled(pads[cidx], SDL_SENSOR_GYRO, SDL_TRUE) != 0) {
+        sysLogPrintf(LOG_WARNING, "Failed to enable gyro sensor for controller %d.", cidx);
     }
 
-    if (hasAccel && SDL_GameControllerSetSensorEnabled(gyroController, SDL_SENSOR_ACCEL, SDL_TRUE) != 0) {
-        sysLogPrintf(LOG_WARNING, "Failed to enable accelerometer sensor.");
+    if (hasAccel && SDL_GameControllerSetSensorEnabled(pads[cidx], SDL_SENSOR_ACCEL, SDL_TRUE) != 0) {
+        sysLogPrintf(LOG_WARNING, "Failed to enable accelerometer sensor for controller %d.", cidx);
     }
 #endif
 
@@ -771,33 +783,36 @@ void inputHandleGyroController()
     float sensorData[3] = { 0.f, 0.f, 0.f };
 
     // Gyro data retrieval
-    if (hasGyro && SDL_GameControllerGetSensorData(gyroController, SDL_SENSOR_GYRO, sensorData, 3) == 0) {
-        gyroDeltaYaw = sensorData[0];
-        gyroDeltaPitch = sensorData[1];
-        gyroDeltaRoll = sensorData[2];
+    if (hasGyro && SDL_GameControllerGetSensorData(pads[cidx], SDL_SENSOR_GYRO, sensorData, 3) == 0) {
+        gyroDeltaYaw[cidx] = sensorData[0];
+        gyroDeltaPitch[cidx] = sensorData[1];
+        gyroDeltaRoll[cidx] = sensorData[2];
     } else {
-        gyroDeltaYaw = gyroDeltaPitch = gyroDeltaRoll = 0.f;
-        sysLogPrintf(LOG_WARNING, "Failed to retrieve gyro data.");
+        gyroDeltaYaw[cidx] = gyroDeltaPitch[cidx] = gyroDeltaRoll[cidx] = 0.f;
+        sysLogPrintf(LOG_WARNING, "Failed to retrieve gyro data for controller %d.", cidx);
     }
 
     // Accelerometer data retrieval
-    if (hasAccel && SDL_GameControllerGetSensorData(gyroController, SDL_SENSOR_ACCEL, sensorData, 3) == 0) {
+    if (hasAccel && SDL_GameControllerGetSensorData(pads[cidx], SDL_SENSOR_ACCEL, sensorData, 3) == 0) {
         accelDeltaX = sensorData[0];
         accelDeltaY = sensorData[1];
         accelDeltaZ = sensorData[2];
     } else {
         accelDeltaX = accelDeltaY = accelDeltaZ = 0.f;
-        sysLogPrintf(LOG_WARNING, "Failed to retrieve accelerometer data.");
+        sysLogPrintf(LOG_WARNING, "Failed to retrieve accelerometer data for controller %d.", cidx);
     }
 }
 
 // Function to clean up when a controller disconnects
-void closeGyroController()
+void closeGyroController(s32 cidx)
 {
-    if (gyroController) {
-        SDL_GameControllerClose(gyroController);
-        gyroController = NULL;
-        sysLogPrintf(LOG_NOTE, "Gyro controller closed.");
+    if (pads[cidx]) {
+#if SDL_VERSION_ATLEAST(2, 0, 14)
+        SDL_GameControllerSetSensorEnabled(pads[cidx], SDL_SENSOR_GYRO, SDL_FALSE);
+        SDL_GameControllerSetSensorEnabled(pads[cidx], SDL_SENSOR_ACCEL, SDL_FALSE);
+#endif
+        // Do not close the controller here, as pads[cidx] is managed elsewhere
+        sysLogPrintf(LOG_NOTE, "Gyro sensors disabled for controller %d.", cidx);
     }
 }
 
@@ -1030,75 +1045,76 @@ static inline void inputUpdateMouse(void)
 	}
 }
 
-static inline void inputUpdateGyro(void)
+static inline void inputUpdateGyro(s32 cidx)
 {
-    if (!gyroEnabled) {
-        sysLogPrintf(LOG_NOTE, "Gyro is disabled. Skipping update.");
-        return;
-    }
+		if (!padsCfg[cidx].gyroEnabled || !padsCfg[cidx].gyroSensorActive) {
+				sysLogPrintf(LOG_NOTE, "Gyro is disabled for controller %d. Skipping update.", cidx);
+				return;
+		}
 
-    // Handle gyro controller initialization
-    inputHandleGyroController();
+    // Handle gyro controller initialization (still global, or adapt for per-controller if needed)
+		inputHandleGyroController(cidx);
 
     // If the controller was unplugged, fully reset gyro values
-    if (!gyroController || SDL_GameControllerGetAttached(gyroController) == SDL_FALSE) {
-        sysLogPrintf(LOG_NOTE, "Gyro Reset: No controllers detected.");
+		if (!pads[cidx] || SDL_GameControllerGetAttached(pads[cidx]) == SDL_FALSE) {
+				sysLogPrintf(LOG_NOTE, "Gyro Reset: No controllers detected.");
 
-        gyroYaw = gyroPitch = gyroRoll = 0.f;
-        gyroDeltaYaw = gyroDeltaPitch = gyroDeltaRoll = 0.f;
-        gyroOffsetX = gyroOffsetY = 0.f;
-        gyroController = NULL; // Ensure it's cleared to prevent invalid references
+				gyroYaw[cidx] = gyroPitch[cidx] = gyroRoll[cidx] = 0.f;
+				gyroDeltaYaw[cidx] = gyroDeltaPitch[cidx] = gyroDeltaRoll[cidx] = 0.f;
+				gyroOffsetX = gyroOffsetY = 0.f;
 
-        return;
-    }
+				return;
+		}
 
     // Retrieve gyro data
-    float gyroData[3] = { 0.f, 0.f, 0.f };
-    if (SDL_GameControllerGetSensorData(gyroController, SDL_SENSOR_GYRO, gyroData, 3) != 0) {
-        sysLogPrintf(LOG_WARNING, "Failed to retrieve gyro data.");
+		float gyroData[3] = { 0.f, 0.f, 0.f };
+		if (SDL_GameControllerGetSensorData(pads[cidx], SDL_SENSOR_GYRO, gyroData, 3) != 0) {
+				sysLogPrintf(LOG_WARNING, "Failed to retrieve gyro data.");
 
-        gyroDeltaYaw = gyroDeltaPitch = gyroDeltaRoll = 0.f; // Prevent unintended movement
-        return;
-    }
+				gyroDeltaYaw[cidx] = gyroDeltaPitch[cidx] = gyroDeltaRoll[cidx] = 0.f;
+				return;
+		}
 
     // Initialize deltas before processing
-    gyroDeltaYaw = gyroDeltaPitch = gyroDeltaRoll = 0.f;
+    gyroDeltaYaw[cidx] = gyroDeltaPitch[cidx] = gyroDeltaRoll[cidx] = 0.f;
 
     f32 deltaX = gyroData[1]; // Yaw
     f32 deltaY = gyroData[0]; // Pitch
     f32 deltaZ = gyroData[2]; // Roll
 
-    // Apply gyro processing functions
-    applyGyroAxisMapping(gyroData, &deltaX, &deltaY, &deltaZ);
-    applyGyroAimMode(&deltaX, &deltaY, &deltaZ);
-    applyGyroModifier(&deltaX, &deltaY, &deltaZ, inputGetGyroModifier(), 0);
-    applyGyroThreshold(&deltaX, &deltaY, &deltaZ, inputGetGyroMinThreshold());
+    // Apply gyro processing functions with per-controller settings
+    applyGyroAxisMapping(cidx, gyroData, &deltaX, &deltaY, &deltaZ);
+    applyGyroAimMode(cidx, &deltaX, &deltaY, &deltaZ);
+    applyGyroModifier(&deltaX, &deltaY, &deltaZ, inputGetGyroModifier(cidx), cidx);
+    applyGyroThreshold(&deltaX, &deltaY, &deltaZ, inputGetGyroMinThreshold(cidx));
 
     // Check acceleration magnitude for stability
     f32 accelMagnitude = sqrtf(accelDeltaX * accelDeltaX + accelDeltaY * accelDeltaY + accelDeltaZ * accelDeltaZ);
 
     // Store processed gyro deltas
-    gyroDeltaYaw = deltaX;
-    gyroDeltaPitch = deltaY;
-    gyroDeltaRoll = deltaZ;
+    gyroDeltaYaw[cidx] = deltaX;
+    gyroDeltaPitch[cidx] = deltaY;
+    gyroDeltaRoll[cidx] = deltaZ;
 
     // Update gyro orientation values
-    gyroYaw += gyroDeltaYaw;
-    gyroPitch += gyroDeltaPitch;
-    gyroRoll += gyroDeltaRoll;
+    gyroYaw[cidx] += gyroDeltaYaw[cidx];
+    gyroPitch[cidx] += gyroDeltaPitch[cidx];
+    gyroRoll[cidx] += gyroDeltaRoll[cidx];
 }
 
 void inputUpdate(void)
 {
-	SDL_GameControllerUpdate();
+		SDL_GameControllerUpdate();
 
-	if (mouseEnabled) {
-		inputUpdateMouse();
-	}
+		if (mouseEnabled) {
+				inputUpdateMouse();
+		}
 
-	if (gyroEnabled) {
-		inputUpdateGyro();
-	}
+		for (s32 cidx = 0; cidx < INPUT_MAX_CONTROLLERS; ++cidx) {
+				if (padsCfg[cidx].gyroEnabled) {
+						inputUpdateGyro(cidx);
+				}
+		}
 }
 
 s32 inputControllerConnected(s32 idx)
@@ -1507,163 +1523,152 @@ void inputSetMouseLockMode(s32 lockmode)
 	}
 }
 
-s32 inputGyroIsEnabled(void)
+s32 inputGyroIsEnabled(s32 cidx)
 {
-	return gyroEnabled;
+	return padsCfg[cidx].gyroEnabled;
 }
 
-void inputGyroEnable(s32 enabled)
+void inputGyroEnable(s32 cidx, s32 enabled)
 {
-	gyroEnabled = (enabled != 0);
+	padsCfg[cidx].gyroEnabled = (enabled != 0);
 }
 
-enum gyroaxismode inputGetGyroAxisMode(void)
+enum gyroaxismode inputGetGyroAxisMode(s32 cidx)
 {
-	return g_GyroAxisMode;
+	return padsCfg[cidx].gyroAxisMode;
 }
 
-void inputSetGyroAxisMode(enum gyroaxismode mode)
+void inputSetGyroAxisMode(s32 cidx, enum gyroaxismode mode)
 {
-	g_GyroAxisMode = mode;
+	padsCfg[cidx].gyroAxisMode = mode;
 }
 
-void applyGyroAxisMapping(float gyroData[3], f32* deltaX, f32* deltaY, f32* deltaZ)
+void applyGyroAxisMapping(s32 cidx, float gyroData[3], f32* deltaX, f32* deltaY, f32* deltaZ)
 {
-		switch (inputGetGyroAxisMode()) {
-		case GYRO_YAW:
-				*deltaX = -gyroData[1]; // Yaw for horizontal movement
-				*deltaY = -gyroData[0]; // Pitch for vertical movement
-				break;
-
-		case GYRO_ROLL:
-				*deltaX = gyroData[2];  // Roll for horizontal movement
-				*deltaY = -gyroData[0]; // Pitch for vertical movement
-				break;
-
-		case GYRO_LOCAL:
-		{
-				float processedYaw = -gyroData[1];
-				float processedPitch = -gyroData[0];
-				float processedRoll = -gyroData[2];
-
-				// Apply Local Space transformation
-				Vector3 transformedGyro = TransformToLocalSpace(
-						processedYaw, processedPitch, processedRoll,
-						0.0f
-				);
-
-				*deltaX = transformedGyro.x;
-				*deltaY = transformedGyro.y;
-				*deltaZ = transformedGyro.z;
-		}
+	switch (inputGetGyroAxisMode(cidx)) {
+	case GYRO_YAW:
+		*deltaX = -gyroData[1]; // Yaw for horizontal movement
+		*deltaY = -gyroData[0]; // Pitch for vertical movement
 		break;
 
-		case GYRO_PLAYER:
-		{
-				float processedYaw = -gyroData[1];
-				float processedPitch = -gyroData[0];
-				float processedRoll = -gyroData[2];
-
-				// Apply Player Space transformation with gravity alignment
-				Vector3 transformedGyro = TransformToPlayerSpace(
-						processedYaw, processedPitch, processedRoll,
-						GetGravityVector()
-				);
-
-				*deltaX = transformedGyro.x;
-				*deltaY = transformedGyro.y;
-				*deltaZ = transformedGyro.z;
-		}
+	case GYRO_ROLL:
+		*deltaX = gyroData[2];  // Roll for horizontal movement
+		*deltaY = -gyroData[0]; // Pitch for vertical movement
 		break;
 
-		case GYRO_WORLD:
-		{
-				float processedYaw = -gyroData[1];
-				float processedPitch = -gyroData[0];
-				float processedRoll = -gyroData[2];
+	case GYRO_LOCAL:
+	{
+		float processedYaw = -gyroData[1];
+		float processedPitch = -gyroData[0];
+		float processedRoll = -gyroData[2];
 
-				// Apply World Space transformation with gravity influence
-				Vector3 transformedGyro = TransformToWorldSpace(
-						processedYaw, processedPitch, processedRoll,
-						GetGravityVector()
-				);
+		Vector3 transformedGyro = TransformToLocalSpace(
+			processedYaw, processedPitch, processedRoll,
+			0.0f
+		);
 
-				*deltaX = transformedGyro.x;
-				*deltaY = transformedGyro.y;
-				*deltaZ = transformedGyro.z;
-		}
+		*deltaX = transformedGyro.x;
+		*deltaY = transformedGyro.y;
+		*deltaZ = transformedGyro.z;
+	}
+	break;
+
+	case GYRO_PLAYER:
+	{
+		float processedYaw = -gyroData[1];
+		float processedPitch = -gyroData[0];
+		float processedRoll = -gyroData[2];
+
+		Vector3 transformedGyro = TransformToPlayerSpace(
+			processedYaw, processedPitch, processedRoll,
+			GetGravityVector()
+		);
+
+		*deltaX = transformedGyro.x;
+		*deltaY = transformedGyro.y;
+		*deltaZ = transformedGyro.z;
+	}
+	break;
+
+	case GYRO_WORLD:
+	{
+		float processedYaw = -gyroData[1];
+		float processedPitch = -gyroData[0];
+		float processedRoll = -gyroData[2];
+
+		Vector3 transformedGyro = TransformToWorldSpace(
+			processedYaw, processedPitch, processedRoll,
+			GetGravityVector()
+		);
+
+		*deltaX = transformedGyro.x;
+		*deltaY = transformedGyro.y;
+		*deltaZ = transformedGyro.z;
+	}
+	break;
+
+	default:
+		*deltaX = 0.f;
+		*deltaY = 0.f;
+		*deltaZ = 0.f;
 		break;
-
-		default:
-				*deltaX = 0.f;
-				*deltaY = 0.f;
-				*deltaZ = 0.f;
-				break;
-		}
+	}
 }
 
-s32 inputGetGyroAimMode(void)
+s32 inputGetGyroAimMode(s32 cidx)
 {
-	return g_GyroAimMode;
+	return padsCfg[cidx].gyroAimMode;
 }
 
-void inputSetGyroAimMode(s32 mode)
+void inputSetGyroAimMode(s32 cidx, s32 mode)
 {
-	g_GyroAimMode = mode;
+	padsCfg[cidx].gyroAimMode = mode;
 }
 
-void applyGyroAimMode(f32* deltaX, f32* deltaY, f32* deltaZ)
+void applyGyroAimMode(s32 cidx, f32* deltaX, f32* deltaY, f32* deltaZ)
 {
 	// Retrieve current Gyro Aim Mode (no changes to deltaX or deltaY here)
-	s32 gyroAimMode = inputGetGyroAimMode();
+	s32 gyroAimMode = inputGetGyroAimMode(cidx);
+	(void)gyroAimMode;
 }
 
-void inputGyroGetRawDelta(s32* dx, s32* dy, s32* dz)
+void inputGyroGetRawDelta(s32 cidx, s32* dx, s32* dy, s32* dz)
 {
-	if (dx) *dx = (s32)gyroDeltaYaw;
-	if (dy) *dy = (s32)gyroDeltaPitch;
-	if (dz) *dz = (s32)gyroDeltaRoll;
+		if (dx) *dx = (s32)gyroDeltaYaw[cidx];
+		if (dy) *dy = (s32)gyroDeltaPitch[cidx];
+		if (dz) *dz = (s32)gyroDeltaRoll[cidx];
 }
 
-static inline void applyGyroVHMixer(f32* dx, f32* dy) {
-		// Clamp mixer value for safety
-		float mix = fminf(fmaxf(gyroVHMixer, -1.0f), 1.0f);
+static inline void applyGyroVHMixer(s32 cidx, f32* dx, f32* dy) {
+	float mix = fminf(fmaxf(padsCfg[cidx].gyroVHMixer, -1.0f), 1.0f);
 
-		// Calculate scale factors
-		float hScale = 1.0f - fmaxf(0.0f, mix); // Reduce horizontal as mix increases
-		float vScale = 1.0f + fminf(0.0f, mix); // Reduce vertical as mix decreases
+	float hScale = 1.0f - fmaxf(0.0f, mix);
+	float vScale = 1.0f + fminf(0.0f, mix);
 
-		// At mix = 0, both are 1.0 (no change)
-		// At mix = -1, hScale = 2.0, vScale = 1.0 (vertical minimized)
-		// At mix = +1, hScale = 1.0, vScale = 2.0 (horizontal minimized)
+	float norm = hScale + vScale;
+	if (norm > 0.0f) {
+		hScale /= norm / 2.0f;
+		vScale /= norm / 2.0f;
+	}
 
-		// Normalize so the sum is always 2.0 (optional, for consistent feel)
-		float norm = hScale + vScale;
-		if (norm > 0.0f) {
-				hScale /= norm / 2.0f;
-				vScale /= norm / 2.0f;
-		}
-
-		*dx *= hScale;
-		*dy *= vScale;
+	*dx *= hScale;
+	*dy *= vScale;
 }
 
-void inputGyroGetScaledDelta(f32* dx, f32* dy, f32* dz)
+void inputGyroGetScaledDelta(s32 cidx, f32* dx, f32* dy, f32* dz)
 {
-	if (!dx || !dy || !dz) return; // Safety check
+	if (!dx || !dy || !dz) return;
 
 	f32 gdx = 0.f, gdy = 0.f, gdz = 0.f;
 
-	if (gyroEnabled) {
-		// Ensure values aren't NaN before applying scaling
-		if (!isnan(gyroDeltaYaw) && !isnan(gyroDeltaPitch) && !isnan(gyroDeltaRoll)) {
-			gdx = gyroDeltaYaw * (0.022f / 0.3f) * gyroSensX;
-			if (gyroInvertX) gdx = -gdx;
-			gdy = gyroDeltaPitch * (0.022f / 0.3f) * gyroSensY;
-			if (gyroInvertY) gdy = -gdy;
-			gdz = gyroDeltaRoll * (0.022f / 0.3f) * gyroSensY;
+	if (padsCfg[cidx].gyroEnabled) {
+		if (!isnan(gyroDeltaYaw[cidx]) && !isnan(gyroDeltaPitch[cidx]) && !isnan(gyroDeltaRoll[cidx])) {
+			gdx = gyroDeltaYaw[cidx] * (0.022f / 0.3f) * padsCfg[cidx].gyroSensX;
+			if (padsCfg[cidx].gyroInvertX) gdx = -gdx;
+			gdy = gyroDeltaPitch[cidx] * (0.022f / 0.3f) * padsCfg[cidx].gyroSensY;
+			if (padsCfg[cidx].gyroInvertY) gdy = -gdy;
+			gdz = gyroDeltaRoll[cidx] * (0.022f / 0.3f) * padsCfg[cidx].gyroSensY;
 
-			// Prevent excessive movement spikes (adjust if needed)
 			gdx = fminf(fmaxf(gdx, -2.0f), 2.0f);
 			gdy = fminf(fmaxf(gdy, -2.0f), 2.0f);
 			gdz = fminf(fmaxf(gdz, -2.0f), 2.0f);
@@ -1674,229 +1679,213 @@ void inputGyroGetScaledDelta(f32* dx, f32* dy, f32* dz)
 	*dy = gdy;
 	*dz = gdz;
 
-	// Apply VH mixer to camera gyro
-	applyGyroVHMixer(dx, dy);
+	applyGyroVHMixer(cidx, dx, dy);
 }
 
-void inputGyroGetSpeed(f32* x, f32* y)
+void inputGyroGetSpeed(s32 cidx, f32* x, f32* y)
 {
-	// Return current sensitivity values
-	if (x) *x = gyroSensX;
-	if (y) *y = gyroSensY;
+	if (x) *x = padsCfg[cidx].gyroSensX;
+	if (y) *y = padsCfg[cidx].gyroSensY;
 }
 
-void inputGyroSetSpeed(f32 x, f32 y)
+void inputGyroSetSpeed(s32 cidx, f32 x, f32 y)
 {
-	// Set new sensitivity values
-	gyroSensX = x;
-	gyroSensY = y;
+	padsCfg[cidx].gyroSensX = x;
+	padsCfg[cidx].gyroSensY = y;
 }
 
-f32 inputGyroGetSpeedX(void)
+f32 inputGyroGetSpeedX(s32 cidx)
 {
-	return gyroSensX; // Return horizontal sensitivity
+	return padsCfg[cidx].gyroSensX;
 }
 
-void inputGyroSetSpeedX(f32 x)
+void inputGyroSetSpeedX(s32 cidx, f32 x)
 {
-	gyroSensX = x; // Set new horizontal sensitivity
+	padsCfg[cidx].gyroSensX = x;
 }
 
-f32 inputGyroGetSpeedY(void)
+f32 inputGyroGetSpeedY(s32 cidx)
 {
-	return gyroSensY; // Return vertical sensitivity
+	return padsCfg[cidx].gyroSensY;
 }
 
-void inputGyroSetSpeedY(f32 y)
+void inputGyroSetSpeedY(s32 cidx, f32 y)
 {
-	gyroSensY = y; // Set new vertical sensitivity
+	padsCfg[cidx].gyroSensY = y;
 }
 
-void inputGyroGetScaledDeltaCrosshair(f32* dx, f32* dy)
+void inputGyroGetScaledDeltaCrosshair(s32 cidx, f32* dx, f32* dy)
 {
-	// Default deltas to zero
 	f32 gdx = 0.f, gdy = 0.f;
 
-	if (gyroEnabled) {
-		// Retrieve raw gyro deltas (yaw and pitch) for crosshair movement
-		gdx = (f32)gyroDeltaYaw;
-		gdy = (f32)gyroDeltaPitch;
-
-		// Apply sensitivity scaling
-		gdx = gyroDeltaYaw * (0.022f / 1.0f) * gyroAimSensX;
-		if (gyroAimInvertX) gdx = -gdx;
-		gdy = gyroDeltaPitch * (0.022f / 1.0f) * gyroAimSensY;
-		if (gyroAimInvertY) gdy = -gdy;
+	if (padsCfg[cidx].gyroEnabled) {
+		gdx = gyroDeltaYaw[cidx] * (0.022f / 1.0f) * padsCfg[cidx].gyroAimSensX;
+		if (padsCfg[cidx].gyroAimInvertX) gdx = -gdx;
+		gdy = gyroDeltaPitch[cidx] * (0.022f / 1.0f) * padsCfg[cidx].gyroAimSensY;
+		if (padsCfg[cidx].gyroAimInvertY) gdy = -gdy;
 	}
 
-	// Assign scaled deltas to output variables
 	if (dx) *dx = gdx;
 	if (dy) *dy = gdy;
 
-	// Apply VH mixer to crosshair gyro
-	if (dx && dy) applyGyroVHMixer(dx, dy);
+	if (dx && dy) applyGyroVHMixer(cidx, dx, dy);
 }
 
-void inputGyroGetCrosshairSpeed(f32* x, f32* y)
+void inputGyroGetCrosshairSpeed(s32 cidx, f32* x, f32* y)
 {
-	// Return current crosshair sensitivity values
-	if (x) *x = gyroAimSensX;
-	if (y) *y = gyroAimSensY;
+	if (x) *x = padsCfg[cidx].gyroAimSensX;
+	if (y) *y = padsCfg[cidx].gyroAimSensY;
 }
 
-void inputGyroSetCrosshairSpeed(f32 x, f32 y)
+void inputGyroSetCrosshairSpeed(s32 cidx, f32 x, f32 y)
 {
-	// Set new crosshair sensitivity values
-	gyroAimSensX = x;
-	gyroAimSensY = y;
+	padsCfg[cidx].gyroAimSensX = x;
+	padsCfg[cidx].gyroAimSensY = y;
 }
 
-f32 inputGyroGetAimSpeedX(void)
+f32 inputGyroGetAimSpeedX(s32 cidx)
 {
-	return gyroAimSensX;
+	return padsCfg[cidx].gyroAimSensX;
 }
 
-void inputGyroSetAimSpeedX(f32 x)
+void inputGyroSetAimSpeedX(s32 cidx, f32 x)
 {
-	gyroAimSensX = x;
+	padsCfg[cidx].gyroAimSensX = x;
 }
 
-f32 inputGyroGetAimSpeedY(void)
+f32 inputGyroGetAimSpeedY(s32 cidx)
 {
-	return gyroAimSensY;
+	return padsCfg[cidx].gyroAimSensY;
 }
 
-void inputGyroSetAimSpeedY(f32 y)
+void inputGyroSetAimSpeedY(s32 cidx, f32 y)
 {
-	gyroAimSensY = y;
+	padsCfg[cidx].gyroAimSensY = y;
 }
 
-s32 inputGyroInvertXIsEnabled(void)
+s32 inputGyroInvertXIsEnabled(s32 cidx)
 {
-		return gyroInvertX;
+	return padsCfg[cidx].gyroInvertX;
 }
 
-void inputGyroInvertXEnable(s32 enabled)
+void inputGyroInvertXEnable(s32 cidx, s32 enabled)
 {
-		gyroInvertX = (enabled != 0);
+	padsCfg[cidx].gyroInvertX = (enabled != 0);
 }
 
-s32 inputGyroInvertYIsEnabled(void)
+s32 inputGyroInvertYIsEnabled(s32 cidx)
 {
-		return gyroInvertY;
+	return padsCfg[cidx].gyroInvertY;
 }
 
-void inputGyroInvertYEnable(s32 enabled)
+void inputGyroInvertYEnable(s32 cidx, s32 enabled)
 {
-		gyroInvertY = (enabled != 0);
+	padsCfg[cidx].gyroInvertY = (enabled != 0);
 }
 
-s32 inputGyroAimInvertXIsEnabled(void)
+s32 inputGyroAimInvertXIsEnabled(s32 cidx)
 {
-		return gyroAimInvertX;
+	return padsCfg[cidx].gyroAimInvertX;
 }
 
-void inputGyroAimInvertXEnable(s32 enabled)
+void inputGyroAimInvertXEnable(s32 cidx, s32 enabled)
 {
-		gyroAimInvertX = (enabled != 0);
+	padsCfg[cidx].gyroAimInvertX = (enabled != 0);
 }
 
-s32 inputGyroAimInvertYIsEnabled(void)
+s32 inputGyroAimInvertYIsEnabled(s32 cidx)
 {
-		return gyroAimInvertY;
+	return padsCfg[cidx].gyroAimInvertY;
 }
 
-void inputGyroAimInvertYEnable(s32 enabled)
+void inputGyroAimInvertYEnable(s32 cidx, s32 enabled)
 {
-		gyroAimInvertY = (enabled != 0);
+	padsCfg[cidx].gyroAimInvertY = (enabled != 0);
 }
 
-f32 inputGetGyroVHMixer(void) {
-		return gyroVHMixer;
+f32 inputGetGyroVHMixer(s32 cidx) {
+	return padsCfg[cidx].gyroVHMixer;
 }
 
-void inputSetGyroVHMixer(f32 value) {
-		if (value < -1.0f) value = -1.0f;
-		if (value > 1.0f) value = 1.0f;
-		gyroVHMixer = value;
+void inputSetGyroVHMixer(s32 cidx, f32 value) {
+	if (value < -1.0f) value = -1.0f;
+	if (value > 1.0f) value = 1.0f;
+	padsCfg[cidx].gyroVHMixer = value;
 }
 
-s32 inputGetGyroModifier(void)
+s32 inputGetGyroModifier(s32 cidx)
 {
-	return g_GyroModifier;
+	return padsCfg[cidx].gyroModifier;
 }
 
-void inputSetGyroModifier(s32 mode)
+void inputSetGyroModifier(s32 cidx, s32 mode)
 {
-	g_GyroModifier = mode;
+	padsCfg[cidx].gyroModifier = mode;
 }
 
 void applyGyroModifier(f32* deltaX, f32* deltaY, f32* deltaZ, s32 activationMode, s32 idx) {
-		static bool gyroToggleState[INPUT_MAX_CONTROLLERS] = { true, true, true, true };
-		bool gyroActive = false;
+	static bool gyroToggleState[INPUT_MAX_CONTROLLERS] = { true, true, true, true };
+	bool gyroActive = false;
 
-		int gyroModPressed = inputBindPressed(idx, CK_GYRO_MOD);
-		int gyroModJustPressed = 0;
-		static int prevGyroMod[INPUT_MAX_CONTROLLERS] = { 0 };
+	int gyroModPressed = inputBindPressed(idx, CK_GYRO_MOD);
+	int gyroModJustPressed = 0;
+	static int prevGyroMod[INPUT_MAX_CONTROLLERS] = { 0 };
 
-		if (gyroModPressed && !prevGyroMod[idx]) {
-				gyroModJustPressed = 1;
+	if (gyroModPressed && !prevGyroMod[idx]) {
+		gyroModJustPressed = 1;
+	}
+	prevGyroMod[idx] = gyroModPressed;
+
+	switch (activationMode) {
+	case GYRO_ALWAYS_ON:
+		gyroActive = true;
+		break;
+	case GYRO_TOGGLE:
+		if (gyroModJustPressed) {
+			gyroToggleState[idx] = !gyroToggleState[idx];
 		}
-		prevGyroMod[idx] = gyroModPressed;
+		gyroActive = gyroToggleState[idx];
+		break;
+	case GYRO_ENABLE_HELD:
+		gyroActive = gyroModPressed;
+		break;
+	case GYRO_DISABLE_HELD:
+		gyroActive = !gyroModPressed;
+		break;
+	default:
+		gyroActive = false;
+		break;
+	}
 
-		switch (activationMode) {
-		case GYRO_ALWAYS_ON:
-				gyroActive = true;
-				break;
-		case GYRO_TOGGLE:
-				if (gyroModJustPressed) {
-						gyroToggleState[idx] = !gyroToggleState[idx];
-				}
-				gyroActive = gyroToggleState[idx];
-				break;
-		case GYRO_ENABLE_HELD:
-				gyroActive = gyroModPressed;
-				break;
-		case GYRO_DISABLE_HELD:
-				gyroActive = !gyroModPressed;
-				break;
-		default:
-				gyroActive = false;
-				break;
-		}
-
-		if (!gyroActive) {
-				*deltaX = 0.f;
-				*deltaY = 0.f;
-				*deltaZ = 0.f;
-		}
+	if (!gyroActive) {
+		*deltaX = 0.f;
+		*deltaY = 0.f;
+		*deltaZ = 0.f;
+	}
 }
 
-f32 inputGetGyroMinThreshold(void)
+f32 inputGetGyroMinThreshold(s32 cidx)
 {
-	return gyroMinThreshold;
+	return padsCfg[cidx].gyroMinThreshold;
 }
 
-void inputSetGyroMinThreshold(f32 threshold)
+void inputSetGyroMinThreshold(s32 cidx, f32 threshold)
 {
-	gyroMinThreshold = threshold;
+	padsCfg[cidx].gyroMinThreshold = threshold;
 }
 
 void applyGyroThreshold(f32* deltaX, f32* deltaY, f32* deltaZ, f32 threshold)
 {
 	if (!deltaX || !deltaY || !deltaZ) return;
 
-	// Fine-tune deadzone values, but only apply if threshold is > 0
 	const f32 baseDeadzone = threshold > 0.f ? fmaxf(threshold * 0.75f, 0.04f) : 0.f;
 
-	// Apply different deadzone thresholds per axis
 	const f32 appliedDeadzoneX = baseDeadzone;
 	const f32 appliedDeadzoneY = baseDeadzone;
 	const f32 appliedDeadzoneZ = baseDeadzone;
 
-	// Soft Tiered Smoothing: Apply smoothing only to small movements
 	static f32 prevDeltaX = 0.f, prevDeltaY = 0.f, prevDeltaZ = 0.f;
-	const f32 smoothingFactor = 0.85f; // Adjust for desired responsiveness
+	const f32 smoothingFactor = 0.85f;
 
 	if (threshold > 0.f) {
 		if (fabsf(*deltaX) < appliedDeadzoneX) *deltaX = 0.f;
@@ -1909,7 +1898,6 @@ void applyGyroThreshold(f32* deltaX, f32* deltaY, f32* deltaZ, f32 threshold)
 		else *deltaZ = (*deltaZ * smoothingFactor) + (prevDeltaZ * (1.f - smoothingFactor));
 	}
 
-	// Store previous values for smoothing
 	prevDeltaX = *deltaX;
 	prevDeltaY = *deltaY;
 	prevDeltaZ = *deltaZ;
@@ -2105,20 +2093,6 @@ PD_CONSTRUCTOR static void inputConfigInit(void)
 	configRegisterInt("Input.MouseLockMode", &mouseLockMode, MLOCK_OFF, MLOCK_AUTO);
 	configRegisterFloat("Input.MouseSpeedX", &mouseSensX, -30.f, 30.f);
 	configRegisterFloat("Input.MouseSpeedY", &mouseSensY, -30.f, 30.f);
-	configRegisterInt("Input.GyroEnabled", &gyroEnabled, 0, 1);
-	configRegisterInt("Input.GyroAxisMode", &g_GyroAxisMode, GYRO_AXIS_YAW, GYRO_AXIS_WORLD);
-	configRegisterInt("Input.GyroAimMode", &g_GyroAimMode, GYRO_AIM_MODE_CAMERA, GYRO_AIM_MODE_BOTH);
-	configRegisterInt("Input.GyroModifier", &g_GyroModifier, GYRO_ALWAYS_ON, GYRO_DISABLE_HELD);
-	configRegisterFloat("Input.gyroSpeedX", &gyroSensX, -30.f, 30.f);
-	configRegisterFloat("Input.gyroSpeedY", &gyroSensY, -30.f, 30.f);
-	configRegisterFloat("Input.gyroAimSensX", &gyroAimSensX, -10.f, 10.f);
-	configRegisterFloat("Input.gyroAimSensY", &gyroAimSensY, -10.f, 10.f);
-	configRegisterFloat("Input.gyroVHMixer", &gyroVHMixer, -1.0f, 1.0f);
-	configRegisterInt("Input.gyroInvertX", &gyroInvertX, 0, 1);
-	configRegisterInt("Input.gyroInvertY", &gyroInvertY, 0, 1);
-	configRegisterInt("Input.gyroAimInvertX", &gyroAimInvertX, 0, 1);
-	configRegisterInt("Input.gyroAimInvertY", &gyroAimInvertY, 0, 1);
-	configRegisterFloat("Input.gyroMinThreshold", &gyroMinThreshold, 0.f, 1.f);
 	configRegisterInt("Input.FakeGamepads", &fakeControllers, 0, 4);
 	configRegisterInt("Input.FirstGamepadNum", &firstController, 0, 3);
 	configRegisterInt("Input.UseHIDAPI", &useHIDAPI, 0, 1);
@@ -2138,6 +2112,20 @@ PD_CONSTRUCTOR static void inputConfigInit(void)
 		configRegisterFloat(strFmt("%s.LStickScaleY", secname), &padsCfg[c].sens[1], -10.f, 10.f);
 		configRegisterFloat(strFmt("%s.RStickScaleX", secname), &padsCfg[c].sens[2], -10.f, 10.f);
 		configRegisterFloat(strFmt("%s.RStickScaleY", secname), &padsCfg[c].sens[3], -10.f, 10.f);
+		configRegisterInt(strFmt("%s.GyroEnabled", secname), &padsCfg[c].gyroEnabled, 0, 1);
+		configRegisterInt(strFmt("%s.GyroAxisMode", secname), &padsCfg[c].gyroAxisMode, GYRO_AXIS_YAW, GYRO_AXIS_WORLD);
+		configRegisterInt(strFmt("%s.GyroAimMode", secname), &padsCfg[c].gyroAimMode, GYRO_AIM_MODE_CAMERA, GYRO_AIM_MODE_BOTH);
+		configRegisterInt(strFmt("%s.GyroModifier", secname), &padsCfg[c].gyroModifier, GYRO_ALWAYS_ON, GYRO_DISABLE_HELD);
+		configRegisterFloat(strFmt("%s.gyroSpeedX", secname), &padsCfg[c].gyroSensX, -30.f, 30.f);
+		configRegisterFloat(strFmt("%s.gyroSpeedY", secname), &padsCfg[c].gyroSensY, -30.f, 30.f);
+		configRegisterFloat(strFmt("%s.gyroAimSensX", secname), &padsCfg[c].gyroAimSensX, -10.f, 10.f);
+		configRegisterFloat(strFmt("%s.gyroAimSensY", secname), &padsCfg[c].gyroAimSensY, -10.f, 10.f);
+		configRegisterFloat(strFmt("%s.gyroVHMixer", secname), &padsCfg[c].gyroVHMixer, -1.0f, 1.0f);
+		configRegisterInt(strFmt("%s.gyroInvertX", secname), &padsCfg[c].gyroInvertX, 0, 1);
+		configRegisterInt(strFmt("%s.gyroInvertY", secname), &padsCfg[c].gyroInvertY, 0, 1);
+		configRegisterInt(strFmt("%s.gyroAimInvertX", secname), &padsCfg[c].gyroAimInvertX, 0, 1);
+		configRegisterInt(strFmt("%s.gyroAimInvertY", secname), &padsCfg[c].gyroAimInvertY, 0, 1);
+		configRegisterFloat(strFmt("%s.gyroMinThreshold", secname), &padsCfg[c].gyroMinThreshold, 0.f, 1.f);
 		configRegisterInt(strFmt("%s.StickCButtons", secname), &padsCfg[c].stickCButtons, 0, 1);
 		configRegisterInt(strFmt("%s.CancelCButtons", secname), &padsCfg[c].cancelCButtons, 0, 1);
 		configRegisterInt(strFmt("%s.SwapSticks", secname), &padsCfg[c].swapSticks, 0, 1);

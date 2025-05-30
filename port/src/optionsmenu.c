@@ -574,234 +574,230 @@ static MenuItemHandlerResult menuhandlerSwapSticks(s32 operation, struct menuite
 
 static MenuItemHandlerResult menuhandlerGyroEnabled(s32 operation, struct menuitem* item, union handlerdata* data)
 {
-		switch (operation) {
-		case MENUOP_GET:
-				return inputGyroIsEnabled(); 
-		case MENUOP_SET:
-				inputGyroEnable(data->checkbox.value);
-				break;
-		}
-		return 0; 
+	switch (operation) {
+	case MENUOP_GET:
+		return inputGyroIsEnabled(g_ExtMenuPlayer);
+	case MENUOP_SET:
+		inputGyroEnable(g_ExtMenuPlayer, data->checkbox.value);
+		break;
+	}
+	return 0;
 }
 
 static MenuItemHandlerResult menuhandlerGyroAimMode(s32 operation, struct menuitem* item, union handlerdata* data)
 {
-		static const char* opts[] = {
-				"Camera",
-				"Crosshair",
-				"Camera+Crosshair"
-		};
+	static const char* opts[] = {
+		"Camera",
+		"Crosshair",
+		"Camera+Crosshair"
+	};
 
-		switch (operation) {
-		case MENUOP_GETOPTIONCOUNT:
-				data->dropdown.value = ARRAYCOUNT(opts);
-				break;
-		case MENUOP_GETOPTIONTEXT:
-				return (intptr_t)opts[data->dropdown.value]; 
-		case MENUOP_SET:
-				inputSetGyroAimMode(data->dropdown.value); 
-				break;
-		case MENUOP_GETSELECTEDINDEX:
-				data->dropdown.value = inputGetGyroAimMode();
-		}
-
-		return 0;
+	switch (operation) {
+	case MENUOP_GETOPTIONCOUNT:
+		data->dropdown.value = ARRAYCOUNT(opts);
+		break;
+	case MENUOP_GETOPTIONTEXT:
+		return (intptr_t)opts[data->dropdown.value];
+	case MENUOP_SET:
+		inputSetGyroAimMode(g_ExtMenuPlayer, data->dropdown.value);
+		break;
+	case MENUOP_GETSELECTEDINDEX:
+		data->dropdown.value = inputGetGyroAimMode(g_ExtMenuPlayer);
+	}
+	return 0;
 }
 
 static MenuItemHandlerResult menuhandlerGyroModifier(s32 operation, struct menuitem* item, union handlerdata* data)
 {
-		static const char* opts[] = {
-				"Always On",
-				"Toggle",
-				"Enable while Held",
-				"Disable while Held"
-		};
+	static const char* opts[] = {
+		"Always On",
+		"Toggle",
+		"Enable while Held",
+		"Disable while Held"
+	};
 
-		switch (operation) {
-		case MENUOP_GETOPTIONCOUNT:
-				data->dropdown.value = ARRAYCOUNT(opts);
-				break;
-		case MENUOP_GETOPTIONTEXT:
-				return (intptr_t)opts[data->dropdown.value];
-		case MENUOP_SET:
-				inputSetGyroModifier(data->dropdown.value);
-				break;
-		case MENUOP_GETSELECTEDINDEX:
-				data->dropdown.value = inputGetGyroModifier();
-		}
-
-		return 0;
+	switch (operation) {
+	case MENUOP_GETOPTIONCOUNT:
+		data->dropdown.value = ARRAYCOUNT(opts);
+		break;
+	case MENUOP_GETOPTIONTEXT:
+		return (intptr_t)opts[data->dropdown.value];
+	case MENUOP_SET:
+		inputSetGyroModifier(g_ExtMenuPlayer, data->dropdown.value);
+		break;
+	case MENUOP_GETSELECTEDINDEX:
+		data->dropdown.value = inputGetGyroModifier(g_ExtMenuPlayer);
+	}
+	return 0;
 }
 
 static MenuItemHandlerResult menuhandlerGyroAxisMode(s32 operation, struct menuitem* item, union handlerdata* data)
 {
-		static const char* opts[] = {
-				"Yaw",
-				"Roll",
-				"Local Space",
-				"Player Space",
-				"World Space"
-		};
+	static const char* opts[] = {
+		"Yaw",
+		"Roll",
+		"Local Space",
+		"Player Space",
+		"World Space"
+	};
 
-		switch (operation) {
-		case MENUOP_GETOPTIONCOUNT:
-				data->dropdown.value = ARRAYCOUNT(opts);
-				break;
-		case MENUOP_GETOPTIONTEXT:
-				return (intptr_t)opts[data->dropdown.value];
-		case MENUOP_SET:
-				inputSetGyroAxisMode(data->dropdown.value);
-				break;
-		case MENUOP_GETSELECTEDINDEX:
-				data->dropdown.value = inputGetGyroAxisMode();
-		}
-
-		return 0;
+	switch (operation) {
+	case MENUOP_GETOPTIONCOUNT:
+		data->dropdown.value = ARRAYCOUNT(opts);
+		break;
+	case MENUOP_GETOPTIONTEXT:
+		return (intptr_t)opts[data->dropdown.value];
+	case MENUOP_SET:
+		inputSetGyroAxisMode(g_ExtMenuPlayer, data->dropdown.value);
+		break;
+	case MENUOP_GETSELECTEDINDEX:
+		data->dropdown.value = inputGetGyroAxisMode(g_ExtMenuPlayer);
+	}
+	return 0;
 }
 
 static MenuItemHandlerResult menuhandlerGyroSensitivityX(s32 operation, struct menuitem* item, union handlerdata* data)
 {
-		switch (operation) {
-		case MENUOP_GETSLIDER:
-				data->slider.value = inputGyroGetSpeedX() * 100.f + 0.1f;
-				break;
-		case MENUOP_SET:
-				inputGyroSetSpeedX((f32)data->slider.value / 100.f);
-				break;
-		case MENUOP_GETSLIDERLABEL:
-				sprintf(data->slider.label, "%.2f", inputGyroGetSpeedX());
-				break;
-		}
-		return 0;
+	switch (operation) {
+	case MENUOP_GETSLIDER:
+		data->slider.value = inputGyroGetSpeedX(g_ExtMenuPlayer) * 100.f + 0.1f;
+		break;
+	case MENUOP_SET:
+		inputGyroSetSpeedX(g_ExtMenuPlayer, (f32)data->slider.value / 100.f);
+		break;
+	case MENUOP_GETSLIDERLABEL:
+		sprintf(data->slider.label, "%.2f", inputGyroGetSpeedX(g_ExtMenuPlayer));
+		break;
+	}
+	return 0;
 }
 
 static MenuItemHandlerResult menuhandlerGyroSensitivityY(s32 operation, struct menuitem* item, union handlerdata* data)
 {
-		switch (operation) {
-		case MENUOP_GETSLIDER:
-				data->slider.value = inputGyroGetSpeedY() * 100.f + 0.1f;
-				break;
-		case MENUOP_SET:
-				inputGyroSetSpeedY((f32)data->slider.value / 100.f);
-				break;
-		case MENUOP_GETSLIDERLABEL:
-				sprintf(data->slider.label, "%.2f", inputGyroGetSpeedY());
-				break;
-		}
-		return 0;
+	switch (operation) {
+	case MENUOP_GETSLIDER:
+		data->slider.value = inputGyroGetSpeedY(g_ExtMenuPlayer) * 100.f + 0.1f;
+		break;
+	case MENUOP_SET:
+		inputGyroSetSpeedY(g_ExtMenuPlayer, (f32)data->slider.value / 100.f);
+		break;
+	case MENUOP_GETSLIDERLABEL:
+		sprintf(data->slider.label, "%.2f", inputGyroGetSpeedY(g_ExtMenuPlayer));
+		break;
+	}
+	return 0;
 }
 
 static MenuItemHandlerResult menuhandlerGyroInvertX(s32 operation, struct menuitem* item, union handlerdata* data)
 {
-		switch (operation) {
-		case MENUOP_GET:
-				return inputGyroInvertXIsEnabled();
-		case MENUOP_SET:
-				inputGyroInvertXEnable(data->checkbox.value);
-				break;
-		}
-		return 0;
+	switch (operation) {
+	case MENUOP_GET:
+		return inputGyroInvertXIsEnabled(g_ExtMenuPlayer);
+	case MENUOP_SET:
+		inputGyroInvertXEnable(g_ExtMenuPlayer, data->checkbox.value);
+		break;
+	}
+	return 0;
 }
 
 static MenuItemHandlerResult menuhandlerGyroInvertY(s32 operation, struct menuitem* item, union handlerdata* data)
 {
-		switch (operation) {
-		case MENUOP_GET:
-				return inputGyroInvertYIsEnabled();
-		case MENUOP_SET:
-				inputGyroInvertYEnable(data->checkbox.value);
-				break;
-		}
-		return 0;
+	switch (operation) {
+	case MENUOP_GET:
+		return inputGyroInvertYIsEnabled(g_ExtMenuPlayer);
+	case MENUOP_SET:
+		inputGyroInvertYEnable(g_ExtMenuPlayer, data->checkbox.value);
+		break;
+	}
+	return 0;
 }
 
 static MenuItemHandlerResult menuhandlerGyroCrosshairSpeedX(s32 operation, struct menuitem* item, union handlerdata* data)
 {
-		switch (operation) {
-		case MENUOP_GETSLIDER:
-				data->slider.value = inputGyroGetAimSpeedX() * 100.f + 0.5f;
-				break;
-		case MENUOP_SET:
-				inputGyroSetAimSpeedX((f32)data->slider.value / 100.f);
-				break;
-		case MENUOP_GETSLIDERLABEL:
-				sprintf(data->slider.label, "%.2f", inputGyroGetAimSpeedX());
-				break;
-		}
-		return 0;
+	switch (operation) {
+	case MENUOP_GETSLIDER:
+		data->slider.value = inputGyroGetAimSpeedX(g_ExtMenuPlayer) * 100.f + 0.5f;
+		break;
+	case MENUOP_SET:
+		inputGyroSetAimSpeedX(g_ExtMenuPlayer, (f32)data->slider.value / 100.f);
+		break;
+	case MENUOP_GETSLIDERLABEL:
+		sprintf(data->slider.label, "%.2f", inputGyroGetAimSpeedX(g_ExtMenuPlayer));
+		break;
+	}
+	return 0;
 }
 
 static MenuItemHandlerResult menuhandlerGyroCrosshairSpeedY(s32 operation, struct menuitem* item, union handlerdata* data)
 {
-		switch (operation) {
-		case MENUOP_GETSLIDER:
-				data->slider.value = inputGyroGetAimSpeedY() * 100.f + 0.5f;
-				break;
-		case MENUOP_SET:
-				inputGyroSetAimSpeedY((f32)data->slider.value / 100.f);
-				break;
-		case MENUOP_GETSLIDERLABEL:
-				sprintf(data->slider.label, "%.2f", inputGyroGetAimSpeedY());
-				break;
-		}
-		return 0;
+	switch (operation) {
+	case MENUOP_GETSLIDER:
+		data->slider.value = inputGyroGetAimSpeedY(g_ExtMenuPlayer) * 100.f + 0.5f;
+		break;
+	case MENUOP_SET:
+		inputGyroSetAimSpeedY(g_ExtMenuPlayer, (f32)data->slider.value / 100.f);
+		break;
+	case MENUOP_GETSLIDERLABEL:
+		sprintf(data->slider.label, "%.2f", inputGyroGetAimSpeedY(g_ExtMenuPlayer));
+		break;
+	}
+	return 0;
 }
 
 static MenuItemHandlerResult menuhandlerGyroAimInvertX(s32 operation, struct menuitem* item, union handlerdata* data)
 {
-		switch (operation) {
-		case MENUOP_GET:
-				return inputGyroAimInvertXIsEnabled();
-		case MENUOP_SET:
-				inputGyroAimInvertXEnable(data->checkbox.value);
-				break;
-		}
-		return 0;
+	switch (operation) {
+	case MENUOP_GET:
+		return inputGyroAimInvertXIsEnabled(g_ExtMenuPlayer);
+	case MENUOP_SET:
+		inputGyroAimInvertXEnable(g_ExtMenuPlayer, data->checkbox.value);
+		break;
+	}
+	return 0;
 }
 
 static MenuItemHandlerResult menuhandlerGyroAimInvertY(s32 operation, struct menuitem* item, union handlerdata* data)
 {
-		switch (operation) {
-		case MENUOP_GET:
-				return inputGyroAimInvertYIsEnabled();
-		case MENUOP_SET:
-				inputGyroAimInvertYEnable(data->checkbox.value);
-				break;
-		}
-		return 0;
+	switch (operation) {
+	case MENUOP_GET:
+		return inputGyroAimInvertYIsEnabled(g_ExtMenuPlayer);
+	case MENUOP_SET:
+		inputGyroAimInvertYEnable(g_ExtMenuPlayer, data->checkbox.value);
+		break;
+	}
+	return 0;
 }
 
 static MenuItemHandlerResult menuhandlerGyroVHMixer(s32 operation, struct menuitem* item, union handlerdata* data)
 {
-		switch (operation) {
-		case MENUOP_GETSLIDER:
-				data->slider.value = (inputGetGyroVHMixer() + 1.0f) * 100.0f;
-				break;
-		case MENUOP_SET:
-				inputSetGyroVHMixer((float)data->slider.value / 100.0f - 1.0f);
-				break;
-		case MENUOP_GETSLIDERLABEL:
-				sprintf(data->slider.label, "%d%%", (int)data->slider.value - 100);
-				break;
-		}
-		return 0;
+	switch (operation) {
+	case MENUOP_GETSLIDER:
+		data->slider.value = (inputGetGyroVHMixer(g_ExtMenuPlayer) + 1.0f) * 100.0f;
+		break;
+	case MENUOP_SET:
+		inputSetGyroVHMixer(g_ExtMenuPlayer, (float)data->slider.value / 100.0f - 1.0f);
+		break;
+	case MENUOP_GETSLIDERLABEL:
+		sprintf(data->slider.label, "%d%%", (int)data->slider.value - 100);
+		break;
+	}
+	return 0;
 }
 
 static MenuItemHandlerResult menuhandlerGyroMinThreshold(s32 operation, struct menuitem* item, union handlerdata* data)
 {
-    switch (operation) {
-    case MENUOP_GETSLIDER:
-        data->slider.value = inputGetGyroMinThreshold() * 100.0f;
-        break;
-    case MENUOP_SET:
-        inputSetGyroMinThreshold((f32)data->slider.value / 100.0f);
-        break;
-    case MENUOP_GETSLIDERLABEL:
-        sprintf(data->slider.label, "%.2f", inputGetGyroMinThreshold());
-        break;
-    }
-
-    return 0;
+	switch (operation) {
+	case MENUOP_GETSLIDER:
+		data->slider.value = inputGetGyroMinThreshold(g_ExtMenuPlayer) * 100.0f;
+		break;
+	case MENUOP_SET:
+		inputSetGyroMinThreshold(g_ExtMenuPlayer, (f32)data->slider.value / 100.0f);
+		break;
+	case MENUOP_GETSLIDERLABEL:
+		sprintf(data->slider.label, "%.2f", inputGetGyroMinThreshold(g_ExtMenuPlayer));
+		break;
+	}
+	return 0;
 }
 
 

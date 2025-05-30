@@ -3680,17 +3680,18 @@ void playerTick(bool arg0)
 				}
 
 				// Gyro control
-				if (g_Vars.currentplayernum == 0) {
+				{
 						f32 gdx_cam = 0.f, gdy_cam = 0.f, gdz_cam = 0.f;
 						f32 gdx_crosshair = 0.f, gdy_crosshair = 0.f;
+						s32 cidx = g_Vars.currentplayernum;
 
 						// Apply gyro movement based on mode
-						if (inputGetGyroAimMode() == GYRO_AIM_MODE_CAMERA || inputGetGyroAimMode() == GYRO_AIM_MODE_BOTH) {
-								inputGyroGetScaledDelta(&gdx_cam, &gdy_cam, &gdz_cam); // Camera movement
+						if (inputGetGyroAimMode(cidx) == GYRO_AIM_MODE_CAMERA || inputGetGyroAimMode(cidx) == GYRO_AIM_MODE_BOTH) {
+								inputGyroGetScaledDelta(cidx, &gdx_cam, &gdy_cam, &gdz_cam); // Camera movement
 						}
 
-						if (inputGetGyroAimMode() == GYRO_AIM_MODE_CROSSHAIR || inputGetGyroAimMode() == GYRO_AIM_MODE_BOTH) {
-								inputGyroGetScaledDeltaCrosshair(&gdx_crosshair, &gdy_crosshair); // Crosshair movement
+						if (inputGetGyroAimMode(cidx) == GYRO_AIM_MODE_CROSSHAIR || inputGetGyroAimMode(cidx) == GYRO_AIM_MODE_BOTH) {
+								inputGyroGetScaledDeltaCrosshair(cidx, &gdx_crosshair, &gdy_crosshair); // Crosshair movement
 						}
 
 						// Apply gyro movement only when detected

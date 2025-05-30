@@ -809,36 +809,37 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 
 	// Handle Gyro Input
 	if (allowgyro) {
-		float gyroCamDx = 0.f, gyroCamDy = 0.f, gyroCamDz = 0.f;
-		float gyroCrossDx = 0.f, gyroCrossDy = 0.f;
+			float gyroCamDx = 0.f, gyroCamDy = 0.f, gyroCamDz = 0.f;
+			float gyroCrossDx = 0.f, gyroCrossDy = 0.f;
+			s32 cidx = g_Vars.currentplayernum;
 
-		if (inputGetGyroAimMode() == GYRO_AIM_MODE_CAMERA || inputGetGyroAimMode() == GYRO_AIM_MODE_BOTH) {
-			inputGyroGetScaledDelta(&gyroCamDx, &gyroCamDy, &gyroCamDz);
-			movedata.gyrolookdx += gyroCamDx;
-			movedata.gyrolookdy += gyroCamDy;
-		}
-
-		if (inputGetGyroAimMode() == GYRO_AIM_MODE_CROSSHAIR || inputGetGyroAimMode() == GYRO_AIM_MODE_BOTH) {
-			inputGyroGetScaledDeltaCrosshair(&gyroCrossDx, &gyroCrossDy);
-			if (g_Vars.currentplayer) {
-				g_Vars.currentplayer->swivelpos[0] += gyroCrossDx;
-				g_Vars.currentplayer->swivelpos[1] += gyroCrossDy;
+			if (inputGetGyroAimMode(cidx) == GYRO_AIM_MODE_CAMERA || inputGetGyroAimMode(cidx) == GYRO_AIM_MODE_BOTH) {
+					inputGyroGetScaledDelta(cidx, &gyroCamDx, &gyroCamDy, &gyroCamDz);
+					movedata.gyrolookdx += gyroCamDx;
+					movedata.gyrolookdy += gyroCamDy;
 			}
-			allowmcross = allowmcross || (gyroCrossDx || gyroCrossDy);
-		}
 
-		if (movedata.invertpitch) {
-			movedata.gyrolookdy = -movedata.gyrolookdy;
-		}
+			if (inputGetGyroAimMode(cidx) == GYRO_AIM_MODE_CROSSHAIR || inputGetGyroAimMode(cidx) == GYRO_AIM_MODE_BOTH) {
+					inputGyroGetScaledDeltaCrosshair(cidx, &gyroCrossDx, &gyroCrossDy);
+					if (g_Vars.currentplayer) {
+							g_Vars.currentplayer->swivelpos[0] += gyroCrossDx;
+							g_Vars.currentplayer->swivelpos[1] += gyroCrossDy;
+					}
+					allowmcross = allowmcross || (gyroCrossDx || gyroCrossDy);
+			}
 
-		// Clamp gyro input to prevent runaway camera movement
-		if (movedata.gyrolookdx < -10.0f) movedata.gyrolookdx = -10.0f;
-		if (movedata.gyrolookdx >  10.0f) movedata.gyrolookdx =  10.0f;
-		if (movedata.gyrolookdy < -10.0f) movedata.gyrolookdy = -10.0f;
-		if (movedata.gyrolookdy >  10.0f) movedata.gyrolookdy =  10.0f;
+			if (movedata.invertpitch) {
+					movedata.gyrolookdy = -movedata.gyrolookdy;
+			}
 
-		fVar25 += movedata.gyrolookdx * gyroscale;
-		fVar25 += movedata.gyrolookdy * gyroscale;
+			// Clamp gyro input to prevent runaway camera movement
+			if (movedata.gyrolookdx < -10.0f) movedata.gyrolookdx = -10.0f;
+			if (movedata.gyrolookdx > 10.0f) movedata.gyrolookdx = 10.0f;
+			if (movedata.gyrolookdy < -10.0f) movedata.gyrolookdy = -10.0f;
+			if (movedata.gyrolookdy > 10.0f) movedata.gyrolookdy = 10.0f;
+
+			fVar25 += movedata.gyrolookdx * gyroscale;
+			fVar25 += movedata.gyrolookdy * gyroscale;
 	}
 #endif
 
@@ -2275,7 +2276,7 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 #ifndef PLATFORM_N64
 			if (allowgcross) {
 					// Gyro is active, apply gyro movement FIRST
-					inputGyroGetScaledDeltaCrosshair(&movedata.gyrolookdx, &movedata.gyrolookdy);
+					inputGyroGetScaledDeltaCrosshair(g_Vars.currentplayernum, &movedata.gyrolookdx, &movedata.gyrolookdy);
 
 					const f32 xcoeff = 320.f / 1080.f;
 					const f32 ycoeff = 240.f / 1080.f;
