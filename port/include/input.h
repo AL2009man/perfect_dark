@@ -328,7 +328,7 @@ f32 inputGetGyroMinThreshold(void);
 void inputSetGyroMinThreshold(f32 threshold);
 void applyGyroThreshold(f32* deltaX, f32* deltaY, f32* deltaZ, f32 threshold);
 
-// Gyro Tighting  Management
+// Gyro Smoothing Management
 f32 inputGetGyroSmoothing(void);
 void inputSetGyroSmoothing(f32 smoothing);
 void applyGyroSmoothing(f32* deltaX, f32* deltaY, f32* deltaZ, f32 threshold);

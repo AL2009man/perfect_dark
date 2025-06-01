@@ -1,4 +1,5 @@
 #include <string.h>
+#include <math.h>
 #include <ctype.h>
 #include <SDL.h>
 #include <PR/ultratypes.h>
@@ -1906,8 +1907,6 @@ void inputSetGyroSmoothing(f32 smoothing)
 {
 		GyroSmoothing = smoothing;
 }
-
-#include <math.h>
 
 void applyGyroSmoothing(f32* deltaX, f32* deltaY, f32* deltaZ, f32 threshold)
 {
