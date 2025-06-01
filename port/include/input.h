@@ -117,30 +117,30 @@ enum contkey {
 };
 
 enum mouselockmode {
-		MLOCK_OFF = 0,
-		MLOCK_ON = 1,
-		MLOCK_AUTO = 2
+	MLOCK_OFF = 0,
+	MLOCK_ON = 1,
+	MLOCK_AUTO = 2
 };
 
 enum gyroactivation {
-		GYRO_ALWAYS_ON = 0,
-		GYRO_TOGGLE = 1,
-		GYRO_ENABLE_HELD = 2,
-		GYRO_DISABLE_HELD = 3
+	GYRO_ALWAYS_ON = 0,
+	GYRO_TOGGLE = 1,
+	GYRO_ENABLE_HELD = 2,
+	GYRO_DISABLE_HELD = 3
 };
 
 enum gyroaxismode {
-		GYRO_YAW = 0,
-		GYRO_ROLL = 1,
-		GYRO_LOCAL = 2,
-		GYRO_PLAYER = 3,
-		GYRO_WORLD = 4
+	GYRO_YAW = 0,
+	GYRO_ROLL = 1,
+	GYRO_LOCAL = 2,
+	GYRO_PLAYER = 3,
+	GYRO_WORLD = 4
 };
 
 enum gyroaimmode {
-		GYRO_AIM_MODE_CAMERA = 0,
-		GYRO_AIM_MODE_CROSSHAIR = 1,
-		GYRO_AIM_MODE_BOTH = 2
+	GYRO_AIM_MODE_CAMERA = 0,
+	GYRO_AIM_MODE_CROSSHAIR = 1,
+	GYRO_AIM_MODE_BOTH = 2
 };
 
 // returns bitmask of connected controllers or -1 if failed
