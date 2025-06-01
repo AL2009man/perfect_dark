@@ -13,6 +13,7 @@
 #include "utils.h"
 #include "system.h"
 #include "fs.h"
+#include <math.h>
 
 #if !SDL_VERSION_ATLEAST(2, 0, 14)
 // this was added in 2.0.14
@@ -40,8 +41,6 @@
 #define GYRO_DISABLE_HELD 3 // Gyro is disabled while a button is held down
 
 // Define gyro axis modes
-// Gyro Space and Play header (gyrospace.h) will be ultilized to handle Gyro Space and Play functionality
-// https://github.com/AL2009man/GyroSpace-and-Play
 #define GYRO_AXIS_YAW 0	// Gyro controls yaw axis (turn)
 #define GYRO_AXIS_ROLL 1 // Gyro controls roll axis (lean)
 #define GYRO_AXIS_LOCAL 2 // Gyro controls local space orientation
@@ -82,6 +81,7 @@ static SDL_GameController *pads[INPUT_MAX_CONTROLLERS];
   .gyroAimInvertX = 0, \
   .gyroAimInvertY = 0, \
   .gyroMinThreshold = 0.07f, \
+  .gyroSmoothing = 0.50f, \
 }
 
 static struct controllercfg {
@@ -109,6 +109,7 @@ static struct controllercfg {
 	s32 gyroAimInvertX;
 	s32 gyroAimInvertY;
 	f32 gyroMinThreshold;
+	f32 gyroSmoothing;
 } padsCfg[INPUT_MAX_CONTROLLERS] = {
 	CONTROLLERCFG_DEFAULT,
 	CONTROLLERCFG_DEFAULT,
@@ -1556,6 +1557,9 @@ void applyGyroAxisMapping(s32 cidx, float gyroData[3], f32* deltaX, f32* deltaY,
 		*deltaY = -gyroData[0]; // Pitch for vertical movement
 		break;
 
+			// Gyro Space and Play header (gyrospace.h) will be ultilized to handle Gyro Space and Play functionalityAdd commentMore actions
+      // https://github.com/AL2009man/GyroSpace-and-Play
+      // based on http://gyrowiki.jibbsmart.com/blog:player-space-gyro-and-alternatives-explained
 	case GYRO_LOCAL:
 	{
 		float processedYaw = -gyroData[1];
@@ -1627,7 +1631,6 @@ void inputSetGyroAimMode(s32 cidx, s32 mode)
 
 void applyGyroAimMode(s32 cidx, f32* deltaX, f32* deltaY, f32* deltaZ)
 {
-	// Retrieve current Gyro Aim Mode (no changes to deltaX or deltaY here)
 	s32 gyroAimMode = inputGetGyroAimMode(cidx);
 	(void)gyroAimMode;
 }
@@ -1878,29 +1881,53 @@ void applyGyroThreshold(f32* deltaX, f32* deltaY, f32* deltaZ, f32 threshold)
 {
 	if (!deltaX || !deltaY || !deltaZ) return;
 
+	// Fine-tune deadzone values, but only apply if threshold is > 0
 	const f32 baseDeadzone = threshold > 0.f ? fmaxf(threshold * 0.75f, 0.04f) : 0.f;
 
-	const f32 appliedDeadzoneX = baseDeadzone;
-	const f32 appliedDeadzoneY = baseDeadzone;
-	const f32 appliedDeadzoneZ = baseDeadzone;
+	// Apply deadzone thresholds per axis
+	if (fabsf(*deltaX) < baseDeadzone) *deltaX = 0.f;
+	if (fabsf(*deltaY) < baseDeadzone) *deltaY = 0.f;
+	if (fabsf(*deltaZ) < baseDeadzone) *deltaZ = 0.f;
+}
 
-	static f32 prevDeltaX = 0.f, prevDeltaY = 0.f, prevDeltaZ = 0.f;
-	const f32 smoothingFactor = 0.85f;
+f32 inputGetGyroSmoothing(s32 cidx)
+{
+		return padsCfg[cidx].gyroSmoothing;
+}
 
-	if (threshold > 0.f) {
-		if (fabsf(*deltaX) < appliedDeadzoneX) *deltaX = 0.f;
-		else *deltaX = (*deltaX * smoothingFactor) + (prevDeltaX * (1.f - smoothingFactor));
+void inputSetGyroSmoothing(s32 cidx, f32 smoothing)
+{
+		padsCfg[cidx].gyroSmoothing = smoothing;
+}
 
-		if (fabsf(*deltaY) < appliedDeadzoneY) *deltaY = 0.f;
-		else *deltaY = (*deltaY * smoothingFactor) + (prevDeltaY * (1.f - smoothingFactor));
+void applyGyroSmoothing(f32* deltaX, f32* deltaY, f32* deltaZ, f32 threshold)
+{
+		if (!deltaX || !deltaY || !deltaZ) return;
 
-		if (fabsf(*deltaZ) < appliedDeadzoneZ) *deltaZ = 0.f;
-		else *deltaZ = (*deltaZ * smoothingFactor) + (prevDeltaZ * (1.f - smoothingFactor));
-	}
+		// Smoothing factor should be < 1 to blend the past state (e.g., 0.85f)
+		const f32 smoothingFactor = 0.85f;
 
-	prevDeltaX = *deltaX;
-	prevDeltaY = *deltaY;
-	prevDeltaZ = *deltaZ;
+		// Compute the overall magnitude of the input vector
+		f32 magnitude = sqrtf((*deltaX) * (*deltaX) + (*deltaY) * (*deltaY) + (*deltaZ) * (*deltaZ));
+		static f32 prevDeltaX = 0.f, prevDeltaY = 0.f, prevDeltaZ = 0.f;
+
+		if (magnitude < threshold) {
+				// For small inputs, blend the current input with the previous smoothed state
+				*deltaX = (*deltaX * smoothingFactor) + (prevDeltaX * (1.f - smoothingFactor));
+				*deltaY = (*deltaY * smoothingFactor) + (prevDeltaY * (1.f - smoothingFactor));
+				*deltaZ = (*deltaZ * smoothingFactor) + (prevDeltaZ * (1.f - smoothingFactor));
+		}
+		else {
+				// For larger inputs, pass the input directly with a decayed previous state
+				*deltaX = *deltaX + (prevDeltaX * (1.f - smoothingFactor));
+				*deltaY = *deltaY + (prevDeltaY * (1.f - smoothingFactor));
+				*deltaZ = *deltaZ + (prevDeltaZ * (1.f - smoothingFactor));
+		}
+
+		// Update previous state
+		prevDeltaX = *deltaX;
+		prevDeltaY = *deltaY;
+		prevDeltaZ = *deltaZ;
 }
 
 const char *inputGetContKeyName(u32 ck)
