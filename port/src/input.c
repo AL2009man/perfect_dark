@@ -67,21 +67,21 @@ static SDL_GameController *pads[INPUT_MAX_CONTROLLERS];
 	.swapSticks = 1, \
 	.deviceIndex = -1, \
 	.cancelCButtons = 0, \
-  .gyroEnabled = 1, \
-  .gyroAxisMode = GYRO_AXIS_YAW, \
-  .gyroAimMode = GYRO_AIM_MODE_BOTH, \
-  .gyroModifier = GYRO_DISABLE_HELD, \
-  .gyroSensX = 2.5f, \
-  .gyroSensY = 2.5f, \
-  .gyroAimSensX = 2.5f, \
-  .gyroAimSensY = 2.5f, \
-  .gyroVHMixer = 0.0f, \
-  .gyroInvertX = 0, \
-  .gyroInvertY = 0, \
-  .gyroAimInvertX = 0, \
-  .gyroAimInvertY = 0, \
-  .gyroMinThreshold = 0.07f, \
-  .gyroSmoothing = 0.50f, \
+	.gyroEnabled = 1, \
+	.gyroAxisMode = GYRO_AXIS_YAW, \
+	.gyroAimMode = GYRO_AIM_MODE_BOTH, \
+	.gyroModifier = GYRO_DISABLE_HELD, \
+	.gyroSensX = 2.5f, \
+	.gyroSensY = 2.5f, \
+	.gyroAimSensX = 2.5f, \
+	.gyroAimSensY = 2.5f, \
+	.gyroVHMixer = 0.0f, \
+	.gyroInvertX = 0, \
+	.gyroInvertY = 0, \
+	.gyroAimInvertX = 0, \
+	.gyroAimInvertY = 0, \
+	.gyroMinThreshold = 0.07f, \
+	.gyroSmoothing = 0.50f, \
 }
 
 static struct controllercfg {
