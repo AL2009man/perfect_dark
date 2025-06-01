@@ -665,7 +665,7 @@ void bmoveResetMoveData(struct movedata *data)
  * 0, 0, 0, 1 = tickmode warp
  * 1, 1, 0, 1 = autowalk
  */
-void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool ignorec2)
+void bmoveProcessInput(s32 cidx, bool allowc1x, bool allowc1y, bool allowc1buttons, bool ignorec2)
 {
 	struct movedata movedata;
 	s32 controlmode;
@@ -725,9 +725,9 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 	const f32 gyroBaseSens = 4.f; // Fixed base sensitivity for gyro input
 	const f32 gyroscale = gyroBaseSens; // Ensure it is constant and independent of FPS
 
-	const bool allowgyro = (g_Vars.currentplayernum == 0) && (allowc1x || allowc1y);
+	const bool allowgyro = (g_Vars.players[cidx] != NULL) && (allowc1x || allowc1y);
 	bool allowmcross = false;
-	bool allowgcross = (g_Vars.currentplayernum == 0) &&
+	bool allowgcross = (g_Vars.players[cidx] != NULL) &&
 			(allowc1x || allowc1y) &&
 			(PLAYER_EXTCFG().gyroaimmode == GYRO_AIM_MODE_CROSSHAIR ||
 					PLAYER_EXTCFG().gyroaimmode == GYRO_AIM_MODE_BOTH);
@@ -811,35 +811,36 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 	if (allowgyro) {
 			float gyroCamDx = 0.f, gyroCamDy = 0.f, gyroCamDz = 0.f;
 			float gyroCrossDx = 0.f, gyroCrossDy = 0.f;
-			s32 cidx = g_Vars.currentplayernum;
 
-			if (inputGetGyroAimMode(cidx) == GYRO_AIM_MODE_CAMERA || inputGetGyroAimMode(cidx) == GYRO_AIM_MODE_BOTH) {
+			if (inputGetGyroAimMode(cidx) == GYRO_AIM_MODE_CAMERA ||
+					inputGetGyroAimMode(cidx) == GYRO_AIM_MODE_BOTH) {
 					inputGyroGetScaledDelta(cidx, &gyroCamDx, &gyroCamDy, &gyroCamDz);
 					movedata.gyrolookdx += gyroCamDx;
 					movedata.gyrolookdy += gyroCamDy;
 			}
 
-			if (inputGetGyroAimMode(cidx) == GYRO_AIM_MODE_CROSSHAIR || inputGetGyroAimMode(cidx) == GYRO_AIM_MODE_BOTH) {
+			if (inputGetGyroAimMode(cidx) == GYRO_AIM_MODE_CROSSHAIR ||
+					inputGetGyroAimMode(cidx) == GYRO_AIM_MODE_BOTH) {
 					inputGyroGetScaledDeltaCrosshair(cidx, &gyroCrossDx, &gyroCrossDy);
-					if (g_Vars.currentplayer) {
-							g_Vars.currentplayer->swivelpos[0] += gyroCrossDx;
-							g_Vars.currentplayer->swivelpos[1] += gyroCrossDy;
+					if (g_Vars.players[cidx]) {
+							g_Vars.players[cidx]->swivelpos[0] += gyroCrossDx;
+							g_Vars.players[cidx]->swivelpos[1] += gyroCrossDy;
 					}
 					allowmcross = allowmcross || (gyroCrossDx || gyroCrossDy);
 			}
 
-		if (movedata.invertpitch) {
-			movedata.gyrolookdy = -movedata.gyrolookdy;
-		}
+			if (movedata.invertpitch) {
+					movedata.gyrolookdy = -movedata.gyrolookdy;
+			}
 
-		// Clamp gyro input to prevent runaway camera movement
-		if (movedata.gyrolookdx < -10.0f) movedata.gyrolookdx = -10.0f;
-		if (movedata.gyrolookdx >  10.0f) movedata.gyrolookdx =  10.0f;
-		if (movedata.gyrolookdy < -10.0f) movedata.gyrolookdy = -10.0f;
-		if (movedata.gyrolookdy >  10.0f) movedata.gyrolookdy =  10.0f;
+			// Clamp gyro input to prevent runaway camera movement
+			if (movedata.gyrolookdx < -10.0f) movedata.gyrolookdx = -10.0f;
+			if (movedata.gyrolookdx > 10.0f)  movedata.gyrolookdx = 10.0f;
+			if (movedata.gyrolookdy < -10.0f) movedata.gyrolookdy = -10.0f;
+			if (movedata.gyrolookdy > 10.0f)  movedata.gyrolookdy = 10.0f;
 
-		fVar25 += movedata.gyrolookdx * gyroscale;
-		fVar25 += movedata.gyrolookdy * gyroscale;
+			fVar25 += movedata.gyrolookdx * gyroscale;
+			fVar25 += movedata.gyrolookdy * gyroscale;
 	}
 #endif
 
@@ -2432,7 +2433,7 @@ void bmoveTick(bool allowc1x, bool allowc1y, bool allowc1buttons, bool ignorec2)
 	f32 zdiff;
 	f32 distance;
 
-	bmoveProcessInput(allowc1x, allowc1y, allowc1buttons, ignorec2);
+	bmoveProcessInput(g_Vars.currentplayernum, allowc1x, allowc1y, allowc1buttons, ignorec2);
 
 	if (g_Vars.currentplayer->bondmovemode == MOVEMODE_BIKE) {
 		bbikeTick();
