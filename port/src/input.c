@@ -146,12 +146,12 @@ static f32 mouseSensY = 2.5f;
 
 static f32 gyroYaw[INPUT_MAX_CONTROLLERS], gyroPitch[INPUT_MAX_CONTROLLERS], gyroRoll[INPUT_MAX_CONTROLLERS];
 static f32 gyroDeltaYaw[INPUT_MAX_CONTROLLERS], gyroDeltaPitch[INPUT_MAX_CONTROLLERS], gyroDeltaRoll[INPUT_MAX_CONTROLLERS];
+static f32 accelDeltaX[INPUT_MAX_CONTROLLERS], accelDeltaY[INPUT_MAX_CONTROLLERS], accelDeltaZ[INPUT_MAX_CONTROLLERS];
 
+// TODO: Will be moved to controllercfg when a proper gyro calibration system is implemented
+// for now, these are static global offsets for the gyro sensor
 static f32 gyroOffsetX = 0.f;
 static f32 gyroOffsetY = 0.f;
-static f32 accelDeltaX = 0.f;
-static f32 accelDeltaY = 0.f;
-static f32 accelDeltaZ = 0.f;
 
 static s32 lastKey = 0;
 static char lastChar = 0;
@@ -796,11 +796,11 @@ void inputHandleGyroController(s32 cidx)
 
     // Accelerometer data retrieval
     if (hasAccel && SDL_GameControllerGetSensorData(pads[cidx], SDL_SENSOR_ACCEL, sensorData, 3) == 0) {
-        accelDeltaX = sensorData[0];
-        accelDeltaY = sensorData[1];
-        accelDeltaZ = sensorData[2];
+				accelDeltaX[cidx] = sensorData[0];
+				accelDeltaY[cidx] = sensorData[1];
+				accelDeltaZ[cidx] = sensorData[2];
     } else {
-        accelDeltaX = accelDeltaY = accelDeltaZ = 0.f;
+				accelDeltaX[cidx] = accelDeltaY[cidx] = accelDeltaZ[cidx] = 0.f;
         sysLogPrintf(LOG_WARNING, "Failed to retrieve accelerometer data for controller %d.", cidx);
     }
 }
@@ -1049,33 +1049,36 @@ static inline void inputUpdateMouse(void)
 
 static inline void inputUpdateGyro(s32 cidx)
 {
-		if (!padsCfg[cidx].gyroEnabled || !padsCfg[cidx].gyroSensorActive) {
-				sysLogPrintf(LOG_NOTE, "Gyro is disabled for controller %d. Skipping update.", cidx);
-				return;
-		}
+    if (!padsCfg[cidx].gyroEnabled || !padsCfg[cidx].gyroSensorActive) {
+        sysLogPrintf(LOG_NOTE, "Gyro is disabled for controller %d. Skipping update.", cidx);
+        return;
+    }
 
-    // Handle gyro controller initialization (still global, or adapt for per-controller if needed)
-		inputHandleGyroController(cidx);
+    // Handle gyro controller initialization
+    inputHandleGyroController(cidx);
 
     // If the controller was unplugged, fully reset gyro values
-		if (!pads[cidx] || SDL_GameControllerGetAttached(pads[cidx]) == SDL_FALSE) {
-				sysLogPrintf(LOG_NOTE, "Gyro Reset: No controllers detected.");
+    if (!pads[cidx] || SDL_GameControllerGetAttached(pads[cidx]) == SDL_FALSE) {
+        sysLogPrintf(LOG_NOTE, "Gyro Reset: No controllers detected for controller %d.", cidx);
 
-				gyroYaw[cidx] = gyroPitch[cidx] = gyroRoll[cidx] = 0.f;
-				gyroDeltaYaw[cidx] = gyroDeltaPitch[cidx] = gyroDeltaRoll[cidx] = 0.f;
-				gyroOffsetX = gyroOffsetY = 0.f;
+        gyroYaw[cidx] = gyroPitch[cidx] = gyroRoll[cidx] = 0.f;
+        gyroDeltaYaw[cidx] = gyroDeltaPitch[cidx] = gyroDeltaRoll[cidx] = 0.f;
+        gyroOffsetX = gyroOffsetY = 0.f;
 
-				return;
-		}
+        accelDeltaX[cidx] = accelDeltaY[cidx] = accelDeltaZ[cidx] = 0.f;
+
+        return;
+    }
 
     // Retrieve gyro data
-		float gyroData[3] = { 0.f, 0.f, 0.f };
-		if (SDL_GameControllerGetSensorData(pads[cidx], SDL_SENSOR_GYRO, gyroData, 3) != 0) {
-				sysLogPrintf(LOG_WARNING, "Failed to retrieve gyro data.");
+    float gyroData[3] = { 0.f, 0.f, 0.f };
+    if (SDL_GameControllerGetSensorData(pads[cidx], SDL_SENSOR_GYRO, gyroData, 3) != 0) {
+        sysLogPrintf(LOG_WARNING, "Failed to retrieve gyro data for controller %d.", cidx);
 
-				gyroDeltaYaw[cidx] = gyroDeltaPitch[cidx] = gyroDeltaRoll[cidx] = 0.f;
-				return;
-		}
+        gyroDeltaYaw[cidx] = gyroDeltaPitch[cidx] = gyroDeltaRoll[cidx] = 0.f;
+        accelDeltaX[cidx] = accelDeltaY[cidx] = accelDeltaZ[cidx] = 0.f;
+        return;
+    }
 
     // Initialize deltas before processing
     gyroDeltaYaw[cidx] = gyroDeltaPitch[cidx] = gyroDeltaRoll[cidx] = 0.f;
@@ -1090,8 +1093,20 @@ static inline void inputUpdateGyro(s32 cidx)
     applyGyroModifier(&deltaX, &deltaY, &deltaZ, inputGetGyroModifier(cidx), cidx);
     applyGyroThreshold(&deltaX, &deltaY, &deltaZ, inputGetGyroMinThreshold(cidx));
 
+    // Retrieve accelerometer data
+    float accelData[3] = { 0.f, 0.f, 0.f };
+    if (SDL_GameControllerGetSensorData(pads[cidx], SDL_SENSOR_ACCEL, accelData, 3) == 0) {
+        accelDeltaX[cidx] = accelData[0];
+        accelDeltaY[cidx] = accelData[1];
+        accelDeltaZ[cidx] = accelData[2];
+    } else {
+        accelDeltaX[cidx] = accelDeltaY[cidx] = accelDeltaZ[cidx] = 0.f;
+    }
+
     // Check acceleration magnitude for stability
-    f32 accelMagnitude = sqrtf(accelDeltaX * accelDeltaX + accelDeltaY * accelDeltaY + accelDeltaZ * accelDeltaZ);
+    f32 accelMagnitude = sqrtf(accelDeltaX[cidx] * accelDeltaX[cidx] +
+                               accelDeltaY[cidx] * accelDeltaY[cidx] +
+                               accelDeltaZ[cidx] * accelDeltaZ[cidx]);
 
     // Store processed gyro deltas
     gyroDeltaYaw[cidx] = deltaX;
