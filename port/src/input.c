@@ -1,4 +1,5 @@
 #include <string.h>
+#include <math.h>
 #include <ctype.h>
 #include <SDL.h>
 #include <PR/ultratypes.h>
