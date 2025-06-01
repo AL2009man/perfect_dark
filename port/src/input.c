@@ -1242,7 +1242,6 @@ void inputMouseGetRawDelta(s32 *dx, s32 *dy)
 void inputMouseGetScaledDelta(f32* dx, f32* dy)
 {
 		f32 mdx = 0.f, mdy = 0.f;
-
 		if (mouseLocked) {
 				mdx = mouseDX * (0.022f / 3.5f) * mouseSensX;
 				mdy = mouseDY * (0.022f / 3.5f) * mouseSensY;
@@ -1254,10 +1253,9 @@ void inputMouseGetScaledDelta(f32* dx, f32* dy)
 void inputMouseGetAbsScaledDelta(f32* dx, f32* dy)
 {
 		f32 mdx = 0.f, mdy = 0.f;
-
 		if (mouseLocked) {
-				mdx = fabsf(mouseDX) * (0.022f / 3.5f) * fabsf(mouseSensX);
-				mdy = fabsf(mouseDY) * (0.022f / 3.5f) * fabsf(mouseSensY);
+				mdx = mouseDX * (0.022f / 3.5f) * fabsf(mouseSensX);
+				mdy = mouseDY * (0.022f / 3.5f) * fabsf(mouseSensY);
 		}
 		if (dx) *dx = mdx;
 		if (dy) *dy = mdy;
