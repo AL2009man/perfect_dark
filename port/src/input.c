@@ -82,6 +82,7 @@ static SDL_GameController *pads[INPUT_MAX_CONTROLLERS];
   .gyroAimInvertX = 0, \
   .gyroAimInvertY = 0, \
   .gyroMinThreshold = 0.07f, \
+  .GyroSmoothing = 0.50f, \
 }
 
 static struct controllercfg {
@@ -1866,41 +1867,67 @@ void applyGyroModifier(f32* deltaX, f32* deltaY, f32* deltaZ, s32 activationMode
 
 f32 inputGetGyroMinThreshold(s32 cidx)
 {
-	return padsCfg[cidx].gyroMinThreshold;
+		return padsCfg[cidx].gyroMinThreshold;
 }
 
 void inputSetGyroMinThreshold(s32 cidx, f32 threshold)
 {
-	padsCfg[cidx].gyroMinThreshold = threshold;
+		padsCfg[cidx].gyroMinThreshold = threshold;
 }
 
-void applyGyroThreshold(f32* deltaX, f32* deltaY, f32* deltaZ, f32 threshold)
+void applyGyroThreshold(s32 cidx, f32* deltaX, f32* deltaY, f32* deltaZ, f32 threshold)
 {
-	if (!deltaX || !deltaY || !deltaZ) return;
+		if (!deltaX || !deltaY || !deltaZ) return;
 
-	const f32 baseDeadzone = threshold > 0.f ? fmaxf(threshold * 0.75f, 0.04f) : 0.f;
+		// Fine-tune deadzone values, but only apply if threshold is > 0
+		const f32 baseDeadzone = threshold > 0.f ? fmaxf(threshold * 0.75f, 0.04f) : 0.f;
 
-	const f32 appliedDeadzoneX = baseDeadzone;
-	const f32 appliedDeadzoneY = baseDeadzone;
-	const f32 appliedDeadzoneZ = baseDeadzone;
+		// Apply deadzone thresholds per axis
+		if (fabsf(*deltaX) < baseDeadzone) *deltaX = 0.f;
+		if (fabsf(*deltaY) < baseDeadzone) *deltaY = 0.f;
+		if (fabsf(*deltaZ) < baseDeadzone) *deltaZ = 0.f;
+}
 
-	static f32 prevDeltaX = 0.f, prevDeltaY = 0.f, prevDeltaZ = 0.f;
-	const f32 smoothingFactor = 0.85f;
+f32 inputGetGyroSmoothing(s32 cidx)
+{
+		return padsCfg[cidx].GyroSmoothing;
+}
 
-	if (threshold > 0.f) {
-		if (fabsf(*deltaX) < appliedDeadzoneX) *deltaX = 0.f;
-		else *deltaX = (*deltaX * smoothingFactor) + (prevDeltaX * (1.f - smoothingFactor));
+void inputSetGyroSmoothing(s32 cidx, f32 smoothing)
+{
+		padsCfg[cidx].GyroSmoothing = smoothing;
+}
 
-		if (fabsf(*deltaY) < appliedDeadzoneY) *deltaY = 0.f;
-		else *deltaY = (*deltaY * smoothingFactor) + (prevDeltaY * (1.f - smoothingFactor));
+#include <math.h>
 
-		if (fabsf(*deltaZ) < appliedDeadzoneZ) *deltaZ = 0.f;
-		else *deltaZ = (*deltaZ * smoothingFactor) + (prevDeltaZ * (1.f - smoothingFactor));
-	}
+void applyGyroSmoothing(f32* deltaX, f32* deltaY, f32* deltaZ, f32 threshold)
+{
+		if (!deltaX || !deltaY || !deltaZ) return;
 
-	prevDeltaX = *deltaX;
-	prevDeltaY = *deltaY;
-	prevDeltaZ = *deltaZ;
+		// Smoothing factor should be < 1 to blend the past state (e.g., 0.85f)
+		const f32 smoothingFactor = 0.85f;
+
+		// Compute the overall magnitude of the input vector
+		f32 magnitude = sqrtf((*deltaX) * (*deltaX) + (*deltaY) * (*deltaY) + (*deltaZ) * (*deltaZ));
+		static f32 prevDeltaX = 0.f, prevDeltaY = 0.f, prevDeltaZ = 0.f;
+
+		if (magnitude < threshold) {
+				// For small inputs, blend the current input with the previous smoothed state
+				*deltaX = (*deltaX * smoothingFactor) + (prevDeltaX * (1.f - smoothingFactor));
+				*deltaY = (*deltaY * smoothingFactor) + (prevDeltaY * (1.f - smoothingFactor));
+				*deltaZ = (*deltaZ * smoothingFactor) + (prevDeltaZ * (1.f - smoothingFactor));
+		}
+		else {
+				// For larger inputs, pass the input directly with a decayed previous state
+				*deltaX = *deltaX + (prevDeltaX * (1.f - smoothingFactor));
+				*deltaY = *deltaY + (prevDeltaY * (1.f - smoothingFactor));
+				*deltaZ = *deltaZ + (prevDeltaZ * (1.f - smoothingFactor));
+		}
+
+		// Update previous state
+		prevDeltaX = *deltaX;
+		prevDeltaY = *deltaY;
+		prevDeltaZ = *deltaZ;
 }
 
 const char *inputGetContKeyName(u32 ck)
