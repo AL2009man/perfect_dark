@@ -828,18 +828,18 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 					allowmcross = allowmcross || (gyroCrossDx || gyroCrossDy);
 			}
 
-			if (movedata.invertpitch) {
-					movedata.gyrolookdy = -movedata.gyrolookdy;
-			}
+		if (movedata.invertpitch) {
+			movedata.gyrolookdy = -movedata.gyrolookdy;
+		}
 
-			// Clamp gyro input to prevent runaway camera movement
-			if (movedata.gyrolookdx < -10.0f) movedata.gyrolookdx = -10.0f;
-			if (movedata.gyrolookdx > 10.0f) movedata.gyrolookdx = 10.0f;
-			if (movedata.gyrolookdy < -10.0f) movedata.gyrolookdy = -10.0f;
-			if (movedata.gyrolookdy > 10.0f) movedata.gyrolookdy = 10.0f;
+		// Clamp gyro input to prevent runaway camera movement
+		if (movedata.gyrolookdx < -10.0f) movedata.gyrolookdx = -10.0f;
+		if (movedata.gyrolookdx >  10.0f) movedata.gyrolookdx =  10.0f;
+		if (movedata.gyrolookdy < -10.0f) movedata.gyrolookdy = -10.0f;
+		if (movedata.gyrolookdy >  10.0f) movedata.gyrolookdy =  10.0f;
 
-			fVar25 += movedata.gyrolookdx * gyroscale;
-			fVar25 += movedata.gyrolookdy * gyroscale;
+		fVar25 += movedata.gyrolookdx * gyroscale;
+		fVar25 += movedata.gyrolookdy * gyroscale;
 	}
 #endif
 
