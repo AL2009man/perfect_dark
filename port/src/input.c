@@ -2153,6 +2153,7 @@ PD_CONSTRUCTOR static void inputConfigInit(void)
 		configRegisterInt(strFmt("%s.gyroAimInvertX", secname), &padsCfg[c].gyroAimInvertX, 0, 1);
 		configRegisterInt(strFmt("%s.gyroAimInvertY", secname), &padsCfg[c].gyroAimInvertY, 0, 1);
 		configRegisterFloat(strFmt("%s.gyroMinThreshold", secname), &padsCfg[c].gyroMinThreshold, 0.f, 1.f);
+		configRegisterFloat(strFmt("%s.gyroSmoothing", secname), &padsCfg[c].gyroSmoothing, 0.f, 1.f);
 		configRegisterInt(strFmt("%s.StickCButtons", secname), &padsCfg[c].stickCButtons, 0, 1);
 		configRegisterInt(strFmt("%s.CancelCButtons", secname), &padsCfg[c].cancelCButtons, 0, 1);
 		configRegisterInt(strFmt("%s.SwapSticks", secname), &padsCfg[c].swapSticks, 0, 1);
