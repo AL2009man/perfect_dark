@@ -148,7 +148,7 @@ s32 inputInit(void);
 
 // read the specified player's inputs into the N64 pad struct
 // returns 0 if read, non-0 if failed
-s32 inputReadController(s32 idx, OSContPad* npad);
+s32 inputReadController(s32 idx, OSContPad *npad);
 
 // returns 1 if rumble is supported for specified player's controller
 s32 inputRumbleSupported(s32 idx);
@@ -182,11 +182,11 @@ void inputControllerSetAxisDeadzone(s32 cidx, s32 stick, s32 axis, f32 value);
 // writes array of up to INPUT_MAX_CONNECTED_CONTROLLERS controller IDs
 // for all the controllers available on this machine into out if it's not NULL
 // returns number of IDs that would've been written (or were written if out is not NULL)
-s32 inputGetConnectedControllers(s32* out);
+s32 inputGetConnectedControllers(s32 *out);
 
 // get name of connected controller id
 // returns "Invalid" on failure
-const char* inputGetConnectedControllerName(s32 id);
+const char *inputGetConnectedControllerName(s32 id);
 
 // get id of the controller currently assigned to player cidx or -1 if none
 s32 inputGetAssignedControllerId(s32 cidx);
@@ -207,19 +207,19 @@ s32 inputButtonPressed(s32 idx, u32 contbtn);
 // if bind is -1, picks a bind slot automatically
 void inputKeyBind(s32 idx, u32 ck, s32 bind, u32 vk);
 
-const u32* inputKeyGetBinds(s32 idx, u32 ck);
+const u32 *inputKeyGetBinds(s32 idx, u32 ck);
 
 // get VK_ value from human-readable name
-s32 inputGetKeyByName(const char* name);
+s32 inputGetKeyByName(const char *name);
 
 // get human-readable name from VK_ value
-const char* inputGetKeyName(s32 vk);
+const char *inputGetKeyName(s32 vk);
 
 // get CK_ value from human-readable name
-s32 inputGetContKeyByName(const char* name);
+s32 inputGetContKeyByName(const char *name);
 
 // get human-readable name from CK_ value
-const char* inputGetContKeyName(u32 ck);
+const char *inputGetContKeyName(u32 ck);
 
 // strength is 0 .. 1; 0 strength turns it off
 void inputRumble(s32 idx, f32 strength, f32 time);
@@ -235,20 +235,20 @@ s32 inputMouseIsLocked(void);
 
 // sets x, y to mouse position in native viewport coordinates (ie, 320x240 most of the time)
 // returns true if mouse has moved this input frame
-s32 inputMouseGetPosition(s32* x, s32* y);
+s32 inputMouseGetPosition(s32 *x, s32 *y);
 
 // returns changes in mouse position since last frame, in window coordinates
-void inputMouseGetRawDelta(s32* dx, s32* dy);
+void inputMouseGetRawDelta(s32 *dx, s32 *dy);
 
 // returns changes in mouse position since last frame, scaled by sensitivity
 // returns 0, 0 when the mouse is not locked into the window
-void inputMouseGetScaledDelta(f32* dx, f32* dy);
+void inputMouseGetScaledDelta(f32 *dx, f32 *dy);
 
 // returns changes in mouse position since last frame, scaled by absolute sensitivity
 // returns 0, 0 when the mouse is not locked into the window
-void inputMouseGetAbsScaledDelta(f32* dx, f32* dy);
+void inputMouseGetAbsScaledDelta(f32 *dx, f32 *dy);
 
-void inputMouseGetSpeed(f32* x, f32* y);
+void inputMouseGetSpeed(f32 *x, f32 *y);
 void inputMouseSetSpeed(f32 x, f32 y);
 
 s32 inputMouseIsEnabled(void);
