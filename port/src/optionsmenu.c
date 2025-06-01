@@ -801,6 +801,23 @@ static MenuItemHandlerResult menuhandlerGyroSmoothing(s32 operation, struct menu
 		return 0;
 }
 
+static MenuItemHandlerResult menuhandlerGyroSmoothing(s32 operation, struct menuitem* item, union handlerdata* data)
+{
+		switch (operation) {
+		case MENUOP_GETSLIDER:
+				data->slider.value = inputGetGyroSmoothing() * 100.0f;
+				break;
+		case MENUOP_SET:
+				inputSetGyroSmoothing((f32)data->slider.value / 100.0f);
+				break;
+		case MENUOP_GETSLIDERLABEL:
+				sprintf(data->slider.label, "%.2f", inputGetGyroSmoothing());
+				break;
+		}
+
+		return 0;
+}
+
 static MenuItemHandlerResult menuhandlerGyroMinThreshold(s32 operation, struct menuitem* item, union handlerdata* data)
 {
 	switch (operation) {
