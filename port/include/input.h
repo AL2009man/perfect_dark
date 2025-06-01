@@ -117,12 +117,6 @@ enum contkey {
 };
 
 enum mouselockmode {
-	MLOCK_OFF = 0,
-	MLOCK_ON = 1,
-	MLOCK_AUTO = 2
-};
-
-enum mouselockmode {
 		MLOCK_OFF = 0,
 		MLOCK_ON = 1,
 		MLOCK_AUTO = 2
