@@ -1600,8 +1600,7 @@ void applyGyroAxisMapping(s32 cidx, float gyroData[3], f32* deltaX, f32* deltaY,
 		float processedRoll = -gyroData[2];
 
 		Vector3 transformedGyro = TransformToPlayerSpace(
-			processedYaw, processedPitch, processedRoll,
-			GetGravityVector()
+			processedYaw, processedPitch, processedRoll
 		);
 
 		*deltaX = transformedGyro.x;
@@ -1617,8 +1616,7 @@ void applyGyroAxisMapping(s32 cidx, float gyroData[3], f32* deltaX, f32* deltaY,
 		float processedRoll = -gyroData[2];
 
 		Vector3 transformedGyro = TransformToWorldSpace(
-			processedYaw, processedPitch, processedRoll,
-			GetGravityVector()
+			processedYaw, processedPitch, processedRoll
 		);
 
 		*deltaX = transformedGyro.x;
