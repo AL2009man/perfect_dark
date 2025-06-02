@@ -2331,13 +2331,13 @@ void bmoveProcessInput(s32 cidx, bool allowc1x, bool allowc1y, bool allowc1butto
 
 			// Mouse input (only if gyro input was inactive)
 			if (allowmcross) {
-					const float xcoeff = 320.f / 1080.f;
-					const float ycoeff = 240.f / 1080.f;
-					const float xscale = (PLAYER_EXTCFG().mouseaimspeedx * xcoeff) / g_Vars.currentplayer->aspect;
-					const float yscale = PLAYER_EXTCFG().mouseaimspeedy * ycoeff;
+					const f32 xcoeff = 320.f / 1080.f;
+					const f32 ycoeff = 240.f / 1080.f;
+					const f32 xscale = (PLAYER_EXTCFG().mouseaimspeedx * xcoeff) / g_Vars.currentplayer->aspect;
+					const f32 yscale = PLAYER_EXTCFG().mouseaimspeedy * ycoeff;
 
-					float x = g_Vars.currentplayer->swivelpos[0] + movedata.freelookdx * xscale;
-					float y = g_Vars.currentplayer->swivelpos[1] + movedata.freelookdy * yscale;
+					f32 x = g_Vars.currentplayer->swivelpos[0] + movedata.freelookdx * xscale;
+					f32 y = g_Vars.currentplayer->swivelpos[1] + movedata.freelookdy * yscale;
 
 					x = (x < -1.f) ? -1.f : ((x > 1.f) ? 1.f : x);
 					y = (y < -1.f) ? -1.f : ((y > 1.f) ? 1.f : y);
