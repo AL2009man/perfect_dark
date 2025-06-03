@@ -38,7 +38,7 @@ int GetAutoCalibrationIsSteady(GamepadMotionHandle handle);
 int GetCalibrationMode(GamepadMotionHandle handle);
 void SetCalibrationMode(GamepadMotionHandle handle, int mode);
 
-// --- GamepadMotionSettings: Getters and Setters ---
+// GamepadMotionSettings: Getters and Setters ---
 
 void SetMinStillnessSamples(GamepadMotionHandle handle, int value);
 int  GetMinStillnessSamples(GamepadMotionHandle handle);

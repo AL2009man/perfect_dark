@@ -14,12 +14,16 @@
 #include "video.h"
 #include "input.h"
 #include "config.h"
+#include <time.h>
 
 static s32 g_ExtMenuPlayer = 0;
 static struct menudialogdef *g_ExtNextDialog = NULL;
 
 static s32 g_BindIndex = 0;
 static u32 g_BindContKey = 0;
+
+static int g_GyroCalibrating = 0;
+static char g_GyroCalibMessage[64] = "";
 
 static MenuItemHandlerResult menuhandlerSelectPlayer(s32 operation, struct menuitem *item, union handlerdata *data);
 
@@ -817,6 +821,70 @@ static MenuItemHandlerResult menuhandlerGyroMinThreshold(s32 operation, struct m
 	return 0;
 }
 
+static struct menudialogdef g_GyroCalibrationMenuDialog; // Forward declaration
+static MenuItemHandlerResult menuhandlerGyroCalibration(s32 operation, struct menuitem* item, union handlerdata* data)
+{
+		if (!menuIsDialogOpen(&g_GyroCalibrationMenuDialog))
+				return 0;
+
+		if (inputKeyPressed(VK_ESCAPE)) {
+				g_GyroCalibrating = 0;
+				menuPopDialog();
+				return 0;
+		}
+
+		if (inputKeyPressed(CK_START)) {
+				GyroCalibration(g_ExtMenuPlayer, GYRO_CALIB_START, NULL, NULL);
+				g_GyroCalibrating = 0;
+				snprintf(g_GyroCalibMessage, sizeof(g_GyroCalibMessage), "Calibration Complete!");
+				// Optionally, close the dialog after a short delay or on next button press
+				menuPopDialog();
+				return 0;
+		}
+
+		// Optionally, show a static message
+		snprintf(g_GyroCalibMessage, sizeof(g_GyroCalibMessage), "Press START to calibrate, ESC to cancel");
+
+		return 0;
+}
+
+static struct menuitem g_GyroCalibrationMenuItems[] = {
+    {
+        MENUITEMTYPE_LABEL,
+        0,
+        MENUITEMFLAG_SELECTABLE_CENTRE | MENUITEMFLAG_LITERAL_TEXT,
+        (uintptr_t)"Gyro Calibration\n",
+        0,
+        NULL,
+    },
+    {
+        MENUITEMTYPE_LABEL,
+        0,
+        MENUITEMFLAG_SELECTABLE_CENTRE | MENUITEMFLAG_LITERAL_TEXT,
+        (uintptr_t)"Place controller on the surface, and press START\n",
+        0,
+        NULL,
+    },
+    {
+        MENUITEMTYPE_SELECTABLE,
+        0,
+        MENUITEMFLAG_SELECTABLE_CENTRE | MENUITEMFLAG_LITERAL_TEXT,
+        (uintptr_t)"Press START to calibrate, ESC to cancel\n",
+        0,
+        menuhandlerGyroCalibration,
+    },
+    { MENUITEMTYPE_END },
+};
+
+static struct menudialogdef g_GyroCalibrationMenuDialog = {
+    MENUDIALOGTYPE_SUCCESS,
+    (uintptr_t)"Calibrate Gyro",
+    g_GyroCalibrationMenuItems,
+    NULL,
+    MENUDIALOGFLAG_LITERAL_TEXT | MENUDIALOGFLAG_IGNOREBACK | MENUDIALOGFLAG_STARTSELECTS,
+    NULL,
+};
+
 struct menuitem g_ExtendedGyroMenuItems[] = {
 		{
 				MENUITEMTYPE_CHECKBOX,
@@ -969,6 +1037,14 @@ struct menuitem g_ExtendedGyroMenuItems[] = {
 				(uintptr_t)"Gyro Movement Threshold",
 				100,
 				menuhandlerGyroMinThreshold,
+		},
+		{
+				MENUITEMTYPE_SELECTABLE,
+				0,
+				MENUITEMFLAG_SELECTABLE_OPENSDIALOG | MENUITEMFLAG_LITERAL_TEXT,
+				(uintptr_t)"Calibrate Gyro...\n",
+				0,
+				(void*)&g_GyroCalibrationMenuDialog,
 		},
 		{
 				MENUITEMTYPE_SEPARATOR,

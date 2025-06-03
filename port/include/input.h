@@ -143,6 +143,13 @@ enum gyroaimmode {
 	GYRO_AIM_MODE_BOTH = 2
 };
 
+typedef enum {
+		GYRO_CALIB_START,
+		GYRO_CALIB_FINISH,
+		GYRO_CALIB_RESET,
+		GYRO_CALIB_QUERY
+} GyroCalibrationOp;
+
 // returns bitmask of connected controllers or -1 if failed
 s32 inputInit(void);
 
@@ -335,6 +342,9 @@ void applyGyroThreshold(f32* deltaX, f32* deltaY, f32* deltaZ, f32 threshold);
 f32 inputGetGyroSmoothing(s32 cidx);
 void inputSetGyroSmoothing(s32 cidx, f32 smoothing);
 void applyGyroSmoothing(f32* deltaX, f32* deltaY, f32* deltaZ, f32 threshold);
+
+// Gyro calibration Management
+void GyroCalibration(s32 cidx, GyroCalibrationOp op, float* out_confidence, int* out_steady);
 
 // call this every frame
 void inputUpdate(void);
