@@ -7,7 +7,7 @@
 #include <PR/os_cont.h>
 #include "platform.h"
 #include "input.h"
-#include "gyrospace.h"
+#include "GamepadMotionHelperWrapper.h"
 #include "../include/types.h"
 #include "video.h"
 #include "config.h"
@@ -144,6 +144,7 @@ static s32 mouseShowCursor = 1;
 static f32 mouseSensX = 2.5f;
 static f32 mouseSensY = 2.5f;
 
+static GamepadMotionHandle gpadMotion[INPUT_MAX_CONTROLLERS] = { NULL };
 static f32 gyroYaw[INPUT_MAX_CONTROLLERS], gyroPitch[INPUT_MAX_CONTROLLERS], gyroRoll[INPUT_MAX_CONTROLLERS];
 static f32 gyroDeltaYaw[INPUT_MAX_CONTROLLERS], gyroDeltaPitch[INPUT_MAX_CONTROLLERS], gyroDeltaRoll[INPUT_MAX_CONTROLLERS];
 static f32 accelDeltaX[INPUT_MAX_CONTROLLERS], accelDeltaY[INPUT_MAX_CONTROLLERS], accelDeltaZ[INPUT_MAX_CONTROLLERS];
@@ -411,11 +412,14 @@ static inline void inputInitController(const s32 cidx, const s32 jidx)
 		sysLogPrintf(LOG_NOTE, "input: GUID for controller %d: %s", jidx, guidStr);
 	}
 
-	padsCfg[cidx].gyroSensorActive = 0;
+padsCfg[cidx].gyroSensorActive = 0;
 #if SDL_VERSION_ATLEAST(2, 0, 14)
+	int gyroActive = 0;
+	int accelActive = 0;
+
 	if (SDL_GameControllerHasSensor(pads[cidx], SDL_SENSOR_GYRO)) {
 		if (SDL_GameControllerSetSensorEnabled(pads[cidx], SDL_SENSOR_GYRO, SDL_TRUE) == 0) {
-			padsCfg[cidx].gyroSensorActive = 1;
+			gyroActive = 1;
 			sysLogPrintf(LOG_NOTE, "input: Gyro sensor enabled for controller %d", cidx);
 		} else {
 			sysLogPrintf(LOG_WARNING, "input: Failed to enable gyro sensor for controller %d", cidx);
@@ -423,6 +427,19 @@ static inline void inputInitController(const s32 cidx, const s32 jidx)
 	} else {
 		sysLogPrintf(LOG_NOTE, "input: Controller %d does not support gyro sensor", cidx);
 	}
+
+	if (SDL_GameControllerHasSensor(pads[cidx], SDL_SENSOR_ACCEL)) {
+		if (SDL_GameControllerSetSensorEnabled(pads[cidx], SDL_SENSOR_ACCEL, SDL_TRUE) == 0) {
+			accelActive = 1;
+			sysLogPrintf(LOG_NOTE, "input: Accelerometer sensor enabled for controller %d", cidx);
+		} else {
+			sysLogPrintf(LOG_WARNING, "input: Failed to enable accelerometer sensor for controller %d", cidx);
+		}
+	} else {
+		sysLogPrintf(LOG_NOTE, "input: Controller %d does not support accelerometer sensor", cidx);
+	}
+
+	padsCfg[cidx].gyroSensorActive = gyroActive || accelActive;
 #endif
 }
 
@@ -755,7 +772,6 @@ static inline void inputLoadBinds(void)
 
 void inputHandleGyroController(s32 cidx)
 {
-    // Close and reopen the controller if needed
     if (!pads[cidx]) {
         sysLogPrintf(LOG_WARNING, "No controller assigned to index %d.", cidx);
         return;
@@ -781,31 +797,12 @@ void inputHandleGyroController(s32 cidx)
     }
 #endif
 
-    // Retrieve sensor data
-    float sensorData[3] = { 0.f, 0.f, 0.f };
-
-    // Gyro data retrieval
-    if (hasGyro && SDL_GameControllerGetSensorData(pads[cidx], SDL_SENSOR_GYRO, sensorData, 3) == 0) {
-        gyroDeltaYaw[cidx] = sensorData[0];
-        gyroDeltaPitch[cidx] = sensorData[1];
-        gyroDeltaRoll[cidx] = sensorData[2];
-    } else {
-        gyroDeltaYaw[cidx] = gyroDeltaPitch[cidx] = gyroDeltaRoll[cidx] = 0.f;
-        sysLogPrintf(LOG_WARNING, "Failed to retrieve gyro data for controller %d.", cidx);
-    }
-
-    // Accelerometer data retrieval
-    if (hasAccel && SDL_GameControllerGetSensorData(pads[cidx], SDL_SENSOR_ACCEL, sensorData, 3) == 0) {
-				accelDeltaX[cidx] = sensorData[0];
-				accelDeltaY[cidx] = sensorData[1];
-				accelDeltaZ[cidx] = sensorData[2];
-    } else {
-				accelDeltaX[cidx] = accelDeltaY[cidx] = accelDeltaZ[cidx] = 0.f;
-        sysLogPrintf(LOG_WARNING, "Failed to retrieve accelerometer data for controller %d.", cidx);
+    // Ensure GamepadMotion instance exists for this controller
+    if (!gpadMotion[cidx]) {
+        gpadMotion[cidx] = CreateGamepadMotion();
     }
 }
 
-// Function to clean up when a controller disconnects
 void closeGyroController(s32 cidx)
 {
     if (pads[cidx]) {
@@ -813,8 +810,12 @@ void closeGyroController(s32 cidx)
         SDL_GameControllerSetSensorEnabled(pads[cidx], SDL_SENSOR_GYRO, SDL_FALSE);
         SDL_GameControllerSetSensorEnabled(pads[cidx], SDL_SENSOR_ACCEL, SDL_FALSE);
 #endif
-        // Do not close the controller here, as pads[cidx] is managed elsewhere
-        sysLogPrintf(LOG_NOTE, "Gyro sensors disabled for controller %d.", cidx);
+        // Clean up GamepadMotion instance
+        if (gpadMotion[cidx]) {
+            DeleteGamepadMotion(gpadMotion[cidx]);
+            gpadMotion[cidx] = NULL;
+        }
+        sysLogPrintf(LOG_NOTE, "Gyro sensors and GamepadMotion cleaned up for controller %d.", cidx);
     }
 }
 
@@ -1054,59 +1055,56 @@ static inline void inputUpdateGyro(s32 cidx)
         return;
     }
 
-    // Handle gyro controller initialization
     inputHandleGyroController(cidx);
 
-    // If the controller was unplugged, fully reset gyro values
     if (!pads[cidx] || SDL_GameControllerGetAttached(pads[cidx]) == SDL_FALSE) {
         sysLogPrintf(LOG_NOTE, "Gyro Reset: No controllers detected for controller %d.", cidx);
 
         gyroYaw[cidx] = gyroPitch[cidx] = gyroRoll[cidx] = 0.f;
         gyroDeltaYaw[cidx] = gyroDeltaPitch[cidx] = gyroDeltaRoll[cidx] = 0.f;
         gyroOffsetX = gyroOffsetY = 0.f;
-
         accelDeltaX[cidx] = accelDeltaY[cidx] = accelDeltaZ[cidx] = 0.f;
 
+        // Clean up GamepadMotion instance if needed
+        if (gpadMotion[cidx]) {
+            DeleteGamepadMotion(gpadMotion[cidx]);
+            gpadMotion[cidx] = NULL;
+        }
         return;
     }
 
-    // Retrieve gyro data
+    // Ensure GamepadMotion instance exists
+    if (!gpadMotion[cidx]) {
+        gpadMotion[cidx] = CreateGamepadMotion();
+    }
+
+    // Retrieve sensor data
     float gyroData[3] = { 0.f, 0.f, 0.f };
-    if (SDL_GameControllerGetSensorData(pads[cidx], SDL_SENSOR_GYRO, gyroData, 3) != 0) {
-        sysLogPrintf(LOG_WARNING, "Failed to retrieve gyro data for controller %d.", cidx);
+    float accelData[3] = { 0.f, 0.f, 0.f };
+    SDL_GameControllerGetSensorData(pads[cidx], SDL_SENSOR_GYRO, gyroData, 3);
+    SDL_GameControllerGetSensorData(pads[cidx], SDL_SENSOR_ACCEL, accelData, 3);
 
-        gyroDeltaYaw[cidx] = gyroDeltaPitch[cidx] = gyroDeltaRoll[cidx] = 0.f;
-        accelDeltaX[cidx] = accelDeltaY[cidx] = accelDeltaZ[cidx] = 0.f;
-        return;
-    }
+    // Feed data to GamepadMotion
+    // You may want to use your real frame delta here
+    float deltaTime = 1.0f / 60.0f;
+    ProcessMotion(gpadMotion[cidx],
+        gyroData[0], gyroData[1], gyroData[2],
+        accelData[0], accelData[1], accelData[2],
+        deltaTime);
 
-    // Initialize deltas before processing
-    gyroDeltaYaw[cidx] = gyroDeltaPitch[cidx] = gyroDeltaRoll[cidx] = 0.f;
+    // Update accel deltas for external use
+    accelDeltaX[cidx] = accelData[0];
+    accelDeltaY[cidx] = accelData[1];
+    accelDeltaZ[cidx] = accelData[2];
 
-    f32 deltaX = gyroData[1]; // Yaw
-    f32 deltaY = gyroData[0]; // Pitch
-    f32 deltaZ = gyroData[2]; // Roll
+		// Calculate output deltas based on axis mode
+		f32 deltaX = 0.f, deltaY = 0.f, deltaZ = 0.f;
+		applyGyroAxisMapping(cidx, gyroData, accelData, &deltaX, &deltaY, &deltaZ);
 
-    // Apply gyro processing functions with per-controller settings
-    applyGyroAxisMapping(cidx, gyroData, &deltaX, &deltaY, &deltaZ);
+    // Apply further processing
     applyGyroAimMode(cidx, &deltaX, &deltaY, &deltaZ);
     applyGyroModifier(&deltaX, &deltaY, &deltaZ, inputGetGyroModifier(cidx), cidx);
     applyGyroThreshold(&deltaX, &deltaY, &deltaZ, inputGetGyroMinThreshold(cidx));
-
-    // Retrieve accelerometer data
-    float accelData[3] = { 0.f, 0.f, 0.f };
-    if (SDL_GameControllerGetSensorData(pads[cidx], SDL_SENSOR_ACCEL, accelData, 3) == 0) {
-        accelDeltaX[cidx] = accelData[0];
-        accelDeltaY[cidx] = accelData[1];
-        accelDeltaZ[cidx] = accelData[2];
-    } else {
-        accelDeltaX[cidx] = accelDeltaY[cidx] = accelDeltaZ[cidx] = 0.f;
-    }
-
-    // Check acceleration magnitude for stability
-    f32 accelMagnitude = sqrtf(accelDeltaX[cidx] * accelDeltaX[cidx] +
-                               accelDeltaY[cidx] * accelDeltaY[cidx] +
-                               accelDeltaZ[cidx] * accelDeltaZ[cidx]);
 
     // Store processed gyro deltas
     gyroDeltaYaw[cidx] = deltaX;
@@ -1560,77 +1558,50 @@ void inputSetGyroAxisMode(s32 cidx, enum gyroaxismode mode)
 	padsCfg[cidx].gyroAxisMode = mode;
 }
 
-void applyGyroAxisMapping(s32 cidx, float gyroData[3], f32* deltaX, f32* deltaY, f32* deltaZ)
+void applyGyroAxisMapping(s32 cidx, float gyroData[3], float accelData[3], f32* deltaX, f32* deltaY, f32* deltaZ)
 {
-	switch (inputGetGyroAxisMode(cidx)) {
-	case GYRO_YAW:
-		*deltaX = -gyroData[1]; // Yaw for horizontal movement
-		*deltaY = -gyroData[0]; // Pitch for vertical movement
-		break;
-
-	case GYRO_ROLL:
-		*deltaX = gyroData[2];  // Roll for horizontal movement
-		*deltaY = -gyroData[0]; // Pitch for vertical movement
-		break;
-
-			// Gyro Space and Play header (gyrospace.h) will be ultilized to handle Gyro Space and Play functionalityAdd commentMore actions
-      // https://github.com/AL2009man/GyroSpace-and-Play
-      // based on http://gyrowiki.jibbsmart.com/blog:player-space-gyro-and-alternatives-explained
-	case GYRO_LOCAL:
-	{
-		float processedYaw = -gyroData[1];
-		float processedPitch = -gyroData[0];
-		float processedRoll = -gyroData[2];
-
-		Vector3 transformedGyro = TransformToLocalSpace(
-			processedYaw, processedPitch, processedRoll,
-			0.0f
-		);
-
-		*deltaX = transformedGyro.x;
-		*deltaY = transformedGyro.y;
-		*deltaZ = transformedGyro.z;
-	}
-	break;
-
-	case GYRO_PLAYER:
-	{
-		float processedYaw = -gyroData[1];
-		float processedPitch = -gyroData[0];
-		float processedRoll = -gyroData[2];
-
-		Vector3 transformedGyro = TransformToPlayerSpace(
-			processedYaw, processedPitch, processedRoll
-		);
-
-		*deltaX = transformedGyro.x;
-		*deltaY = transformedGyro.y;
-		*deltaZ = transformedGyro.z;
-	}
-	break;
-
-	case GYRO_WORLD:
-	{
-		float processedYaw = -gyroData[1];
-		float processedPitch = -gyroData[0];
-		float processedRoll = -gyroData[2];
-
-		Vector3 transformedGyro = TransformToWorldSpace(
-			processedYaw, processedPitch, processedRoll
-		);
-
-		*deltaX = transformedGyro.x;
-		*deltaY = transformedGyro.y;
-		*deltaZ = transformedGyro.z;
-	}
-	break;
-
-	default:
-		*deltaX = 0.f;
-		*deltaY = 0.f;
-		*deltaZ = 0.f;
-		break;
-	}
+    switch (inputGetGyroAxisMode(cidx)) {
+    case GYRO_AXIS_YAW:
+        *deltaX = -gyroData[1];
+        *deltaY = -gyroData[0];
+        *deltaZ = 0.f;
+        break;
+    case GYRO_AXIS_ROLL:
+        *deltaX = gyroData[2];
+        *deltaY = -gyroData[0];
+        *deltaZ = 0.f;
+        break;
+    case GYRO_AXIS_LOCAL:
+        *deltaX = -gyroData[1] + gyroData[2];
+        *deltaY = -gyroData[0];
+        *deltaZ = 0.f;
+        break;
+    case GYRO_AXIS_PLAYER:
+        if (gpadMotion[cidx]) {
+            float x = 0, y = 0;
+            GetPlayerSpaceGyro(gpadMotion[cidx], &x, &y, 1.41f);
+            *deltaX = -y;
+            *deltaY = -x;
+            *deltaZ = 0.f;
+        } else {
+            *deltaX = *deltaY = *deltaZ = 0.f;
+        }
+        break;
+    case GYRO_AXIS_WORLD:
+        if (gpadMotion[cidx]) {
+            float x = 0, y = 0;
+            GetWorldSpaceGyro(gpadMotion[cidx], &x, &y, 0.125f);
+            *deltaX = -y;
+            *deltaY = -x;
+            *deltaZ = 0.f;
+        } else {
+            *deltaX = *deltaY = *deltaZ = 0.f;
+        }
+        break;
+    default:
+        *deltaX = *deltaY = *deltaZ = 0.f;
+        break;
+    }
 }
 
 s32 inputGetGyroAimMode(s32 cidx)
