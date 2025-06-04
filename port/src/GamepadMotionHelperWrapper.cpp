@@ -3,6 +3,7 @@
 
 struct GamepadMotionOpaque {
     GamepadMotion impl;
+    float savedGyroOffset[3] = {0.f, 0.f, 0.f};
 };
 
 extern "C" {
@@ -294,6 +295,23 @@ void SetGravityCorrectionMinimumSpeed(GamepadMotionHandle handle, float value) {
 float GetGravityCorrectionMinimumSpeed(GamepadMotionHandle handle) {
     if (handle) return static_cast<GamepadMotionOpaque*>(handle)->impl.Settings.GravityCorrectionMinimumSpeed;
     return 0.0f;
+}
+
+void SaveCurrentCalibrationOffset(GamepadMotionHandle handle) {
+    if (handle) {
+        float x, y, z;
+        static_cast<GamepadMotionOpaque*>(handle)->impl.GetCalibrationOffset(x, y, z);
+        static_cast<GamepadMotionOpaque*>(handle)->savedGyroOffset[0] = x;
+        static_cast<GamepadMotionOpaque*>(handle)->savedGyroOffset[1] = y;
+        static_cast<GamepadMotionOpaque*>(handle)->savedGyroOffset[2] = z;
+    }
+}
+
+void RestoreSavedCalibrationOffset(GamepadMotionHandle handle) {
+    if (handle) {
+        float* arr = static_cast<GamepadMotionOpaque*>(handle)->savedGyroOffset;
+        static_cast<GamepadMotionOpaque*>(handle)->impl.SetCalibrationOffset(arr[0], arr[1], arr[2], 100);
+    }
 }
 
 } // extern "C"

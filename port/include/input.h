@@ -103,6 +103,7 @@ enum contkey {
 	CK_ACCEPT,
 	CK_CANCEL,
 	CK_GYRO_MOD,
+	CK_GYRO_CALIBRATION,
 	CK_0040,
 	CK_0080,
 	CK_0100,
@@ -147,7 +148,8 @@ typedef enum {
 		GYRO_CALIB_START,
 		GYRO_CALIB_FINISH,
 		GYRO_CALIB_RESET,
-		GYRO_CALIB_QUERY
+		GYRO_CALIB_QUERY,
+		GYRO_CALIB_UPDATE
 } GyroCalibrationOp;
 
 // returns bitmask of connected controllers or -1 if failed
@@ -343,8 +345,12 @@ f32 inputGetGyroSmoothing(s32 cidx);
 void inputSetGyroSmoothing(s32 cidx, f32 smoothing);
 void applyGyroSmoothing(f32* deltaX, f32* deltaY, f32* deltaZ, f32 threshold);
 
-// Gyro calibration Management
+// Gyro calibration Management (powered by GamepadMotionHelper)
 void GyroCalibration(s32 cidx, GyroCalibrationOp op, float* out_confidence, int* out_steady);
+void inputGyroSetAutoCalibration(s32 cidx, s32 enabled);
+s32 inputGyroGetAutoCalibration(s32 cidx);
+float inputGyroGetAutoCalibrationConfidence(s32 cidx);
+s32 inputGyroGetAutoCalibrationIsSteady(s32 cidx);
 
 // call this every frame
 void inputUpdate(void);
