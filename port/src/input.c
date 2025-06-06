@@ -451,6 +451,11 @@ static inline void inputCloseController(const s32 cidx)
 	pads[cidx] = NULL;
 	padsCfg[cidx].rumbleOn = 0;
 
+	// Zero out gyro deltas and orientation to prevent drift after disconnect
+	// Reset gyro deltas and orientation
+	gyroDeltaYaw[cidx] = gyroDeltaPitch[cidx] = gyroDeltaRoll[cidx] = 0.f;
+	gyroYaw[cidx] = gyroPitch[cidx] = gyroRoll[cidx] = 0.f;
+
 	if (cidx) {
 		connectedMask &= ~(1 << cidx);
 	}
@@ -1993,7 +1998,6 @@ void inputAutoStartGyroCalibrationIfSteady(void)
 	}
 }
 
-
 static void inputUpdateGyroCalibrationBinds(void)
 {
 	static int manualCalibrationLocked[INPUT_MAX_CONTROLLERS] = {0};
@@ -2023,9 +2027,9 @@ static void inputUpdateGyroCalibrationBinds(void)
 				sysLogPrintf(LOG_NOTE, "Started gyro calibration for controller %d.", cidx);
 			}
 		} else if (g_GyroCalibrating[cidx]) {
-			// Wait for 2 seconds after calibration bind is released before finishing calibration
+			// Wait for 1 seconds after calibration bind is released before finishing calibration
 			Uint32 elapsed = SDL_GetTicks() - g_GyroCalibStartTime[cidx];
-			if (elapsed >= 2000) {
+			if (elapsed >= 1000) {
 				g_GyroCalibrating[cidx] = 0;
 				inputGyroCalibration(cidx, GYRO_CALIB_FINISH, NULL, NULL);
 				sysLogPrintf(LOG_NOTE, "Finished gyro calibration for controller %d.", cidx);
