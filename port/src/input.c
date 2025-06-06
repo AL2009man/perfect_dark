@@ -451,6 +451,11 @@ static inline void inputCloseController(const s32 cidx)
 	pads[cidx] = NULL;
 	padsCfg[cidx].rumbleOn = 0;
 
+	// Zero out gyro deltas and orientation to prevent drift after disconnect
+	// Reset gyro deltas and orientation
+	gyroDeltaYaw[cidx] = gyroDeltaPitch[cidx] = gyroDeltaRoll[cidx] = 0.f;
+	gyroYaw[cidx] = gyroPitch[cidx] = gyroRoll[cidx] = 0.f;
+
 	if (cidx) {
 		connectedMask &= ~(1 << cidx);
 	}
@@ -1917,10 +1922,6 @@ void inputGyroSetAutoCalibration(s32 cidx, s32 enabled)
 		static int manualCalibrationLocked[INPUT_MAX_CONTROLLERS] = { 0 };
 
 		if (enabled) {
-				// Reset calibration before starting/restarting auto-calibration
-				ResetContinuousCalibration(gpadMotion[cidx]);
-				sysLogPrintf(LOG_NOTE, "Controller %d: Resetting and enabling auto-calibration.", cidx);
-
 				// Only start calibration if the controller is steady
 				int isSteady = GetAutoCalibrationIsSteady(gpadMotion[cidx]);
 				if (isSteady) {
@@ -1955,7 +1956,7 @@ void inputGyroSetAutoCalibration(s32 cidx, s32 enabled)
 
 				// Log steady state for debugging
 				int isSteady = GetAutoCalibrationIsSteady(gpadMotion[cidx]);
-				sysLogPrintf(LOG_NOTE, "Auto-calibration disabled. Steady state for controller %d: %d", cidx, isSteady);
+				sysLogPrintf(LOG_NOTE, "Auto-calibration steady state for controller %d: %d", cidx, isSteady);
 		}
 }
 
@@ -1979,6 +1980,7 @@ s32 inputGyroGetAutoCalibrationIsSteady(s32 cidx)
 	}
 	return 0;
 }
+
 
 void inputAutoStartGyroCalibrationIfSteady(void)
 {
