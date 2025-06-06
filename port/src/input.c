@@ -21,8 +21,6 @@
 #define SDL_CONTROLLER_TYPE_VIRTUAL SDL_CONTROLLER_TYPE_UNKNOWN
 #endif
 
-#define GamepadMotion_WRAPPER_WITHOUTDLL
-
 #define CONTROLLERDB_FNAME "gamecontrollerdb.txt"
 #define MAX_BIND_STR 256
 
