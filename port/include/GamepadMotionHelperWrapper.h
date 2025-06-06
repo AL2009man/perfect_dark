@@ -15,6 +15,7 @@ void ProcessMotion(GamepadMotionHandle handle, float gyroX, float gyroY, float g
                                 float accelX, float accelY, float accelZ, float deltaTime);
 void Reset(GamepadMotionHandle handle);
 void ResetMotion(GamepadMotionHandle handle);
+void GetFusedAccelerometer(GamepadMotionHandle handle, float* x, float* y, float* z);
 
 // State getters
 void GetCalibratedGyro(GamepadMotionHandle handle, float* x, float* y, float* z);

@@ -347,10 +347,14 @@ void applyGyroSmoothing(f32* deltaX, f32* deltaY, f32* deltaZ, f32 threshold);
 
 // Gyro calibration Management (powered by GamepadMotionHelper)
 void GyroCalibration(s32 cidx, GyroCalibrationOp op, float* out_confidence, int* out_steady);
+void inputUpdateGyroCalibrationOnly(void);
 void inputGyroSetAutoCalibration(s32 cidx, s32 enabled);
 s32 inputGyroGetAutoCalibration(s32 cidx);
 float inputGyroGetAutoCalibrationConfidence(s32 cidx);
 s32 inputGyroGetAutoCalibrationIsSteady(s32 cidx);
+void inputAutoStartGyroCalibrationIfSteady(void);
+void inputGyroSetMinStillnessSamples(s32 cidx, int samples);
+void inputGyroSetMinStillnessCollectionTime(s32 cidx, float seconds);
 
 // call this every frame
 void inputUpdate(void);
