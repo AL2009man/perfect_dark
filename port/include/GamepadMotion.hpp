@@ -262,6 +262,11 @@ public:
 
 	GamepadMotionSettings Settings;
 
+	// Add these methods:
+	void SaveCurrentCalibrationOffset();
+	void RestoreSavedCalibrationOffset();
+	void GetFusedAccelerometer(float& x, float& y, float& z);
+
 private:
 	GamepadMotionHelpers::Vec Gyro;
 	GamepadMotionHelpers::Vec RawAccel;
@@ -271,6 +276,9 @@ private:
 	GamepadMotionHelpers::CalibrationMode CurrentCalibrationMode;
 
 	bool IsCalibrating;
+	// Add storage for saved calibration offset
+	GamepadMotionHelpers::GyroCalibration SavedGyroCalibration;
+
 	void PushSensorSamples(float gyroX, float gyroY, float gyroZ, float accelMagnitude);
 	void GetCalibratedSensor(float& gyroOffsetX, float& gyroOffsetY, float& gyroOffsetZ, float& accelMagnitude);
 };
@@ -1309,4 +1317,20 @@ inline void GamepadMotion::GetCalibratedSensor(float& gyroOffsetX, float& gyroOf
 	gyroOffsetY = GyroCalibration.Y * inverseSamples;
 	gyroOffsetZ = GyroCalibration.Z * inverseSamples;
 	accelMagnitude = GyroCalibration.AccelMagnitude * inverseSamples;
+}
+
+inline void GamepadMotion::SaveCurrentCalibrationOffset()
+{
+	SavedGyroCalibration = GyroCalibration;
+}
+
+inline void GamepadMotion::RestoreSavedCalibrationOffset()
+{
+	GyroCalibration = SavedGyroCalibration;
+}
+
+inline void GamepadMotion::GetFusedAccelerometer(float& x, float& y, float& z)
+{
+	// Fused accelerometer = processed acceleration (gravity-compensated)
+	GetProcessedAcceleration(x, y, z);
 }
