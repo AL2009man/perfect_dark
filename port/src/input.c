@@ -82,7 +82,7 @@ static SDL_GameController *pads[INPUT_MAX_CONTROLLERS];
 	.gyroAimInvertY = 0, \
 	.gyroMinThreshold = 0.07f, \
 	.gyroSmoothing = 0.50f, \
-    .gyroAutoCalibration = 1 \
+	.gyroAutoCalibration = 0, \
 }
 
 static struct controllercfg {
