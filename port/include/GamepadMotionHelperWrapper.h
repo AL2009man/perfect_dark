@@ -4,7 +4,9 @@
 extern "C" {
 #endif
 
-typedef void* GamepadMotionHandle;
+// Use the actual C++ class pointer for the handle
+typedef struct GamepadMotion GamepadMotion;
+typedef GamepadMotion* GamepadMotionHandle;
 
 // Creation and destruction
 GamepadMotionHandle CreateGamepadMotion(void);
@@ -12,10 +14,9 @@ void DeleteGamepadMotion(GamepadMotionHandle handle);
 
 // Core motion processing
 void ProcessMotion(GamepadMotionHandle handle, float gyroX, float gyroY, float gyroZ,
-                                float accelX, float accelY, float accelZ, float deltaTime);
-void Reset(GamepadMotionHandle handle);
+                   float accelX, float accelY, float accelZ, float deltaTime);
+void ResetGamepadMotion(GamepadMotionHandle handle);
 void ResetMotion(GamepadMotionHandle handle);
-void GetFusedAccelerometer(GamepadMotionHandle handle, float* x, float* y, float* z);
 
 // State getters
 void GetCalibratedGyro(GamepadMotionHandle handle, float* x, float* y, float* z);
@@ -24,6 +25,7 @@ void GetProcessedAcceleration(GamepadMotionHandle handle, float* x, float* y, fl
 void GetOrientation(GamepadMotionHandle handle, float* w, float* x, float* y, float* z);
 void GetPlayerSpaceGyro(GamepadMotionHandle handle, float* x, float* y, float yawRelaxFactor);
 void GetWorldSpaceGyro(GamepadMotionHandle handle, float* x, float* y, float sideReductionThreshold);
+void GetRawGyro(GamepadMotionHandle handle, float* x, float* y, float* z);
 
 // Calibration
 void StartContinuousCalibration(GamepadMotionHandle handle);
@@ -31,8 +33,6 @@ void PauseContinuousCalibration(GamepadMotionHandle handle);
 void ResetContinuousCalibration(GamepadMotionHandle handle);
 void GetCalibrationOffset(GamepadMotionHandle handle, float* xOffset, float* yOffset, float* zOffset);
 void SetCalibrationOffset(GamepadMotionHandle handle, float xOffset, float yOffset, float zOffset, int weight);
-void SaveCurrentCalibrationOffset(GamepadMotionHandle handle);
-void RestoreSavedCalibrationOffset(GamepadMotionHandle handle);
 float GetAutoCalibrationConfidence(GamepadMotionHandle handle);
 void SetAutoCalibrationConfidence(GamepadMotionHandle handle, float newConfidence);
 int GetAutoCalibrationIsSteady(GamepadMotionHandle handle);

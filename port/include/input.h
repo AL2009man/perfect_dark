@@ -145,11 +145,10 @@ enum gyroaimmode {
 };
 
 typedef enum {
-		GYRO_CALIB_START,
-		GYRO_CALIB_FINISH,
-		GYRO_CALIB_RESET,
-		GYRO_CALIB_QUERY,
-		GYRO_CALIB_UPDATE
+	GYRO_CALIB_START,
+	GYRO_CALIB_FINISH,
+	GYRO_CALIB_RESET,
+	GYRO_CALIB_QUERY
 } GyroCalibrationOp;
 
 // returns bitmask of connected controllers or -1 if failed
