@@ -148,8 +148,16 @@ typedef enum {
 	GYRO_CALIB_START,
 	GYRO_CALIB_FINISH,
 	GYRO_CALIB_RESET,
-	GYRO_CALIB_QUERY
+	GYRO_CALIB_QUERY,
+	GYRO_CALIB_AUTO
 } GyroCalibrationOp;
+
+typedef enum {
+		CALIBRATIONMODE_MANUAL = 0,
+		CALIBRATIONMODE_STILLNESS = 1,
+		CALIBRATIONMODE_SENSORFUSION = 2
+} CalibrationMode;
+
 
 // returns bitmask of connected controllers or -1 if failed
 s32 inputInit(void);
@@ -344,16 +352,14 @@ f32 inputGetGyroSmoothing(s32 cidx);
 void inputSetGyroSmoothing(s32 cidx, f32 smoothing);
 void applyGyroSmoothing(f32* deltaX, f32* deltaY, f32* deltaZ, f32 threshold);
 
-// Gyro calibration Management (powered by GamepadMotionHelper)
-void GyroCalibration(s32 cidx, GyroCalibrationOp op, float* out_confidence, int* out_steady);
-void inputUpdateGyroCalibrationOnly(void);
+// Gyro auto-calibration management
+void inputGyroCalibration(s32 cidx, GyroCalibrationOp op, float* out_confidence, int* out_steady);
 void inputGyroSetAutoCalibration(s32 cidx, s32 enabled);
 s32 inputGyroGetAutoCalibration(s32 cidx);
 float inputGyroGetAutoCalibrationConfidence(s32 cidx);
 s32 inputGyroGetAutoCalibrationIsSteady(s32 cidx);
 void inputAutoStartGyroCalibrationIfSteady(void);
-void inputGyroSetMinStillnessSamples(s32 cidx, int samples);
-void inputGyroSetMinStillnessCollectionTime(s32 cidx, float seconds);
+void inputUpdateGyroManualCalibration(void);
 
 // call this every frame
 void inputUpdate(void);
@@ -392,5 +398,7 @@ const char *inputGetClipboard(void);
 
 // returns keymod values
 u32 inputGetKeyModState(void);
+
+
 
 #endif

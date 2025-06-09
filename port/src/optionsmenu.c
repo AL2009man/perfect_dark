@@ -873,7 +873,7 @@ struct menuitem g_ExtendedGyroMenuItems[] = {
 				MENUITEMTYPE_CHECKBOX,
 				0,
 				MENUITEMFLAG_LITERAL_TEXT,
-				(uintptr_t)"Gyro Auto-Calibration",
+				(uintptr_t)"Auto-Calibrate while Stationary",
 				0,
 				menuhandlerGyroAutoCalibration,
 		},
