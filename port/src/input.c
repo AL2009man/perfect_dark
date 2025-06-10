@@ -831,6 +831,18 @@ static int inputIsNintendoSwitchController(SDL_GameController *controller) {
     return 0;
 }
 
+// Public accessor for switch controller detection
+int inputControllerIsNintendoSwitch(int cidx) {
+    if (cidx < 0 || cidx >= INPUT_MAX_CONTROLLERS) {
+        return 0; // Invalid controller index
+    }
+    if (pads[cidx]) { // pads is the static array of SDL_GameController* in this file
+        // Call the internal static helper function
+        return inputIsNintendoSwitchController(pads[cidx]);
+    }
+    return 0; // No controller at this index
+}
+
 static inline s32 inputBindPressed(const s32 idx, const u32 ck)
 {
     u32 real_ck = ck;

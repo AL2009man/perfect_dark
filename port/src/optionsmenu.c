@@ -1752,9 +1752,30 @@ static MenuItemHandlerResult menuhandlerDoBind(s32 operation, struct menuitem *i
 
 static const char *menutextBind(struct menuitem *item)
 {
-	return g_PlayerExtCfg[g_ExtMenuPlayer].extcontrols ?
-		menuBinds[item - g_ExtendedBindsMenuItems].name :
-		menuBinds[item - g_ExtendedBindsMenuItems].n64name;
+    int idx = item - g_ExtendedBindsMenuItems;
+    u32 ck = menuBinds[idx].ck;
+
+    // Use accessor for per-controller layout
+    int layout = inputGetJapaneseButtonLayout(g_ExtMenuPlayer);
+    if (layout == JAPANESE_LAYOUT_AUTO)
+        layout = inputControllerIsNintendoSwitch(g_ExtMenuPlayer) ? JAPANESE_LAYOUT_ON : JAPANESE_LAYOUT_OFF;
+
+    if (ck == CK_ACCEPT) {
+        if (layout == JAPANESE_LAYOUT_ON)
+            return "UI Accept [JPN LAYOUT - B]\n";
+        else
+            return "UI Accept [+]\n";
+    }
+    if (ck == CK_CANCEL) {
+        if (layout == JAPANESE_LAYOUT_ON)
+            return "UI Cancel [JPN LAYOUT - A]\n";
+        else
+            return "UI Cancel [+]\n";
+    }
+
+    return g_PlayerExtCfg[g_ExtMenuPlayer].extcontrols ?
+        menuBinds[idx].name :
+        menuBinds[idx].n64name;
 }
 
 static MenuItemHandlerResult menuhandlerBind(s32 operation, struct menuitem *item, union handlerdata *data)

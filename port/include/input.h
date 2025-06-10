@@ -196,6 +196,9 @@ void inputSetJapaneseButtonLayout(int cidx, s32 enabled);
 // Remaps UI button for a controller (handles Japanese layout)
 u32 inputRemapUIButton(int cidx, u32 button);
 
+// Returns 1 if the given controller index is a Nintendo Switch controller, 0 otherwise
+int inputControllerIsNintendoSwitch(int cidx);
+
 // bind virtkey vk to n64 pad #idx's button/axis ck as represented by its contkey value
 // if bind is -1, picks a bind slot automatically
 void inputKeyBind(s32 idx, u32 ck, s32 bind, u32 vk);
