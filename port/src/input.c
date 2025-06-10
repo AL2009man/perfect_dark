@@ -79,7 +79,7 @@ static SDL_GameController *pads[INPUT_MAX_CONTROLLERS];
 	.gyroAimInvertX = 0, \
 	.gyroAimInvertY = 0, \
 	.gyroMinThreshold = 0.07f, \
-	.gyroSmoothing = 0.50f, \
+	.gyroSmoothing = 0.15f, \
 	.gyroAutoCalibration = 0, \
 }
 
@@ -1570,7 +1570,6 @@ void applyGyroAxisMapping(s32 cidx, float gyroData[3], float accelData[3], f32* 
 		return;
 	}
 
-	// Always get calibrated gyro values based on raw sensor data (not camera/game orientation)
 	float calibratedGyro[3] = {0.f};
 	GetCalibratedGyro(gpadMotion[cidx], &calibratedGyro[0], &calibratedGyro[1], &calibratedGyro[2]);
 
@@ -1591,7 +1590,6 @@ void applyGyroAxisMapping(s32 cidx, float gyroData[3], float accelData[3], f32* 
 		*deltaZ = 0.f;
 		break;
 	case GYRO_AXIS_PLAYER: {
-		// Use only raw sensor data for calibration, not camera/game orientation
 		float x = 0.f, y = 0.f;
 		GetPlayerSpaceGyro(gpadMotion[cidx], &x, &y, 1.41f);
 		*deltaX = -y;
@@ -1600,7 +1598,6 @@ void applyGyroAxisMapping(s32 cidx, float gyroData[3], float accelData[3], f32* 
 		break;
 	}
 	case GYRO_AXIS_WORLD: {
-		// Use only raw sensor data for calibration, not camera/game orientation
 		float x = 0.f, y = 0.f;
 		GetWorldSpaceGyro(gpadMotion[cidx], &x, &y, 0.125f);
 		*deltaX = -y;
@@ -1868,20 +1865,21 @@ f32 inputGetGyroMinThreshold(s32 cidx)
 
 void inputSetGyroMinThreshold(s32 cidx, f32 threshold)
 {
+	if (threshold < 0.f) threshold = 0.f;
+	if (threshold > 1.f) threshold = 1.f;
+
+	if (threshold > 0.f && threshold < 0.01f) threshold = 0.01f;
 	padsCfg[cidx].gyroMinThreshold = threshold;
 }
 
-void applyGyroThreshold(f32* deltaX, f32* deltaY, f32* deltaZ, f32 threshold)
+void applyGyroThreshold(f32* dx, f32* dy, f32* dz, f32 threshold)
 {
-	if (!deltaX || !deltaY || !deltaZ) return;
-
-	// Fine-tune deadzone values, but only apply if threshold is > 0
-	const f32 baseDeadzone = threshold > 0.f ? fmaxf(threshold * 0.75f, 0.04f) : 0.f;
-
-	// Apply deadzone thresholds per axis
-	if (fabsf(*deltaX) < baseDeadzone) *deltaX = 0.f;
-	if (fabsf(*deltaY) < baseDeadzone) *deltaY = 0.f;
-	if (fabsf(*deltaZ) < baseDeadzone) *deltaZ = 0.f;
+	if (threshold > 0.f && dx && dy && dz) {
+		f32 mag = sqrtf((*dx) * (*dx) + (*dy) * (*dy) + (*dz) * (*dz));
+		if (mag < threshold) {
+			*dx = *dy = *dz = 0.f;
+		}
+	}
 }
 
 f32 inputGetGyroSmoothing(s32 cidx)
@@ -1891,6 +1889,8 @@ f32 inputGetGyroSmoothing(s32 cidx)
 
 void inputSetGyroSmoothing(s32 cidx, f32 smoothing)
 {
+	if (smoothing < 0.0f) smoothing = 0.0f;
+	if (smoothing > 1.0f) smoothing = 1.0f;
 	padsCfg[cidx].gyroSmoothing = smoothing;
 }
 
@@ -1898,23 +1898,26 @@ void applyGyroSmoothing(f32* deltaX, f32* deltaY, f32* deltaZ, f32 smoothing, s3
 {
 	if (!deltaX || !deltaY || !deltaZ) return;
 
-	// Clamp smoothing factor to [0.0, 0.99] (0 = no smoothing, 0.99 = heavy smoothing, 1.0 would freeze output)
-	smoothing = fmaxf(0.0f, fminf(smoothing, 0.99f));
+	f32 smoothFactor = 0.0f;
+	if (smoothing >= 1.0f) {
+		smoothFactor = 0.99f;
+	} else if (smoothing >= 0.01f) {
+		smoothFactor = 0.01f + (smoothing - 0.01f) * (0.98f / 0.99f);
+	}
 
 	static f32 smoothedDeltaX[INPUT_MAX_CONTROLLERS] = { 0.0f };
 	static f32 smoothedDeltaY[INPUT_MAX_CONTROLLERS] = { 0.0f };
 	static f32 smoothedDeltaZ[INPUT_MAX_CONTROLLERS] = { 0.0f };
 
-	if (smoothing > 0.0f) {
-		smoothedDeltaX[cidx] = smoothedDeltaX[cidx] * smoothing + (*deltaX) * (1.0f - smoothing);
-		smoothedDeltaY[cidx] = smoothedDeltaY[cidx] * smoothing + (*deltaY) * (1.0f - smoothing);
-		smoothedDeltaZ[cidx] = smoothedDeltaZ[cidx] * smoothing + (*deltaZ) * (1.0f - smoothing);
+	if (smoothFactor > 0.0f) {
+		smoothedDeltaX[cidx] = smoothedDeltaX[cidx] * smoothFactor + (*deltaX) * (1.0f - smoothFactor);
+		smoothedDeltaY[cidx] = smoothedDeltaY[cidx] * smoothFactor + (*deltaY) * (1.0f - smoothFactor);
+		smoothedDeltaZ[cidx] = smoothedDeltaZ[cidx] * smoothFactor + (*deltaZ) * (1.0f - smoothFactor);
 
 		*deltaX = smoothedDeltaX[cidx];
 		*deltaY = smoothedDeltaY[cidx];
 		*deltaZ = smoothedDeltaZ[cidx];
 	}
-	// If smoothing is 0, use raw deltas (no smoothing)
 }
 
 void inputGyroCalibration(s32 cidx, GyroCalibrationOp op, float* out_confidence, int* out_steady)
