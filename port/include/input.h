@@ -127,14 +127,6 @@ enum japaneseButtonLayout {
 	JAPANESE_LAYOUT_ON = 2     // use Japanese button layout
 };
 
-// --- Japanese Button Layout Support ---
-// Returns the Japanese button layout setting for a controller
-s32 inputGetJapaneseButtonLayout(int cidx);
-// Sets Japanese button layout for a controller (0 = auto, 1 = standard, 2 = Japanese)
-void inputSetJapaneseButtonLayout(int cidx, s32 enabled);
-// Remaps UI button for a controller (handles Japanese layout)
-u32 inputRemapUIButton(int cidx, u32 button);
-
 // returns bitmask of connected controllers or -1 if failed
 s32 inputInit(void);
 
@@ -194,6 +186,15 @@ s32 inputKeyJustPressed(u32 vk);
 
 // idx is controller index, contbtn is one of the CONT_ constants
 s32 inputButtonPressed(s32 idx, u32 contbtn);
+
+// Returns the Japanese button layout setting for a controller
+s32 inputGetJapaneseButtonLayout(int cidx);
+
+// Sets Japanese button layout for a controller (0 = auto, 1 = standard, 2 = japanese)
+void inputSetJapaneseButtonLayout(int cidx, s32 enabled);
+
+// Remaps UI button for a controller (handles Japanese layout)
+u32 inputRemapUIButton(int cidx, u32 button);
 
 // bind virtkey vk to n64 pad #idx's button/axis ck as represented by its contkey value
 // if bind is -1, picks a bind slot automatically
