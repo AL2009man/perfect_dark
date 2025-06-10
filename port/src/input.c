@@ -11,6 +11,7 @@
 #include "utils.h"
 #include "system.h"
 #include "fs.h"
+#include "constants.h"
 
 #if !SDL_VERSION_ATLEAST(2, 0, 14)
 // this was added in 2.0.14
@@ -58,6 +59,7 @@ static struct controllercfg {
 	s32 swapSticks;
 	s32 deviceIndex;
 	s32 cancelCButtons;
+	s32 japaneseButtonLayout; // 0 = auto, 1 = standard, 2 = Japanese
 } padsCfg[INPUT_MAX_CONTROLLERS] = {
 	CONTROLLERCFG_DEFAULT,
 	CONTROLLERCFG_DEFAULT,
@@ -67,6 +69,7 @@ static struct controllercfg {
 
 static u32 binds[MAXCONTROLLERS][CK_TOTAL_COUNT][INPUT_MAX_BINDS];
 static char bindStrs[MAXCONTROLLERS][CK_TOTAL_COUNT][MAX_BIND_STR];
+static int inputIsSwitchController(SDL_GameController *controller);
 
 static s32 fakeControllers = 0;
 static s32 firstController = 0;
@@ -347,6 +350,43 @@ static inline void inputInitController(const s32 cidx, const s32 jidx)
 		SDL_JoystickGetGUIDString(guid, guidStr, sizeof(guidStr));
 		sysLogPrintf(LOG_NOTE, "input: GUID for controller %d: %s", jidx, guidStr);
 	}
+
+	// Set default key binds for this controller
+    inputSetDefaultKeyBinds(cidx, 0);
+
+    // Determine Japanese layout
+    int use_japanese = padsCfg[cidx].japaneseButtonLayout;
+    if (use_japanese < 0 && pads[cidx]) {
+        use_japanese = inputIsSwitchController(pads[cidx]);
+    }
+
+    // Set default UI accept/cancel binds
+    // These always bind CK_ACCEPT and CK_CANCEL to the UI actions, regardless of layout
+    inputKeyBind(cidx, CK_ACCEPT, -1, BUTTON_UI_ACCEPT);
+    inputKeyBind(cidx, CK_CANCEL, -1, BUTTON_UI_CANCEL);
+    inputKeyBind(cidx, CK_A, -1, BUTTON_UI_ACCEPT);
+    inputKeyBind(cidx, CK_B, -1, BUTTON_UI_CANCEL);
+}
+
+// Helper to remap UI buttons for Japanese layout
+static int inputIsJapaneseLayoutActive(int cidx) {
+    if (padsCfg[cidx].japaneseButtonLayout == JAPANESE_LAYOUT_ON) {
+        return 1;
+    }
+    if (padsCfg[cidx].japaneseButtonLayout == JAPANESE_LAYOUT_AUTO) {
+        if (pads[cidx] && inputIsSwitchController(pads[cidx])) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+u32 inputRemapUIButton(int cidx, u32 button) {
+    if (inputIsJapaneseLayoutActive(cidx)) {
+        if (button == BUTTON_UI_ACCEPT) return BUTTON_UI_CANCEL;
+        if (button == BUTTON_UI_CANCEL) return BUTTON_UI_ACCEPT;
+    }
+    return button;
 }
 
 static inline void inputCloseController(const s32 cidx)
@@ -712,11 +752,12 @@ s32 inputInit(void)
 
 	if (useNintendoLayout) {
 		// use the Nintendo-style face button layout
-        // this is the default in SDL 2.0.6 and later
+    // this is the default in SDL 2.0.6 and later
 		SDL_SetHint(SDL_HINT_GAMECONTROLLER_USE_BUTTON_LABELS, "1");
 	} else {
 #if SDL_VERSION_ATLEAST(2, 0, 6)
 		// use the Xbox-style face button layout
+		// this is set by default, but we set it explicitly here to avoid confusion
 		SDL_SetHint(SDL_HINT_GAMECONTROLLER_USE_BUTTON_LABELS, "0");
 #endif
 	}
@@ -760,16 +801,41 @@ s32 inputInit(void)
 	return connectedMask;
 }
 
+static int inputIsSwitchController(SDL_GameController *controller) {
+#if SDL_VERSION_ATLEAST(2, 0, 12)
+    SDL_GameControllerType type = SDL_GameControllerGetType(controller);
+    if (type == SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_PRO
+#if SDL_VERSION_ATLEAST(2, 0, 14)
+        || type == SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_JOYCON_LEFT
+        || type == SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_JOYCON_RIGHT
+        || type == SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_JOYCON_PAIR
+#endif
+    ) {
+        return 1;
+    }
+#endif
+    SDL_Joystick *joy = SDL_GameControllerGetJoystick(controller);
+    if (joy && SDL_JoystickGetVendor(joy) == 0x057e) { // Nintendo
+        return 1;
+    }
+    return 0;
+}
+
 static inline s32 inputBindPressed(const s32 idx, const u32 ck)
 {
-	for (s32 i = 0; i < INPUT_MAX_BINDS; ++i) {
-		if (binds[idx][ck][i]) {
-			if (inputKeyPressed(binds[idx][ck][i])) {
-				return 1;
-			}
-		}
-	}
-	return 0;
+    u32 real_ck = ck;
+    if (inputIsJapaneseLayoutActive(idx)) {
+        if (ck == CK_A) real_ck = CK_B;
+        else if (ck == CK_B) real_ck = CK_A;
+    }
+    for (s32 i = 0; i < INPUT_MAX_BINDS; ++i) {
+        if (binds[idx][real_ck][i]) {
+            if (inputKeyPressed(binds[idx][real_ck][i])) {
+                return 1;
+            }
+        }
+    }
+    return 0;
 }
 
 static inline s32 inputAxisScale(s32 x, const s32 deadzone, const f32 scale)
@@ -1227,6 +1293,17 @@ s32 inputButtonPressed(s32 idx, u32 contbtn)
 	return inputBindPressed(idx, inputContToContKey(contbtn));
 }
 
+
+// Getter for Japanese button layout config
+s32 inputGetJapaneseButtonLayout(int cidx) {
+    return padsCfg[cidx].japaneseButtonLayout;
+}
+
+// Setter for Japanese button layout config
+void inputSetJapaneseButtonLayout(int cidx, s32 enabled) {
+    padsCfg[cidx].japaneseButtonLayout = enabled;
+}
+
 void inputLockMouse(s32 lock)
 {
 	mouseLocked = !!lock;
@@ -1517,15 +1594,15 @@ u32 inputGetKeyModState(void)
 
 PD_CONSTRUCTOR static void inputConfigInit(void)
 {
-	configRegisterInt("Input.MouseEnabled", &mouseEnabled, 0, 1);
-	configRegisterInt("Input.MouseLockMode", &mouseLockMode, MLOCK_OFF, MLOCK_AUTO);
-	configRegisterFloat("Input.MouseSpeedX", &mouseSensX, -30.f, 30.f);
-	configRegisterFloat("Input.MouseSpeedY", &mouseSensY, -30.f, 30.f);
-	configRegisterInt("Input.FakeGamepads", &fakeControllers, 0, 4);
-	configRegisterInt("Input.FirstGamepadNum", &firstController, 0, 3);
-	configRegisterInt("Input.UseHIDAPI", &useHIDAPI, 0, 1);
-	configRegisterInt("Input.UseRawInput", &useRawInput, 0, 1);
-	configRegisterInt("Input.UseNintendoLayout", &useNintendoLayout, 0, 1);
+    configRegisterInt("Input.MouseEnabled", &mouseEnabled, 0, 1);
+    configRegisterInt("Input.MouseLockMode", &mouseLockMode, MLOCK_OFF, MLOCK_AUTO);
+    configRegisterFloat("Input.MouseSpeedX", &mouseSensX, -30.f, 30.f);
+    configRegisterFloat("Input.MouseSpeedY", &mouseSensY, -30.f, 30.f);
+    configRegisterInt("Input.FakeGamepads", &fakeControllers, 0, 4);
+    configRegisterInt("Input.FirstGamepadNum", &firstController, 0, 3);
+    configRegisterInt("Input.UseHIDAPI", &useHIDAPI, 0, 1);
+    configRegisterInt("Input.UseRawInput", &useRawInput, 0, 1);
+    configRegisterInt("Input.UseNintendoLayout", &useNintendoLayout, 0, 1);
 
 	char secname[] = "Input.Player1.Binds";
 	char keyname[256] = { 0 };
@@ -1545,6 +1622,7 @@ PD_CONSTRUCTOR static void inputConfigInit(void)
 		configRegisterInt(strFmt("%s.CancelCButtons", secname), &padsCfg[c].cancelCButtons, 0, 1);
 		configRegisterInt(strFmt("%s.SwapSticks", secname), &padsCfg[c].swapSticks, 0, 1);
 		configRegisterInt(strFmt("%s.ControllerIndex", secname), &padsCfg[c].deviceIndex, -1, 0x7FFFFFFF);
+		configRegisterInt(strFmt("%s.JapaneseButtonLayout", secname), &padsCfg[c].japaneseButtonLayout, 0, 2);
 		secname[13] = '.';
 		for (u32 ck = 0; ck < CK_TOTAL_COUNT; ++ck) {
 			snprintf(keyname, sizeof(keyname), "%s.%s", secname, inputGetContKeyName(ck));

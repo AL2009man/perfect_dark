@@ -121,6 +121,20 @@ enum mouselockmode {
 	MLOCK_AUTO = 2
 };
 
+enum japaneseButtonLayout {
+	JAPANESE_LAYOUT_AUTO = 0, // auto-detect based on controller type
+	JAPANESE_LAYOUT_OFF = 1,   // use standard button layout
+	JAPANESE_LAYOUT_ON = 2     // use Japanese button layout
+};
+
+// --- Japanese Button Layout Support ---
+// Returns the Japanese button layout setting for a controller
+s32 inputGetJapaneseButtonLayout(int cidx);
+// Sets Japanese button layout for a controller (0 = auto, 1 = standard, 2 = Japanese)
+void inputSetJapaneseButtonLayout(int cidx, s32 enabled);
+// Remaps UI button for a controller (handles Japanese layout)
+u32 inputRemapUIButton(int cidx, u32 button);
+
 // returns bitmask of connected controllers or -1 if failed
 s32 inputInit(void);
 
