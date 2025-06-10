@@ -1089,6 +1089,7 @@ static inline void inputUpdateGyro(s32 cidx)
 	applyGyroAimMode(cidx, &deltaX, &deltaY, &deltaZ);
 	applyGyroModifier(&deltaX, &deltaY, &deltaZ, inputGetGyroModifier(cidx), cidx);
 	applyGyroThreshold(&deltaX, &deltaY, &deltaZ, inputGetGyroMinThreshold(cidx));
+	applyGyroSmoothing(&deltaX, &deltaY, &deltaZ, inputGetGyroSmoothing(cidx), cidx);
 
 	// Store processed gyro deltas
 	gyroDeltaYaw[cidx] = deltaX;
@@ -1883,6 +1884,39 @@ void applyGyroThreshold(f32* deltaX, f32* deltaY, f32* deltaZ, f32 threshold)
 	if (fabsf(*deltaZ) < baseDeadzone) *deltaZ = 0.f;
 }
 
+f32 inputGetGyroSmoothing(s32 cidx)
+{
+	return padsCfg[cidx].gyroSmoothing;
+}
+
+void inputSetGyroSmoothing(s32 cidx, f32 smoothing)
+{
+	padsCfg[cidx].gyroSmoothing = smoothing;
+}
+
+void applyGyroSmoothing(f32* deltaX, f32* deltaY, f32* deltaZ, f32 smoothing, s32 cidx)
+{
+	if (!deltaX || !deltaY || !deltaZ) return;
+
+	// Clamp smoothing factor to [0.0, 0.99] (0 = no smoothing, 0.99 = heavy smoothing, 1.0 would freeze output)
+	smoothing = fmaxf(0.0f, fminf(smoothing, 0.99f));
+
+	static f32 smoothedDeltaX[INPUT_MAX_CONTROLLERS] = { 0.0f };
+	static f32 smoothedDeltaY[INPUT_MAX_CONTROLLERS] = { 0.0f };
+	static f32 smoothedDeltaZ[INPUT_MAX_CONTROLLERS] = { 0.0f };
+
+	if (smoothing > 0.0f) {
+		smoothedDeltaX[cidx] = smoothedDeltaX[cidx] * smoothing + (*deltaX) * (1.0f - smoothing);
+		smoothedDeltaY[cidx] = smoothedDeltaY[cidx] * smoothing + (*deltaY) * (1.0f - smoothing);
+		smoothedDeltaZ[cidx] = smoothedDeltaZ[cidx] * smoothing + (*deltaZ) * (1.0f - smoothing);
+
+		*deltaX = smoothedDeltaX[cidx];
+		*deltaY = smoothedDeltaY[cidx];
+		*deltaZ = smoothedDeltaZ[cidx];
+	}
+	// If smoothing is 0, use raw deltas (no smoothing)
+}
+
 void inputGyroCalibration(s32 cidx, GyroCalibrationOp op, float* out_confidence, int* out_steady)
 {
 	if (!gpadMotion[cidx] && op != GYRO_CALIB_RESET) {
@@ -1947,6 +1981,9 @@ void inputGyroCalibration(s32 cidx, GyroCalibrationOp op, float* out_confidence,
 		if (!padsCfg[cidx].gyroAutoCalibration) {
 			SetCalibrationMode(gpadMotion[cidx], CALIBRATIONMODE_MANUAL);
 			PauseContinuousCalibration(gpadMotion[cidx]);
+			if (gpadMotion[cidx]) { 
+				ResetContinuousCalibration(gpadMotion[cidx]);
+			}
 			if (isCalibrating[cidx]) {
 				gyroJustFinishedCalibrating[cidx] = true;
 			}
@@ -1986,9 +2023,8 @@ void inputUpdateGyroManualCalibration(void)
 
 		// Do not allow manual calibration if auto-calibration is active and controller is steady
 		if (padsCfg[cidx].gyroAutoCalibration && wasSteady[cidx]) {
-			if (manualCalibrating[cidx]) { // If manual calibration was ongoing, stop it.
+			if (manualCalibrating[cidx]) {
 				manualCalibrating[cidx] = 0;
-				// Optionally, log that auto-calib is overriding manual trigger
 			}
 			continue;
 		}
@@ -1999,18 +2035,14 @@ void inputUpdateGyroManualCalibration(void)
 			manualCalibrating[cidx] = 1;
 			manualCalibStartTime[cidx] = SDL_GetTicks();
 			inputGyroCalibration(cidx, GYRO_CALIB_START, NULL, NULL);
-			gyroJustFinishedCalibrating[cidx] = true; // Manual calibration started, ignore next delta
+			gyroJustFinishedCalibrating[cidx] = true;
 		} else if (!pressed && manualCalibrating[cidx]) {
 			Uint32 elapsed = SDL_GetTicks() - manualCalibStartTime[cidx];
-			// Require a minimum hold time for manual calibration to complete, e.g., 500ms.
 			if (elapsed >= 500) {
 				manualCalibrating[cidx] = 0;
 				inputGyroCalibration(cidx, GYRO_CALIB_FINISH, NULL, NULL);
-				gyroJustFinishedCalibrating[cidx] = true; // Manual calibration finished
+				gyroJustFinishedCalibrating[cidx] = true; 
 			}
-			// If button released too early, calibration doesn't "finish" but stops.
-			// The CALIBRATIONMODE_MANUAL remains, and StartContinuousCalibration was called.
-			// It will continue to calibrate based on that.
 		}
 	}
 }
@@ -2045,46 +2077,6 @@ void inputGyroSetAutoCalibration(s32 cidx, s32 enabled)
 			PauseContinuousCalibration(gpadMotion[cidx]);
 		}
 	}
-}
-
-f32 inputGetGyroSmoothing(s32 cidx)
-{
-		return padsCfg[cidx].gyroSmoothing;
-}
-
-void inputSetGyroSmoothing(s32 cidx, f32 smoothing)
-{
-		padsCfg[cidx].gyroSmoothing = smoothing;
-}
-
-void applyGyroSmoothing(f32* deltaX, f32* deltaY, f32* deltaZ, f32 threshold)
-{
-		if (!deltaX || !deltaY || !deltaZ) return;
-
-		// Smoothing factor should be < 1 to blend the past state (e.g., 0.85f)
-		const f32 smoothingFactor = 0.85f;
-
-		// Compute the overall magnitude of the input vector
-		f32 magnitude = sqrtf((*deltaX) * (*deltaX) + (*deltaY) * (*deltaY) + (*deltaZ) * (*deltaZ));
-		static f32 prevDeltaX = 0.f, prevDeltaY = 0.f, prevDeltaZ = 0.f;
-
-		if (magnitude < threshold) {
-				// For small inputs, blend the current input with the previous smoothed state
-				*deltaX = (*deltaX * smoothingFactor) + (prevDeltaX * (1.f - smoothingFactor));
-				*deltaY = (*deltaY * smoothingFactor) + (prevDeltaY * (1.f - smoothingFactor));
-				*deltaZ = (*deltaZ * smoothingFactor) + (prevDeltaZ * (1.f - smoothingFactor));
-		}
-		else {
-				// For larger inputs, pass the input directly with a decayed previous state
-				*deltaX = *deltaX + (prevDeltaX * (1.f - smoothingFactor));
-				*deltaY = *deltaY + (prevDeltaY * (1.f - smoothingFactor));
-				*deltaZ = *deltaZ + (prevDeltaZ * (1.f - smoothingFactor));
-		}
-
-		// Update previous state
-		prevDeltaX = *deltaX;
-		prevDeltaY = *deltaY;
-		prevDeltaZ = *deltaZ;
 }
 
 const char *inputGetContKeyName(u32 ck)
