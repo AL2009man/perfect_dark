@@ -69,7 +69,7 @@ static struct controllercfg {
 
 static u32 binds[MAXCONTROLLERS][CK_TOTAL_COUNT][INPUT_MAX_BINDS];
 static char bindStrs[MAXCONTROLLERS][CK_TOTAL_COUNT][MAX_BIND_STR];
-static int inputIsSwitchController(SDL_GameController *controller);
+static int inputIsNintendoSwitchController(SDL_GameController *controller);
 
 static s32 fakeControllers = 0;
 static s32 firstController = 0;
@@ -357,7 +357,7 @@ static inline void inputInitController(const s32 cidx, const s32 jidx)
     // Determine Japanese layout
     int use_japanese = padsCfg[cidx].japaneseButtonLayout;
     if (use_japanese < 0 && pads[cidx]) {
-        use_japanese = inputIsSwitchController(pads[cidx]);
+        use_japanese = inputIsNintendoSwitchController(pads[cidx]);
     }
 
     // Set default UI accept/cancel binds
@@ -374,7 +374,7 @@ static int inputIsJapaneseLayoutActive(int cidx) {
         return 1;
     }
     if (padsCfg[cidx].japaneseButtonLayout == JAPANESE_LAYOUT_AUTO) {
-        if (pads[cidx] && inputIsSwitchController(pads[cidx])) {
+        if (pads[cidx] && inputIsNintendoSwitchController(pads[cidx])) {
             return 1;
         }
     }
@@ -801,7 +801,7 @@ s32 inputInit(void)
 	return connectedMask;
 }
 
-static int inputIsSwitchController(SDL_GameController *controller) {
+static int inputIsNintendoSwitchController(SDL_GameController *controller) {
 #if SDL_VERSION_ATLEAST(2, 0, 12)
     SDL_GameControllerType type = SDL_GameControllerGetType(controller);
     if (type == SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_PRO
