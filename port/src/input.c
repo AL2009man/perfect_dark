@@ -805,30 +805,30 @@ s32 inputInit(void)
 // This function checks if the given SDL_GameController is a Nintendo Switch controller
 // note: will fallback to joystick vendor ID if SDL_VERSION_ATLEAST is not defined.
 static int inputIsNintendoSwitchController(SDL_GameController *controller) {
-#if defined(SDL_VERSION_ATLEAST) && SDL_VERSION_ATLEAST(2, 0, 12)
-    SDL_GameControllerType type = SDL_GameControllerGetType(controller);
-    if (type == SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_PRO
-#if defined(SDL_VERSION_ATLEAST) && SDL_VERSION_ATLEAST(2, 0, 14)
-        || type == SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_JOYCON_LEFT
-        || type == SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_JOYCON_RIGHT
-        || type == SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_JOYCON_PAIR
-#endif
-    ) {
-        return 1;
-    }
-#endif
+#if SDL_VERSION_ATLEAST(2, 0, 12)
+	SDL_GameControllerType type = SDL_GameControllerGetType(controller);
+	if (type == SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_PRO
+#if SDL_VERSION_ATLEAST(2, 0, 14)
+		|| type == SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_JOYCON_LEFT
+		|| type == SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_JOYCON_RIGHT
+		|| type == SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_JOYCON_PAIR
+#endif // SDL_VERSION_ATLEAST(2, 0, 14)
+	) {
+		return 1;
+	}
+#endif // SDL_VERSION_ATLEAST(2, 0, 12)
 #ifdef SDL_JOYSTICK_VENDOR_NINTENDO
-    SDL_Joystick *joy = SDL_GameControllerGetJoystick(controller);
-    if (joy && SDL_JoystickGetVendor(joy) == SDL_JOYSTICK_VENDOR_NINTENDO) {
-        return 1;
-    }
+	SDL_Joystick *joy = SDL_GameControllerGetJoystick(controller);
+	if (joy && SDL_JoystickGetVendor(joy) == SDL_JOYSTICK_VENDOR_NINTENDO) {
+		return 1;
+	}
 #else
-    SDL_Joystick *joy = SDL_GameControllerGetJoystick(controller);
-    if (joy && SDL_JoystickGetVendor(joy) == 0x057e) { // Nintendo
-        return 1;
-    }
+	SDL_Joystick *joy = SDL_GameControllerGetJoystick(controller);
+	if (joy && SDL_JoystickGetVendor(joy) == 0x057e) { // Nintendo
+		return 1;
+	}
 #endif
-    return 0;
+	return 0;
 }
 
 // Public accessor for switch controller detection
@@ -1316,12 +1316,12 @@ s32 inputButtonPressed(s32 idx, u32 contbtn)
 }
 
 
-// Getter for Japanese button layout config
+// Getter for Japanese button layout
 s32 inputGetJapaneseButtonLayout(int cidx) {
     return padsCfg[cidx].japaneseButtonLayout;
 }
 
-// Setter for Japanese button layout config
+// Setter for Japanese button layout
 void inputSetJapaneseButtonLayout(int cidx, s32 enabled) {
     padsCfg[cidx].japaneseButtonLayout = enabled;
 }
