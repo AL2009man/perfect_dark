@@ -1244,6 +1244,7 @@ void inputMouseGetRawDelta(s32 *dx, s32 *dy)
 void inputMouseGetScaledDelta(f32* dx, f32* dy)
 {
 	f32 mdx = 0.f, mdy = 0.f;
+
 	if (mouseLocked) {
 		mdx = mouseDX * (0.022f / 3.5f) * mouseSensX;
 		mdy = mouseDY * (0.022f / 3.5f) * mouseSensY;
@@ -1255,9 +1256,10 @@ void inputMouseGetScaledDelta(f32* dx, f32* dy)
 void inputMouseGetAbsScaledDelta(f32* dx, f32* dy)
 {
 	f32 mdx = 0.f, mdy = 0.f;
+
 	if (mouseLocked) {
-		mdx = mouseDX * (0.022f / 3.5f) * fabsf(mouseSensX);
-		mdy = mouseDY * (0.022f / 3.5f) * fabsf(mouseSensY);
+		mdx = fabsf(mouseDX) * (0.022f / 3.5f) * fabsf(mouseSensX);
+		mdy = fabsf(mouseDY) * (0.022f / 3.5f) * fabsf(mouseSensY);
 	}
 	if (dx) *dx = mdx;
 	if (dy) *dy = mdy;
@@ -1277,25 +1279,25 @@ void inputMouseSetSpeed(f32 x, f32 y)
 
 void inputMouseGetScaledDeltaCrosshair(f32* dx, f32* dy)
 {
-		f32 mdx = 0.f, mdy = 0.f;
-		if (mouseLocked) {
-				mdx = mouseDX * (0.022f / 35.0f) * mouseAimSensY;
-				mdy = mouseDY * (0.022f / 35.0f) * mouseAimSensY;
-		}
-		if (dx) *dx = mdx;
-		if (dy) *dy = mdy;
+	f32 mdx = 0.f, mdy = 0.f;
+	if (mouseLocked) {
+		mdx = mouseDX * (0.022f / 35.0f) * mouseAimSensX;
+		mdy = mouseDY * (0.022f / 35.0f) * mouseAimSensY;
+	}
+	if (dx) *dx = mdx;
+	if (dy) *dy = mdy;
 }
 
 void inputMouseGetAimSpeed(f32* x, f32* y)
 {
-		if (x) *x = mouseAimSensX;
-		if (y) *y = mouseAimSensY;
+	if (x) *x = mouseAimSensX;
+	if (y) *y = mouseAimSensY;
 }
 
 void inputMouseSetAimSpeed(f32 x, f32 y)
 {
-		mouseAimSensX = x;
-		mouseAimSensY = y;
+	mouseAimSensX = x;
+	mouseAimSensY = y;
 }
 
 s32 inputMouseIsEnabled(void)

@@ -2205,17 +2205,17 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 		bgunSetAimType(0);
 #ifndef PLATFORM_N64
 		if (allowmcross) {
-				// joystick is inactive, move crosshair using the mouse
-				f32 dx, dy;
-				inputMouseGetScaledDeltaCrosshair(&dx, &dy);
-				f32 x = g_Vars.currentplayer->swivelpos[0] + dx;
-				f32 y = g_Vars.currentplayer->swivelpos[1] + dy;
-				x = (x < -1.f) ? -1.f : ((x > 1.f) ? 1.f : x);
-				y = (y < -1.f) ? -1.f : ((y > 1.f) ? 1.f : y);
-				g_Vars.currentplayer->swivelpos[0] = x;
-				g_Vars.currentplayer->swivelpos[1] = y;
-				bgunSwivelWithDamp(x, y, 0.01f);
-				return;
+			// joystick is inactive, move crosshair using the mouse
+			f32 dx, dy;
+			inputMouseGetScaledDeltaCrosshair(&dx, &dy);
+			f32 x = g_Vars.currentplayer->swivelpos[0] + dx;
+			f32 y = g_Vars.currentplayer->swivelpos[1] + dy;
+			if (x < -1.f) x = -1.f; else if (x > 1.f) x = 1.f;
+			if (y < -1.f) y = -1.f; else if (y > 1.f) y = 1.f;
+			g_Vars.currentplayer->swivelpos[0] = x;
+			g_Vars.currentplayer->swivelpos[1] = y;
+			bgunSwivelWithDamp(x, y, 0.01f);
+			return;
 		}
 #endif
 		bgunSwivelWithoutDamp((movedata.c1stickxraw * 0.65f) / 80.0f, (movedata.c1stickyraw * 0.65f) / 80.0f);
