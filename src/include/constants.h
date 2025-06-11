@@ -18,7 +18,6 @@
 #define MAX_CHRSPERSQUADRON    16
 #define MAX_CHRSPERTEAM        32
 #define MAX_CHRWAYPOINTS       6
-#define MAX_EXPLOSIONS         6
 #define MAX_EYESPYDARTS        8
 #define MAX_MPCHRS             (MAX_PLAYERS + MAX_BOTS)
 #define MAX_MPPLAYERCONFIGS    (MAX_PLAYERS + 2)
