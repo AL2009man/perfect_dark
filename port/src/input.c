@@ -351,9 +351,6 @@ static inline void inputInitController(const s32 cidx, const s32 jidx)
 		sysLogPrintf(LOG_NOTE, "input: GUID for controller %d: %s", jidx, guidStr);
 	}
 
-	// Set default key binds for this controller
-    inputSetDefaultKeyBinds(cidx, 0);
-
     // Determine Japanese layout
     int use_japanese = padsCfg[cidx].japaneseButtonLayout;
     if (use_japanese < 0 && pads[cidx]) {
@@ -368,7 +365,6 @@ static inline void inputInitController(const s32 cidx, const s32 jidx)
     inputKeyBind(cidx, CK_B, -1, BUTTON_UI_CANCEL);
 }
 
-// Helper to remap UI buttons for Japanese layout
 static int inputIsJapaneseLayoutActive(int cidx) {
     if (padsCfg[cidx].japaneseButtonLayout == JAPANESE_LAYOUT_ON) {
         return 1;
@@ -381,12 +377,14 @@ static int inputIsJapaneseLayoutActive(int cidx) {
     return 0;
 }
 
+// Remap UI Accept/Cancel to swap A/B when Japanese layout is active
 u32 inputRemapUIButton(int cidx, u32 button) {
-    if (inputIsJapaneseLayoutActive(cidx)) {
-        if (button == BUTTON_UI_ACCEPT) return BUTTON_UI_CANCEL;
-        if (button == BUTTON_UI_CANCEL) return BUTTON_UI_ACCEPT;
-    }
-    return button;
+	if (inputIsJapaneseLayoutActive(cidx)) {
+		// Remap hardcoded UI buttons only
+		if (button == BUTTON_UI_ACCEPT || button == (VK_JOY1_BEGIN + SDL_CONTROLLER_BUTTON_A)) return BUTTON_UI_CANCEL;
+		if (button == BUTTON_UI_CANCEL || button == (VK_JOY1_BEGIN + SDL_CONTROLLER_BUTTON_B)) return BUTTON_UI_ACCEPT;
+	}
+	return button;
 }
 
 static inline void inputCloseController(const s32 cidx)
@@ -805,18 +803,31 @@ s32 inputInit(void)
 // This function checks if the given SDL_GameController is a Nintendo Switch controller
 // note: will fallback to joystick vendor ID if SDL_VERSION_ATLEAST is not defined.
 static int inputIsNintendoSwitchController(SDL_GameController *controller) {
+#if defined(SDL_VERSION_ATLEAST)
 #if SDL_VERSION_ATLEAST(2, 0, 12)
 	SDL_GameControllerType type = SDL_GameControllerGetType(controller);
-	if (type == SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_PRO
+	if (
+#if defined(SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_PRO)
+		type == SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_PRO
+#else
+		0
+#endif
 #if SDL_VERSION_ATLEAST(2, 0, 14)
+#if defined(SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_JOYCON_LEFT)
 		|| type == SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_JOYCON_LEFT
+#endif
+#if defined(SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_JOYCON_RIGHT)
 		|| type == SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_JOYCON_RIGHT
+#endif
+#if defined(SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_JOYCON_PAIR)
 		|| type == SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_JOYCON_PAIR
+#endif
 #endif // SDL_VERSION_ATLEAST(2, 0, 14)
 	) {
 		return 1;
 	}
 #endif // SDL_VERSION_ATLEAST(2, 0, 12)
+#endif // defined(SDL_VERSION_ATLEAST)
 #ifdef SDL_JOYSTICK_VENDOR_NINTENDO
 	SDL_Joystick *joy = SDL_GameControllerGetJoystick(controller);
 	if (joy && SDL_JoystickGetVendor(joy) == SDL_JOYSTICK_VENDOR_NINTENDO) {
@@ -1315,13 +1326,10 @@ s32 inputButtonPressed(s32 idx, u32 contbtn)
 	return inputBindPressed(idx, inputContToContKey(contbtn));
 }
 
-
-// Getter for Japanese button layout
 s32 inputGetJapaneseButtonLayout(int cidx) {
     return padsCfg[cidx].japaneseButtonLayout;
 }
 
-// Setter for Japanese button layout
 void inputSetJapaneseButtonLayout(int cidx, s32 enabled) {
     padsCfg[cidx].japaneseButtonLayout = enabled;
 }

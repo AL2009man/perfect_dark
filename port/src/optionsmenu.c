@@ -1752,30 +1752,9 @@ static MenuItemHandlerResult menuhandlerDoBind(s32 operation, struct menuitem *i
 
 static const char *menutextBind(struct menuitem *item)
 {
-    int idx = item - g_ExtendedBindsMenuItems;
-    u32 ck = menuBinds[idx].ck;
-
-    // Use accessor for per-controller layout
-    int layout = inputGetJapaneseButtonLayout(g_ExtMenuPlayer);
-    if (layout == JAPANESE_LAYOUT_AUTO)
-        layout = inputControllerIsNintendoSwitch(g_ExtMenuPlayer) ? JAPANESE_LAYOUT_ON : JAPANESE_LAYOUT_OFF;
-
-    if (ck == CK_ACCEPT) {
-        if (layout == JAPANESE_LAYOUT_ON)
-            return "UI Accept [JPN LAYOUT - B]\n";
-        else
-            return "UI Accept [+]\n";
-    }
-    if (ck == CK_CANCEL) {
-        if (layout == JAPANESE_LAYOUT_ON)
-            return "UI Cancel [JPN LAYOUT - A]\n";
-        else
-            return "UI Cancel [+]\n";
-    }
-
-    return g_PlayerExtCfg[g_ExtMenuPlayer].extcontrols ?
-        menuBinds[idx].name :
-        menuBinds[idx].n64name;
+	return g_PlayerExtCfg[g_ExtMenuPlayer].extcontrols ?
+		menuBinds[item - g_ExtendedBindsMenuItems].name :
+		menuBinds[item - g_ExtendedBindsMenuItems].n64name;
 }
 
 static MenuItemHandlerResult menuhandlerBind(s32 operation, struct menuitem *item, union handlerdata *data)
@@ -1792,7 +1771,9 @@ static MenuItemHandlerResult menuhandlerBind(s32 operation, struct menuitem *ite
 	case MENUOP_GETOPTIONTEXT:
 		binds = inputKeyGetBinds(g_ExtMenuPlayer, menuBinds[idx].ck);
 		if (binds && binds[data->dropdown.value]) {
-			strncpy(keyname, inputGetKeyName(binds[data->dropdown.value]), sizeof(keyname) - 1);
+			u32 vk = binds[data->dropdown.value];
+			strncpy(keyname, inputGetKeyName(vk), sizeof(keyname) - 1);
+			keyname[sizeof(keyname) - 1] = 0;
 			for (char *p = keyname; *p; ++p) {
 				if (*p == '_') *p = ' ';
 			}
@@ -1800,7 +1781,6 @@ static MenuItemHandlerResult menuhandlerBind(s32 operation, struct menuitem *ite
 		}
 		return (intptr_t)"NONE";
 	case MENUOP_SET:
-		g_ExtendedBindKeyMenuItems[0].param2 = (uintptr_t)menuBinds[idx].name;
 		g_BindIndex = data->dropdown.value;
 		g_BindContKey = menuBinds[idx].ck;
 		inputClearLastKey();
