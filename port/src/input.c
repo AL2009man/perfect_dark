@@ -79,7 +79,6 @@ static s32 numJoysticks = 0;
 
 static s32 useHIDAPI = 1;
 static s32 useRawInput = 1;
-static s32 useNintendoLayout = 0;
 
 static s32 mouseEnabled = 1;
 static s32 mouseX, mouseY;
@@ -748,18 +747,6 @@ s32 inputInit(void)
 	if (useRawInput) {
 		SDL_SetHint(SDL_HINT_JOYSTICK_RAWINPUT, "1");
 		SDL_SetHint(SDL_HINT_JOYSTICK_RAWINPUT_CORRELATE_XINPUT, "1");
-	}
-
-	if (useNintendoLayout) {
-		// use the Nintendo-style face button layout
-    // this is the default in SDL 2.0.6 and later
-		SDL_SetHint(SDL_HINT_GAMECONTROLLER_USE_BUTTON_LABELS, "1");
-	} else {
-#if SDL_VERSION_ATLEAST(2, 0, 6)
-		// use the Xbox-style face button layout
-		// this is set by default, but we set it explicitly here to avoid confusion
-		SDL_SetHint(SDL_HINT_GAMECONTROLLER_USE_BUTTON_LABELS, "0");
-#endif
 	}
 
 	if (!SDL_WasInit(SDL_INIT_GAMECONTROLLER | SDL_INIT_HAPTIC)) {
@@ -1637,7 +1624,6 @@ PD_CONSTRUCTOR static void inputConfigInit(void)
     configRegisterInt("Input.FirstGamepadNum", &firstController, 0, 3);
     configRegisterInt("Input.UseHIDAPI", &useHIDAPI, 0, 1);
     configRegisterInt("Input.UseRawInput", &useRawInput, 0, 1);
-    configRegisterInt("Input.UseNintendoLayout", &useNintendoLayout, 0, 1);
 
 	char secname[] = "Input.Player1.Binds";
 	char keyname[256] = { 0 };
