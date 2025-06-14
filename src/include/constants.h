@@ -27,6 +27,7 @@
 #define MAX_ROOMPROPLISTCHUNKS 256
 #define MAX_SQUADRONS          16
 #define MAX_TEAMS              8
+#define MAX_EXPLOSIONS_DEFAULT 6
 
 #define NUM_BOTDIFFS          6
 #define NUM_CYCLEABLE_WEAPONS 45
