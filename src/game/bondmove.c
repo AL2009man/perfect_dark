@@ -48,6 +48,10 @@
 #define fmax(a, b) ((a) > (b) ? (a) : (b))
 #endif
 
+#ifndef PLATFORM_N64
+static int s_recenterfast = 0;
+#endif
+
 static void bgunProcessQuickDetonate(struct movedata *data, u32 c1buttons, u32 c1buttonsthisframe, u32 buttons1, u32 buttons2) {
 	if ((((c1buttons & (buttons1)) && (c1buttonsthisframe & (buttons2)))
 			|| ((c1buttons & (buttons2)) && (c1buttonsthisframe & (buttons1))))
@@ -2043,10 +2047,34 @@ void bmoveProcessInput(s32 cidx, bool allowc1x, bool allowc1y, bool allowc1butto
 
 	// Look ahead
 	if (g_Vars.currentplayer->pausemode == PAUSEMODE_UNPAUSED) {
-		lookahead = -4;
+			lookahead = -4;
+			offbike = g_Vars.currentplayer->bondmovemode == MOVEMODE_WALK
+					|| g_Vars.currentplayer->bondmovemode == MOVEMODE_GRAB;
 
-		offbike = g_Vars.currentplayer->bondmovemode == MOVEMODE_WALK
-			|| g_Vars.currentplayer->bondmovemode == MOVEMODE_GRAB;
+#ifndef PLATFORM_N64
+			// Camera recenter vertical binding
+			static bool prev_reset_pressed = false;
+			bool reset_pressed = inputResetCameraPressed(cidx);
+
+			if (reset_pressed && !prev_reset_pressed) {
+				if (g_Vars.currentplayer) {
+					if (g_Vars.currentplayer->insightaimmode) {
+						// Recenter crosshair if in crosshair aim mode
+						g_Vars.currentplayer->swivelpos[0] = 0.0f;
+						g_Vars.currentplayer->swivelpos[1] = 0.0f;
+					}
+
+					if (offbike && !g_Vars.currentplayer->insightaimmode) {
+						g_Vars.currentplayer->cachedlookahead = bmoveCalculateLookahead();
+						g_Vars.currentplayer->docentreupdown = true;
+						g_Vars.currentplayer->automovecentre = false;
+						g_Vars.currentplayer->speedverta = (g_Vars.currentplayer->vv_verta < g_Vars.currentplayer->cachedlookahead) ? 7.0f : -7.0f;
+						s_recenterfast = 1;
+					}
+				}
+			}
+			prev_reset_pressed = reset_pressed;
+#endif
 
 		if (g_Vars.currentplayer->lookaheadcentreenabled) {
 			if (g_Vars.lvframenum != g_Vars.currentplayer->lookaheadframe
@@ -2166,7 +2194,15 @@ void bmoveProcessInput(s32 cidx, bool allowc1x, bool allowc1y, bool allowc1butto
 				bmoveUpdateSpeedVerta(0);
 			}
 
-			g_Vars.currentplayer->vv_verta += g_Vars.currentplayer->speedverta * g_Vars.lvupdate60freal * 3.5f;
+#ifndef PLATFORM_N64
+    float recenterMult = (s_recenterfast ? 7.0f : 3.5f);
+    g_Vars.currentplayer->vv_verta += g_Vars.currentplayer->speedverta * g_Vars.lvupdate60freal * recenterMult;
+    if (s_recenterfast && !g_Vars.currentplayer->docentreupdown) {
+        s_recenterfast = 0;
+    }
+#else
+    g_Vars.currentplayer->vv_verta += g_Vars.currentplayer->speedverta * g_Vars.lvupdate60freal * 3.5f;
+#endif
 		}
 	}
 

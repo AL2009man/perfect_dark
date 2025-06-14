@@ -2099,10 +2099,11 @@ static const struct menubind menuBinds[] = {
 		{ CK_8000,   "Cycle Crouch [+]\n",  "N64 Ext 8000\n" },
 		{ CK_4000,   "Half Crouch [+]\n",   "N64 Ext 4000\n" },
 		{ CK_2000,   "Full Crouch [+]\n",   "N64 Ext 2000\n" },
+		{ CK_RESET_CAMERA, "Reset Camera/Crosshair [+]\n", "EXT Reset Camera/Crosshair\n" },
+		{ CK_GYRO_MOD, "Gyro Modifier [+]\n", "EXT Gyro Modifier\n" },
+		{ CK_GYRO_CALIB, "Gyro Calibration (Manual) [+]\n", "EXT Gyro Calibration (Manual)[+]\n" },
 		{ CK_ACCEPT, "UI Accept [+]\n",     "EXT UI Accept\n" },
 		{ CK_CANCEL, "UI Cancel [+]\n",     "EXT UI Cancel\n" },
-		{ CK_GYRO_MOD, "Gyro Modifier [+]\n", "EXT Gyro Modifier\n" },
-		{ CK_GYRO_CALIBRATION, "Gyro Calibration [+]\n", "EXT Gyro Calibration [+]\n" },
 };
 
 static const char *menutextBind(struct menuitem *item);
@@ -2121,6 +2122,7 @@ static MenuItemHandlerResult menuhandlerResetBindsN64(s32 operation, struct menu
 	}
 
 struct menuitem g_ExtendedBindsMenuItems[] = {
+	DEFINE_MENU_BIND(),
 	DEFINE_MENU_BIND(),
 	DEFINE_MENU_BIND(),
 	DEFINE_MENU_BIND(),

@@ -102,8 +102,9 @@ enum contkey {
 	CK_STICK_YPOS,
 	CK_ACCEPT,
 	CK_CANCEL,
+	CK_RESET_CAMERA,
 	CK_GYRO_MOD,
-	CK_GYRO_CALIBRATION,
+	CK_GYRO_CALIB,
 	CK_0040,
 	CK_0080,
 	CK_0100,
@@ -233,6 +234,9 @@ const char *inputGetKeyName(s32 vk);
 
 // get CK_ value from human-readable name
 s32 inputGetContKeyByName(const char *name);
+
+// Returns 1 if the reset camera action is pressed for the given controller indexAdd commentMore actions
+s32 inputResetCameraPressed(s32 idx);
 
 // get human-readable name from CK_ value
 const char *inputGetContKeyName(u32 ck);
