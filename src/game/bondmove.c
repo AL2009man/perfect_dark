@@ -2353,10 +2353,6 @@ void bmoveProcessInput(s32 cidx, bool allowc1x, bool allowc1y, bool allowc1butto
 							float x = g_Vars.currentplayer->swivelpos[0] + movedata.gyrolookdx * xscale;
 							float y = g_Vars.currentplayer->swivelpos[1] + movedata.gyrolookdy * yscale;
 
-							// Clamp crosshair movement within boundaries
-							x = (x < -1.f) ? -1.f : ((x > 1.f) ? 1.f : x);
-							y = (y < -1.f) ? -1.f : ((y > 1.f) ? 1.f : y);
-
 							g_Vars.currentplayer->swivelpos[0] = x;
 							g_Vars.currentplayer->swivelpos[1] = y;
 
