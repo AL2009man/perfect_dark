@@ -2322,7 +2322,8 @@ void bmoveProcessInput(s32 cidx, bool allowc1x, bool allowc1y, bool allowc1butto
 			y = -g_Vars.currentplayer->speedverta * 0.1f + g_Vars.currentplayer->gunextraaimy;
 #else
 			f32 xscale, yscale;
-			if (movedata.freelookdx || movedata.freelookdy) {
+			// Reduces overall crosshair sway when mouse and/or gyro input is active
+            if ((movedata.freelookdx || movedata.freelookdy) || (movedata.gyrolookdx || movedata.gyrolookdy)) {
 				xscale = PLAYER_EXTCFG().crosshairsway * 0.20f;
 				yscale = PLAYER_EXTCFG().crosshairsway * 0.30f;
 			} else {
@@ -2336,11 +2337,9 @@ void bmoveProcessInput(s32 cidx, bool allowc1x, bool allowc1y, bool allowc1butto
 		}
 	}
 	else if (movedata.canmanualaim) {
-			// Adjust crosshair's position on screen
-			// when holding aim and moving stick
+			// adjust crosshair's position on screen when holding aim and moving stick
 			bgunSetAimType(0);
 #ifndef PLATFORM_N64
-			// Only allow gyro crosshair override for Player 1, not for P2/P3/P4
 			if (allowgcross && g_Vars.currentplayernum == 0) {
 					// Gyro is active, apply gyro movement FIRST
 					inputGyroGetScaledDeltaCrosshair(g_Vars.currentplayernum, &movedata.gyrolookdx, &movedata.gyrolookdy);
