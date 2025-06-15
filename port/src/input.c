@@ -712,14 +712,12 @@ s32 inputInit(void)
 
 	if (useNintendoLayout) {
 		// use the Nintendo-style face button layout across both menus and gameplay
-    // this is default hint in SDL 2.0.6 and later
+		// this is default hint in SDL 2.0.6 and later
 		SDL_SetHint(SDL_HINT_GAMECONTROLLER_USE_BUTTON_LABELS, "1"); // uses button labels (A/B/X/Y)
 	} else {
-#if SDL_VERSION_ATLEAST(2, 0, 6)
 		// use the Xbox-style face button layout
 		// this is set by default, but it's explicitly set here to avoid confusion
 		SDL_SetHint(SDL_HINT_GAMECONTROLLER_USE_BUTTON_LABELS, "0"); // Uses positional face buttons (SOUTH/EAST/WEST/NORTH)
-#endif
 	}
 
 	if (!SDL_WasInit(SDL_INIT_GAMECONTROLLER | SDL_INIT_HAPTIC)) {
