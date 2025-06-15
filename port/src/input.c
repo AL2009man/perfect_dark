@@ -1534,8 +1534,8 @@ PD_CONSTRUCTOR static void inputConfigInit(void)
 	configRegisterInt("Input.MouseLockMode", &mouseLockMode, MLOCK_OFF, MLOCK_AUTO);
 	configRegisterFloat("Input.MouseSpeedX", &mouseSensX, -30.f, 30.f);
 	configRegisterFloat("Input.MouseSpeedY", &mouseSensY, -30.f, 30.f);
-	configRegisterFloat("Input.MouseAimSpeedX", &mouseAimSensX, -10.f, 10.f);
-	configRegisterFloat("Input.MouseAimSpeedY", &mouseAimSensY, -10.f, 10.f);
+	configRegisterFloat("Input.mouseAimSensX", &mouseAimSensX, -10.f, 10.f);
+	configRegisterFloat("Input.mouseAimSensY", &mouseAimSensY, -10.f, 10.f);
 	configRegisterInt("Input.FakeGamepads", &fakeControllers, 0, 4);
 	configRegisterInt("Input.FirstGamepadNum", &firstController, 0, 3);
 	configRegisterInt("Input.UseHIDAPI", &useHIDAPI, 0, 1);
