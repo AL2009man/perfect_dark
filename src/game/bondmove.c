@@ -2347,8 +2347,8 @@ void bmoveProcessInput(s32 cidx, bool allowc1x, bool allowc1y, bool allowc1butto
 					if (movedata.gyrolookdx != 0.0f || movedata.gyrolookdy != 0.0f) {
 							const float xcoeff = 320.f / 1080.f;
 							const float ycoeff = 240.f / 1080.f;
-							const float xscale = (PLAYER_EXTCFG().gyroaimsensx * xcoeff) / g_Vars.currentplayer->aspect;
-							const float yscale = PLAYER_EXTCFG().gyroaimsensy * ycoeff;
+							const float xscale = (PLAYER_EXTCFG().gyroaimsensx * xcoeff * g_Vars.lvupdate60freal) / g_Vars.currentplayer->aspect;
+							const float yscale = PLAYER_EXTCFG().gyroaimsensy * ycoeff * g_Vars.lvupdate60freal;
 
 							float x = g_Vars.currentplayer->swivelpos[0] + movedata.gyrolookdx * xscale;
 							float y = g_Vars.currentplayer->swivelpos[1] + movedata.gyrolookdy * yscale;

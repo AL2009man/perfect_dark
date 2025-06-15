@@ -457,6 +457,10 @@ static inline void inputCloseController(const s32 cidx)
 	pads[cidx] = NULL;
 	padsCfg[cidx].rumbleOn = 0;
 
+    // Zero out gyro deltas and orientation to prevent drift after disconnect
+	gyroDeltaYaw[cidx] = gyroDeltaPitch[cidx] = gyroDeltaRoll[cidx] = 0.f;
+	gyroYaw[cidx] = gyroPitch[cidx] = gyroRoll[cidx] = 0.f;
+
 	if (cidx) {
 		connectedMask &= ~(1 << cidx);
 	}
