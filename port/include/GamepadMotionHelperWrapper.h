@@ -4,6 +4,8 @@
 extern "C" {
 #endif
 
+#include <stdbool.h>
+
 // Use the actual C++ class pointer for the handle
 typedef struct GamepadMotion GamepadMotion;
 typedef GamepadMotion* GamepadMotionHandle;
@@ -18,14 +20,13 @@ void ProcessMotion(GamepadMotionHandle handle, float gyroX, float gyroY, float g
 void ResetGamepadMotion(GamepadMotionHandle handle);
 void ResetMotion(GamepadMotionHandle handle);
 
-// State getters
+// State getters (now using pointers for outputs)
 void GetCalibratedGyro(GamepadMotionHandle handle, float* x, float* y, float* z);
 void GetGravity(GamepadMotionHandle handle, float* x, float* y, float* z);
 void GetProcessedAcceleration(GamepadMotionHandle handle, float* x, float* y, float* z);
 void GetOrientation(GamepadMotionHandle handle, float* w, float* x, float* y, float* z);
 void GetPlayerSpaceGyro(GamepadMotionHandle handle, float* x, float* y, float yawRelaxFactor);
 void GetWorldSpaceGyro(GamepadMotionHandle handle, float* x, float* y, float sideReductionThreshold);
-void GetRawGyro(GamepadMotionHandle handle, float* x, float* y, float* z);
 
 // Calibration
 void StartContinuousCalibration(GamepadMotionHandle handle);
@@ -35,13 +36,13 @@ void GetCalibrationOffset(GamepadMotionHandle handle, float* xOffset, float* yOf
 void SetCalibrationOffset(GamepadMotionHandle handle, float xOffset, float yOffset, float zOffset, int weight);
 float GetAutoCalibrationConfidence(GamepadMotionHandle handle);
 void SetAutoCalibrationConfidence(GamepadMotionHandle handle, float newConfidence);
-int GetAutoCalibrationIsSteady(GamepadMotionHandle handle);
+bool GetAutoCalibrationIsSteady(GamepadMotionHandle handle);
 
 // Calibration mode
 int GetCalibrationMode(GamepadMotionHandle handle);
 void SetCalibrationMode(GamepadMotionHandle handle, int mode);
 
-// GamepadMotionSettings: Getters and Setters
+// GamepadMotionSettings: Getters and Setters (unchanged)
 void SetMinStillnessSamples(GamepadMotionHandle handle, int value);
 int  GetMinStillnessSamples(GamepadMotionHandle handle);
 void SetMinStillnessCollectionTime(GamepadMotionHandle handle, float value);

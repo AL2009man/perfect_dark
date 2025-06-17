@@ -2,6 +2,7 @@
 #include <math.h>
 #include <ctype.h>
 #include <SDL.h>
+#include <SDL_sensor.h>
 #include <PR/ultratypes.h>
 #include <PR/os_thread.h>
 #include <PR/os_cont.h>
@@ -15,6 +16,11 @@
 #include "system.h"
 #include "fs.h"
 #include <math.h>
+
+// Fallback for SDL_STANDARD_GRAVITY if SDL_sensor.h is not available
+#ifndef SDL_STANDARD_GRAVITY
+#define SDL_STANDARD_GRAVITY 9.80665f
+#endif
 
 #if !SDL_VERSION_ATLEAST(2, 0, 14)
 // this was added in 2.0.14
@@ -1074,7 +1080,7 @@ static inline void inputUpdateGyro(s32 cidx)
 	const float deltaTime = 1.0f / 60.0f;
 	ProcessMotion(gpadMotion[cidx],
 		gyroData[0], gyroData[1], gyroData[2],
-		accelData[0], accelData[1], accelData[2],
+		accelData[0] / SDL_STANDARD_GRAVITY, accelData[1] / SDL_STANDARD_GRAVITY, accelData[2] / SDL_STANDARD_GRAVITY,
 		deltaTime);
 
 	// Get calibrated gyro output and map axes
@@ -1927,6 +1933,7 @@ void applyGyroSmoothing(f32* deltaX, f32* deltaY, f32* deltaZ, f32 smoothing, s3
 	*deltaY = smoothedDeltaY[cidx];
 	*deltaZ = smoothedDeltaZ[cidx];
 }
+
 void inputGyroCalibration(s32 cidx, GyroCalibrationOp op, float* out_confidence, int* out_steady)
 {
 	if (!gpadMotion[cidx] && op != GYRO_CALIB_RESET) {
