@@ -726,7 +726,7 @@ void bmoveProcessInput(s32 cidx, bool allowc1x, bool allowc1y, bool allowc1butto
 	const bool allowmlook = (g_Vars.currentplayernum == 0) && (allowc1x || allowc1y);
 
 	// Gyro sensitivity scaling
-	const f32 gyroBaseSens = 4.f; // Fixed base sensitivity for gyro input
+	const f32 gyroBaseSens = 0.278f; // Fixed base sensitivity for gyro input
 	const f32 gyroscale = gyroBaseSens; // Ensure it is constant and independent of FPS
 
 	const bool allowgyro = (g_Vars.players[cidx] != NULL) && (allowc1x || allowc1y);

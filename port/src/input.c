@@ -1670,29 +1670,25 @@ static inline void applyGyroVHMixer(s32 cidx, f32* dx, f32* dy) {
 
 void inputGyroGetScaledDelta(s32 cidx, f32* dx, f32* dy, f32* dz)
 {
-	if (!dx || !dy || !dz) return;
+    if (!dx || !dy || !dz) return;
 
-	f32 gdx = 0.f, gdy = 0.f, gdz = 0.f;
+    f32 gdx = 0.f, gdy = 0.f, gdz = 0.f;
 
-	if (padsCfg[cidx].gyroEnabled) {
-		if (!isnan(gyroDeltaYaw[cidx]) && !isnan(gyroDeltaPitch[cidx]) && !isnan(gyroDeltaRoll[cidx])) {
-			gdx = gyroDeltaYaw[cidx] * (0.022f / 0.3f) * padsCfg[cidx].gyroSensX;
-			if (padsCfg[cidx].gyroInvertX) gdx = -gdx;
-			gdy = gyroDeltaPitch[cidx] * (0.022f / 0.3f) * padsCfg[cidx].gyroSensY;
-			if (padsCfg[cidx].gyroInvertY) gdy = -gdy;
-			gdz = gyroDeltaRoll[cidx] * (0.022f / 0.3f) * padsCfg[cidx].gyroSensY;
+    if (padsCfg[cidx].gyroEnabled) {
+        if (!isnan(gyroDeltaYaw[cidx]) && !isnan(gyroDeltaPitch[cidx]) && !isnan(gyroDeltaRoll[cidx])) {
+            gdx = gyroDeltaYaw[cidx] * padsCfg[cidx].gyroSensX;
+            if (padsCfg[cidx].gyroInvertX) gdx = -gdx;
+            gdy = gyroDeltaPitch[cidx] * padsCfg[cidx].gyroSensY;
+            if (padsCfg[cidx].gyroInvertY) gdy = -gdy;
+            gdz = gyroDeltaRoll[cidx] * padsCfg[cidx].gyroSensY;
+        }
+    }
 
-			gdx = fminf(fmaxf(gdx, -2.0f), 2.0f);
-			gdy = fminf(fmaxf(gdy, -2.0f), 2.0f);
-			gdz = fminf(fmaxf(gdz, -2.0f), 2.0f);
-		}
-	}
+    *dx = gdx;
+    *dy = gdy;
+    *dz = gdz;
 
-	*dx = gdx;
-	*dy = gdy;
-	*dz = gdz;
-
-	applyGyroVHMixer(cidx, dx, dy);
+    applyGyroVHMixer(cidx, dx, dy);
 }
 
 void inputGyroGetSpeed(s32 cidx, f32* x, f32* y)
