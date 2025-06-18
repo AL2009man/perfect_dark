@@ -8,7 +8,7 @@
 #include <PR/os_cont.h>
 #include "platform.h"
 #include "input.h"
-#include "GamepadMotionHelperWrapper.h"
+#include "GamepadMotionWrapper.h"
 #include "../include/types.h"
 #include "video.h"
 #include "config.h"
@@ -16,11 +16,6 @@
 #include "system.h"
 #include "fs.h"
 #include <math.h>
-
-// Fallback for SDL_STANDARD_GRAVITY if SDL_sensor.h is not available
-#ifndef SDL_STANDARD_GRAVITY
-#define SDL_STANDARD_GRAVITY 9.80665f
-#endif
 
 #if !SDL_VERSION_ATLEAST(2, 0, 14)
 // this was added in 2.0.14
@@ -40,6 +35,11 @@
 #define CURSOR_HIDE_THRESHOLD 1
 #define CURSOR_HIDE_TIME 3000000 // us
 
+// Fallback for SDL_STANDARD_GRAVITY if SDL_sensor.h is not available
+// This may break GamepadMotion's Gyro Calibration systems on platforms without SDL_sensor.h
+#ifndef SDL_STANDARD_GRAVITY
+#define SDL_STANDARD_GRAVITY 9.80665f
+#endif
 
 #define GYRO_ALWAYS_ON 0 // Gyro is always enabled, regardless of button state
 #define GYRO_TOGGLE 1 // Gyro is toggled on/off with a button press

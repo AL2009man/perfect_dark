@@ -20,7 +20,7 @@ void ProcessMotion(GamepadMotionHandle handle, float gyroX, float gyroY, float g
 void ResetGamepadMotion(GamepadMotionHandle handle);
 void ResetMotion(GamepadMotionHandle handle);
 
-// State getters (now using pointers for outputs)
+// State getters
 void GetCalibratedGyro(GamepadMotionHandle handle, float* x, float* y, float* z);
 void GetGravity(GamepadMotionHandle handle, float* x, float* y, float* z);
 void GetProcessedAcceleration(GamepadMotionHandle handle, float* x, float* y, float* z);
@@ -42,7 +42,7 @@ bool GetAutoCalibrationIsSteady(GamepadMotionHandle handle);
 int GetCalibrationMode(GamepadMotionHandle handle);
 void SetCalibrationMode(GamepadMotionHandle handle, int mode);
 
-// GamepadMotionSettings: Getters and Setters (unchanged)
+// GamepadMotionSettings: Getters and Setters
 void SetMinStillnessSamples(GamepadMotionHandle handle, int value);
 int  GetMinStillnessSamples(GamepadMotionHandle handle);
 void SetMinStillnessCollectionTime(GamepadMotionHandle handle, float value);
