@@ -287,6 +287,9 @@ void inputSetGyroVHMixer(s32 cidx, f32 value);
 // Raw Gyro Movement Retrieval
 void inputGyroGetRawDelta(s32 cidx, s32* dx, s32* dy, s32* dz);
 
+// Update Gyro Data
+void inputUpdateGyro(s32 cidx);
+
 // Scaled Gyro Movement Retrieval
 void inputGyroGetScaledDelta(s32 cidx, f32* dx, f32* dy, f32* dz);
 
@@ -402,7 +405,5 @@ const char *inputGetClipboard(void);
 
 // returns keymod values
 u32 inputGetKeyModState(void);
-
-
 
 #endif

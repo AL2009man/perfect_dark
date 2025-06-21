@@ -8,7 +8,7 @@
 #include <PR/os_cont.h>
 #include "platform.h"
 #include "input.h"
-#include "GamepadMotionWrapper.h"
+#include "GamepadMotion.h"
 #include "../include/types.h"
 #include "video.h"
 #include "config.h"
@@ -35,8 +35,8 @@
 #define CURSOR_HIDE_THRESHOLD 1
 #define CURSOR_HIDE_TIME 3000000 // us
 
-// Fallback for SDL_STANDARD_GRAVITY if SDL_sensor.h is not available
-// This may break GamepadMotion's Gyro Calibration systems on platforms without SDL_sensor.h
+// standard gravity constants
+// Note: this may break GamepadMotion's Gyro Calibration systems on platforms without SDL_sensor.h
 #ifndef SDL_STANDARD_GRAVITY
 #define SDL_STANDARD_GRAVITY 9.80665f
 #endif
@@ -789,7 +789,7 @@ void inputHandleGyroController(s32 cidx)
 	}
 
 #if SDL_VERSION_ATLEAST(2, 0, 14)
-	// Enable gyro sensor if available
+	// Enable gyroscopic sensor if available
 	if (SDL_GameControllerHasSensor(pads[cidx], SDL_SENSOR_GYRO)) {
 		if (SDL_GameControllerSetSensorEnabled(pads[cidx], SDL_SENSOR_GYRO, SDL_TRUE) != 0) {
 			sysLogPrintf(LOG_WARNING, "Failed to enable gyro sensor for controller %d.", cidx);
@@ -1054,11 +1054,22 @@ static inline void inputUpdateMouse(void)
 	}
 }
 
-static inline void inputUpdateGyro(s32 cidx)
+void inputUpdateGyro(s32 cidx)
 {
+	// Ensure DeltaTime is calculated correctly
+	static uint64_t lastUpdateTime[INPUT_MAX_CONTROLLERS] = {0};
+	uint64_t now = sysGetMicroseconds();
+	float deltaTime = 1.0f / 60.0f;
+	if (lastUpdateTime[cidx] != 0) {
+		deltaTime = (now - lastUpdateTime[cidx]) / 1000000.0f;
+		if (deltaTime <= 0.0f || deltaTime > 0.5f) deltaTime = 1.0f / 60.0f;
+	}
+	lastUpdateTime[cidx] = now;
+
 	if (!padsCfg[cidx].gyroEnabled || !padsCfg[cidx].gyroSensorActive)
 		return;
 
+	// Check if the controller is still connected
 	if (!pads[cidx] || SDL_GameControllerGetAttached(pads[cidx]) == SDL_FALSE) {
 		if (gpadMotion[cidx]) {
 			DeleteGamepadMotion(gpadMotion[cidx]);
@@ -1077,7 +1088,6 @@ static inline void inputUpdateGyro(s32 cidx)
 	SDL_GameControllerGetSensorData(pads[cidx], SDL_SENSOR_ACCEL, accelData, 3);
 
 	// Feed data to GamepadMotionHelper
-	const float deltaTime = 1.0f / 60.0f;
 	ProcessMotion(gpadMotion[cidx],
 		gyroData[0], gyroData[1], gyroData[2],
 		accelData[0] / SDL_STANDARD_GRAVITY, accelData[1] / SDL_STANDARD_GRAVITY, accelData[2] / SDL_STANDARD_GRAVITY,
@@ -1140,14 +1150,11 @@ void inputUpdate(void)
 	}
 }
 
-// This function only updates gyro calibration state, not normal gyro input
+// This function only updates gyro calibration state
 void inputUpdateGyroCalibrationOnly(void)
 {
 	// Only handle gyro calibration binds and state
 	inputUpdateGyroManualCalibration();
-
-	// Optionally, you may want to update calibration confidence/steady state here
-	// but do NOT call inputUpdateGyro or process normal gyro input
 }
 
 s32 inputControllerConnected(s32 idx)
@@ -1912,7 +1919,7 @@ void applyGyroSmoothing(f32* deltaX, f32* deltaY, f32* deltaZ, f32 smoothing, s3
 {
 	if (!deltaX || !deltaY || !deltaZ) return;
 
-	// Clamp smoothing to [0, 0.99] to avoid freezing at 1.0
+	// Clamp smoothing to (0.99) to avoid freezing at 1.0
 	f32 smoothFactor = smoothing;
 	if (smoothFactor < 0.0f) smoothFactor = 0.0f;
 	if (smoothFactor >= 1.0f) smoothFactor = 0.99f;
@@ -2031,7 +2038,7 @@ void inputUpdateGyroManualCalibration(void)
 	static Uint32 manualCalibStartTime[INPUT_MAX_CONTROLLERS] = {0};
 
 	for (s32 cidx = 0; cidx < INPUT_MAX_CONTROLLERS; ++cidx) {
-		if (!pads[cidx] || !gpadMotion[cidx]) // Ensure gpadMotion exists
+		if (!pads[cidx] || !gpadMotion[cidx])
 			continue;
 
 		// Do not allow manual calibration if auto-calibration is active and controller is steady
