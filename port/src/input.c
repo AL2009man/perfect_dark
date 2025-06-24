@@ -8,7 +8,7 @@
 #include <PR/os_cont.h>
 #include "platform.h"
 #include "input.h"
-#include "GamepadMotion.h"
+#include "../gamepadmotionhelper/GamepadMotion.h"
 #include "../include/types.h"
 #include "video.h"
 #include "config.h"
