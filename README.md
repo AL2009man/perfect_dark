@@ -90,6 +90,23 @@ Support for one controller, two-stick configurations are enabled for 1.2.
 
 Note that the mouse only controls player 1.
 
+Motion Sensor Aiming (also known as Gyro Aiming) is enabled by default when using Aim Mode (Crosshair).
+
+> [!NOTE]
+> Gyro Aiming is only supported for controllers that has Motion Sensor functionality. (**DualShock 4**, **DualSense**, **Nintendo Switch family of controllers**)
+>
+> Gyro Aiming will not work if Steam Input is enabled by default, or using a Xbox controller.
+
+> [!TIP]
+> Gyro Drift may become a occurence during regular gameplay.it becomes far more evident when using a first-party Nintendo Switch controller.
+>
+>To calibrate the Controller's Gyro functions: you can either turn on "Auto-Calibrate Gyro while Stationary" or press the SHARE button on your Xbox pad (Xbox Series X|S model-onwards). please place the controller on the surface beforehand.
+>
+> >To be more specific: pressing the `Microphone Mute button` (DualSense) or `Capture Button` (Nintendo Switch) button or `F10` key to manually calibrate the controller's Motion Sensors functionality to reduce drift. 
+>
+> "Gyro Calibration (Manual)" can be rebinded within pd.ini or extended settings
+>
+
 Controls can be rebound in `pd.ini`. Default control scheme is as follows:
 
 | Action           | Keyboard and mouse     | Xbox pad                 | N64 pad                   |
@@ -98,7 +115,7 @@ Controls can be rebound in `pd.ini`. Default control scheme is as follows:
 | Aim mode         | RMB/Z                  | LT                       | R Trigger                 |
 | Use / Cancel     | E                      | N/A                      | B                         |
 | Use / Accept     | N/A                    | A                        | A                         |
-| Crouch cycle     | N/A                    | L3                       | `0x80000000` (Extra)      |
+| Crouch cycle     | N/A                    | LS CLICK                 | `0x80000000` (Extra)      |
 | Half-Crouch      | Shift                  | N/A                      | `0x40000000` (Extra)      |
 | Full-Crouch      | Control                | N/A                      | `0x20000000` (Extra)      |
 | Reload           | R                      | X                        | X `(0x40)`                |
@@ -108,6 +125,8 @@ Controls can be rebound in `pd.ini`. Default control scheme is as follows:
 | Alt fire mode    | F                      | RB                       | L Trigger                 |
 | Alt-fire oneshot | `F + LMB` or `E + LMB` | `A + RT` or  `RB + RT`   | `A + Z`     or `L + Z`    |
 | Quick-detonate   | `E + Q`   or `E + R`   | `A + B`  or  `A + X`     | `A + D-Left`or `A + X`    |
+| Reset Camera / Crosshair   | C            | RS                       | N/A                       |
+| Gyro Calibration (Manual)  | F10          | SHARE                    | N/A                       |
 
 ## Building
 
