@@ -24,6 +24,8 @@ There are minor graphics- and gameplay-related issues, and possibly occasional c
 **The following extra features are implemented:**
 * mouselook;
 * dual analog controller support;
+* gyro aiming support 
+  * compatible controllers only
 * widescreen resolution support;
 * configurable field of view;
 * 60 FPS support, including fixes for some framerate-related issues;
@@ -95,7 +97,7 @@ Motion Sensor Aiming (also known as Gyro Aiming) is enabled by default when usin
 > [!NOTE]
 > Gyro Aiming is only supported for controllers that has Motion Sensor functionality. (**DualShock 4**, **DualSense**, **Nintendo Switch family of controllers**)
 >
-> Gyro Aiming will not work if Steam Input is enabled by default, or using a Xbox controller.
+> Gyro Aiming will not work if Steam Input is enabled, or using a Xbox controller.
 
 > [!TIP]
 > Gyro Drift may become a occurence during regular gameplay.it becomes far more evident when using a first-party Nintendo Switch controller.
@@ -125,7 +127,7 @@ Controls can be rebound in `pd.ini`. Default control scheme is as follows:
 | Alt fire mode    | F                      | RB                       | L Trigger                 |
 | Alt-fire oneshot | `F + LMB` or `E + LMB` | `A + RT` or  `RB + RT`   | `A + Z`     or `L + Z`    |
 | Quick-detonate   | `E + Q`   or `E + R`   | `A + B`  or  `A + X`     | `A + D-Left`or `A + X`    |
-| Reset Camera / Crosshair   | C            | RS CLICK                      | N/A                       |
+| Reset Camera / Crosshair   | C            | RS CLICK                 | N/A                       |
 | Gyro Calibration (Manual)  | F10          | SHARE                    | N/A                       |
 
 ## Building
@@ -227,6 +229,7 @@ It might be possible to build and run the game on platforms that are not specifi
 * [Ship of Harkinian team](https://github.com/Kenix3/libultraship/tree/main/src/graphic/Fast3D), Emill and MaikelChan for the libultraship version of fast3d that this port uses;
 * lieff for [minimp3](https://github.com/lieff/minimp3);
 * Mouse Injector and 1964GEPD authors for some of the 60FPS- and mouselook-related fixes;
+* [GamepadMotionHelpers](https://github.com/JibbSmart/GamepadMotionHelpers) authors for motion sensor-related tools like sensor fusion, gyro space and gyro calibration.
 * Raf for the 64-bit port;
 * NicNamSam for the icon;
 * everyone who has submitted pull requests and issues to this repository and tested the port;
