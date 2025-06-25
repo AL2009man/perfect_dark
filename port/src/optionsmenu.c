@@ -831,18 +831,18 @@ static MenuItemHandlerResult menuhandlerGyroSmoothing(s32 operation, struct menu
 
 static MenuItemHandlerResult menuhandlerGyroMinThreshold(s32 operation, struct menuitem* item, union handlerdata* data)
 {
-	switch (operation) {
-	case MENUOP_GETSLIDER:
-		data->slider.value = inputGetGyroMinThreshold(g_ExtMenuPlayer) * 100.0f;
-		break;
-	case MENUOP_SET:
-		inputSetGyroMinThreshold(g_ExtMenuPlayer, (f32)data->slider.value / 100.0f);
-		break;
-	case MENUOP_GETSLIDERLABEL:
-		sprintf(data->slider.label, "%.2f", inputGetGyroMinThreshold(g_ExtMenuPlayer));
-		break;
-	}
-	return 0;
+    switch (operation) {
+    case MENUOP_GETSLIDER:
+        data->slider.value = inputGyroGetMinThreshold(g_ExtMenuPlayer) * 100.0f;
+        break;
+    case MENUOP_SET:
+        inputGyroSetMinThreshold(g_ExtMenuPlayer, (f32)data->slider.value / 100.0f);
+        break;
+    case MENUOP_GETSLIDERLABEL:
+        sprintf(data->slider.label, "%.2f", inputGyroGetMinThreshold(g_ExtMenuPlayer));
+        break;
+    }
+    return 0;
 }
 
 static MenuItemHandlerResult menuhandlerGyroAutoCalibration(s32 operation, struct menuitem* item, union handlerdata* data)
@@ -858,183 +858,183 @@ static MenuItemHandlerResult menuhandlerGyroAutoCalibration(s32 operation, struc
 }
 
 struct menuitem g_ExtendedGyroMenuItems[] = {
-		{
-				MENUITEMTYPE_CHECKBOX,
-				0,
-				MENUITEMFLAG_LITERAL_TEXT,
-				(uintptr_t)"Enable Gyro Aim",
-				0,
-				menuhandlerGyroEnabled,
-		},
-		{
-				MENUITEMTYPE_SEPARATOR,
-				 0,
-				 0,
-				 0,
-				 0,
-				NULL,
-		},
-		{
-				MENUITEMTYPE_DROPDOWN,
-				0,
-				MENUITEMFLAG_LITERAL_TEXT,
-				(uintptr_t)"Aim Mode",
-				0,
-				menuhandlerGyroAimMode,
-		},
-		{
-				MENUITEMTYPE_DROPDOWN,
-				0,
-				MENUITEMFLAG_LITERAL_TEXT,
-				(uintptr_t)"Gyro Modifier",
-				0,
-				menuhandlerGyroModifier,
-		},
-		{
-				MENUITEMTYPE_DROPDOWN,
-				0,
-				MENUITEMFLAG_LITERAL_TEXT,
-				(uintptr_t)"Axis Orientation",
-				0,
-				menuhandlerGyroAxisMode,
-		},
-		{
-				MENUITEMTYPE_CHECKBOX,
-				0,
-				MENUITEMFLAG_LITERAL_TEXT,
-				(uintptr_t)"Auto-Calibrate Gyro while Stationary",
-				0,
-				menuhandlerGyroAutoCalibration,
-		},
-		{
-				MENUITEMTYPE_SEPARATOR,
-				 0,
-				 0,
-				 0,
-				 0,
-				NULL,
-		},
-		{
-				MENUITEMTYPE_SLIDER,
-				0,
-				MENUITEMFLAG_LITERAL_TEXT | MENUITEMFLAG_SLIDER_WIDE,
-				(uintptr_t)"Gyro Speed X",
-				3000,
-				menuhandlerGyroSensitivityX,
-		},
-		{
-				MENUITEMTYPE_SLIDER,
-				0,
-				MENUITEMFLAG_LITERAL_TEXT | MENUITEMFLAG_SLIDER_WIDE,
-				(uintptr_t)"Gyro Speed Y",
-				3000,
-				menuhandlerGyroSensitivityY,
-		},
-		{
-				MENUITEMTYPE_SLIDER,
-				0,
-				MENUITEMFLAG_LITERAL_TEXT | MENUITEMFLAG_SLIDER_WIDE,
-				(uintptr_t)"Gyro Crosshair Speed X",
-				1000,
-				menuhandlerGyroCrosshairSpeedX,
-		},
-		{
-				MENUITEMTYPE_SLIDER,
-				0,
-				MENUITEMFLAG_LITERAL_TEXT | MENUITEMFLAG_SLIDER_WIDE,
-				(uintptr_t)"Gyro Crosshair Speed Y",
-				1000,
-				menuhandlerGyroCrosshairSpeedY,
-		},
-		{
-				MENUITEMTYPE_SEPARATOR,
-				 0,
-				 0,
-				 0,
-				 0,
-				NULL,
-		},
-		{
-				MENUITEMTYPE_CHECKBOX,
-				0,
-				MENUITEMFLAG_LITERAL_TEXT,
-				(uintptr_t)"Invert Gyro Speed X",
-				0,
-				menuhandlerGyroInvertX,
-		},
-		{
-				MENUITEMTYPE_CHECKBOX,
-				0,
-				MENUITEMFLAG_LITERAL_TEXT,
-				(uintptr_t)"Invert Gyro Speed Y",
-				0,
-				menuhandlerGyroInvertY,
-		},
-		{
-				MENUITEMTYPE_CHECKBOX,
-				0,
-				MENUITEMFLAG_LITERAL_TEXT,
-				(uintptr_t)"Invert Gyro Crosshair X",
-				0,
-				menuhandlerGyroAimInvertX,
-		},
-		{
-				MENUITEMTYPE_CHECKBOX,
-				0,
-				MENUITEMFLAG_LITERAL_TEXT,
-				(uintptr_t)"Invert Gyro Crosshair Y",
-				0,
-				menuhandlerGyroAimInvertY,
-		},
-		{
-		    MENUITEMTYPE_SEPARATOR,
-		     0,
-		     0,
-		     0,
-		     0,
-				NULL,
-		},
-		{
-				MENUITEMTYPE_SLIDER,
-				0,
-				MENUITEMFLAG_LITERAL_TEXT | MENUITEMFLAG_SLIDER_WIDE,
-				(uintptr_t)"Gyro X/Y Output Mixer",
-				200,
-				menuhandlerGyroVHMixer,
-		},
-		{
-				MENUITEMTYPE_SLIDER,
-				0,
-				MENUITEMFLAG_LITERAL_TEXT | MENUITEMFLAG_SLIDER_WIDE,
-				(uintptr_t)"Gyro Smoothing",
-				100,
-				menuhandlerGyroSmoothing,
-		},
-		{
-				MENUITEMTYPE_SLIDER,
-				0,
-				MENUITEMFLAG_LITERAL_TEXT | MENUITEMFLAG_SLIDER_WIDE,
-				(uintptr_t)"Gyro Movement Threshold",
-				100,
-				menuhandlerGyroMinThreshold,
-		},
-		{
-				MENUITEMTYPE_SEPARATOR,
-				0,
-				0,
-				0,
-				0,
-				NULL,
-		},
-		{
-				MENUITEMTYPE_SELECTABLE,
-				0,
-				MENUITEMFLAG_SELECTABLE_CLOSESDIALOG,
-				L_OPTIONS_213, // "Back"
-				0,
-				NULL,
-		},
-		{ MENUITEMTYPE_END },
+	{
+		MENUITEMTYPE_CHECKBOX,
+		0,
+		MENUITEMFLAG_LITERAL_TEXT,
+		(uintptr_t)"Enable Gyro Aim",
+		0,
+		menuhandlerGyroEnabled,
+	},
+	{
+		MENUITEMTYPE_SEPARATOR,
+		0,
+		0,
+		0,
+		0,
+		NULL,
+	},
+	{
+		MENUITEMTYPE_DROPDOWN,
+		0,
+		MENUITEMFLAG_LITERAL_TEXT,
+		(uintptr_t)"Aim Mode",
+		0,
+		menuhandlerGyroAimMode,
+	},
+	{
+		MENUITEMTYPE_DROPDOWN,
+		0,
+		MENUITEMFLAG_LITERAL_TEXT,
+		(uintptr_t)"Gyro Modifier",
+		0,
+		menuhandlerGyroModifier,
+	},
+	{
+		MENUITEMTYPE_DROPDOWN,
+		0,
+		MENUITEMFLAG_LITERAL_TEXT,
+		(uintptr_t)"Axis Orientation",
+		0,
+		menuhandlerGyroAxisMode,
+	},
+	{
+		MENUITEMTYPE_CHECKBOX,
+		0,
+		MENUITEMFLAG_LITERAL_TEXT,
+		(uintptr_t)"Auto-Calibrate Gyro while Stationary",
+		0,
+		menuhandlerGyroAutoCalibration,
+	},
+	{
+		MENUITEMTYPE_SEPARATOR,
+		0,
+		0,
+		0,
+		0,
+		NULL,
+	},
+	{
+		MENUITEMTYPE_SLIDER,
+		0,
+		MENUITEMFLAG_LITERAL_TEXT | MENUITEMFLAG_SLIDER_WIDE,
+		(uintptr_t)"Gyro Speed X",
+		3000,
+		menuhandlerGyroSensitivityX,
+	},
+	{
+		MENUITEMTYPE_SLIDER,
+		0,
+		MENUITEMFLAG_LITERAL_TEXT | MENUITEMFLAG_SLIDER_WIDE,
+		(uintptr_t)"Gyro Speed Y",
+		3000,
+		menuhandlerGyroSensitivityY,
+	},
+	{
+		MENUITEMTYPE_SLIDER,
+		0,
+		MENUITEMFLAG_LITERAL_TEXT | MENUITEMFLAG_SLIDER_WIDE,
+		(uintptr_t)"Gyro Crosshair Speed X",
+		1000,
+		menuhandlerGyroCrosshairSpeedX,
+	},
+	{
+		MENUITEMTYPE_SLIDER,
+		0,
+		MENUITEMFLAG_LITERAL_TEXT | MENUITEMFLAG_SLIDER_WIDE,
+		(uintptr_t)"Gyro Crosshair Speed Y",
+		1000,
+		menuhandlerGyroCrosshairSpeedY,
+	},
+	{
+		MENUITEMTYPE_SEPARATOR,
+		0,
+		0,
+		0,
+		0,
+		NULL,
+	},
+	{
+		MENUITEMTYPE_CHECKBOX,
+		0,
+		MENUITEMFLAG_LITERAL_TEXT,
+		(uintptr_t)"Invert Gyro Speed X",
+		0,
+		menuhandlerGyroInvertX,
+	},
+	{
+		MENUITEMTYPE_CHECKBOX,
+		0,
+		MENUITEMFLAG_LITERAL_TEXT,
+		(uintptr_t)"Invert Gyro Speed Y",
+		0,
+		menuhandlerGyroInvertY,
+	},
+	{
+		MENUITEMTYPE_CHECKBOX,
+		0,
+		MENUITEMFLAG_LITERAL_TEXT,
+		(uintptr_t)"Invert Gyro Crosshair X",
+		0,
+		menuhandlerGyroAimInvertX,
+	},
+	{
+		MENUITEMTYPE_CHECKBOX,
+		0,
+		MENUITEMFLAG_LITERAL_TEXT,
+		(uintptr_t)"Invert Gyro Crosshair Y",
+		0,
+		menuhandlerGyroAimInvertY,
+	},
+	{
+		MENUITEMTYPE_SEPARATOR,
+		0,
+		0,
+		0,
+		0,
+		NULL,
+	},
+	{
+		MENUITEMTYPE_SLIDER,
+		0,
+		MENUITEMFLAG_LITERAL_TEXT | MENUITEMFLAG_SLIDER_WIDE,
+		(uintptr_t)"Gyro X/Y Output Mixer",
+		200,
+		menuhandlerGyroVHMixer,
+	},
+	{
+		MENUITEMTYPE_SLIDER,
+		0,
+		MENUITEMFLAG_LITERAL_TEXT | MENUITEMFLAG_SLIDER_WIDE,
+		(uintptr_t)"Gyro Smoothing",
+		100,
+		menuhandlerGyroSmoothing,
+	},
+	{
+		MENUITEMTYPE_SLIDER,
+		0,
+		MENUITEMFLAG_LITERAL_TEXT | MENUITEMFLAG_SLIDER_WIDE,
+		(uintptr_t)"Gyro Movement Threshold",
+		100,
+		menuhandlerGyroMinThreshold,
+	},
+	{
+		MENUITEMTYPE_SEPARATOR,
+		0,
+		0,
+		0,
+		0,
+		NULL,
+	},
+	{
+		MENUITEMTYPE_SELECTABLE,
+		0,
+		MENUITEMFLAG_SELECTABLE_CLOSESDIALOG,
+		L_OPTIONS_213, // "Back"
+		0,
+		NULL,
+	},
+	{ MENUITEMTYPE_END },
 };
 
 struct menudialogdef g_ExtendedGyroMenuDialog = {

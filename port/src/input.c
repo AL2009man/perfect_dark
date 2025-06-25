@@ -1107,7 +1107,7 @@ void inputUpdateGyro(s32 cidx)
 	// Apply aim mode, modifier, and threshold
 	applyGyroAimMode(cidx, &deltaX, &deltaY, &deltaZ);
 	applyGyroModifier(&deltaX, &deltaY, &deltaZ, inputGetGyroModifier(cidx), cidx);
-	applyGyroThreshold(&deltaX, &deltaY, &deltaZ, inputGetGyroMinThreshold(cidx));
+    applyGyroThreshold(&deltaX, &deltaY, &deltaZ, inputGyroGetMinThreshold(cidx));
 	applyGyroSmoothing(&deltaX, &deltaY, &deltaZ, inputGetGyroSmoothing(cidx), cidx);
 
 	// Store processed gyro deltas
@@ -1839,28 +1839,28 @@ void applyGyroModifier(f32* deltaX, f32* deltaY, f32* deltaZ, s32 activationMode
 	}
 }
 
-f32 inputGetGyroMinThreshold(s32 cidx)
+f32 inputGyroGetMinThreshold(s32 cidx)
 {
-	return padsCfg[cidx].gyroMinThreshold;
+    return padsCfg[cidx].gyroMinThreshold;
 }
 
-void inputSetGyroMinThreshold(s32 cidx, f32 threshold)
+void inputGyroSetMinThreshold(s32 cidx, f32 threshold)
 {
-	if (threshold < 0.f) threshold = 0.f;
-	if (threshold > 1.f) threshold = 1.f;
+    if (threshold < 0.f) threshold = 0.f;
+    if (threshold > 1.f) threshold = 1.f;
 
-	if (threshold > 0.f && threshold < 0.01f) threshold = 0.01f;
-	padsCfg[cidx].gyroMinThreshold = threshold;
+    if (threshold > 0.f && threshold < 0.01f) threshold = 0.01f;
+    padsCfg[cidx].gyroMinThreshold = threshold;
 }
 
 void applyGyroThreshold(f32* dx, f32* dy, f32* dz, f32 threshold)
 {
-	if (threshold > 0.f && dx && dy && dz) {
-		f32 mag = sqrtf((*dx) * (*dx) + (*dy) * (*dy) + (*dz) * (*dz));
-		if (mag < threshold) {
-			*dx = *dy = *dz = 0.f;
-		}
-	}
+    if (threshold > 0.f && dx && dy && dz) {
+        f32 mag = sqrtf((*dx) * (*dx) + (*dy) * (*dy) + (*dz) * (*dz));
+        if (mag < threshold) {
+            *dx = *dy = *dz = 0.f;
+        }
+    }
 }
 
 f32 inputGetGyroSmoothing(s32 cidx)

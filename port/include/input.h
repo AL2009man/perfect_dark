@@ -326,8 +326,8 @@ void inputGyroGetAimInvert(s32 cidx, s32* out_invertx, s32* out_inverty);
 void inputGyroSetAimInvert(s32 cidx, s32 invertx, s32 inverty);
 
 // Gyro Movement Threshold Management
-f32 inputGetGyroMinThreshold(s32 cidx);
-void inputSetGyroMinThreshold(s32 cidx, f32 threshold);
+f32 inputGyroGetMinThreshold(s32 cidx);
+void inputGyroSetMinThreshold(s32 cidx, f32 threshold);
 void applyGyroThreshold(f32* deltaX, f32* deltaY, f32* deltaZ, f32 threshold);
 
 // Gyro Smoothing Management
