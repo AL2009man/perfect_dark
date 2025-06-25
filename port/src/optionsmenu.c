@@ -633,27 +633,27 @@ static MenuItemHandlerResult menuhandlerGyroModifier(s32 operation, struct menui
 
 static MenuItemHandlerResult menuhandlerGyroAxisMode(s32 operation, struct menuitem* item, union handlerdata* data)
 {
-	static const char* opts[] = {
-		"Yaw",
-		"Roll",
-		"Local Space",
-		"Player Space",
-		"World Space"
-	};
+    static const char* opts[] = {
+        "Yaw",
+        "Roll",
+        "Local Space",
+        "Player Space",
+        "World Space"
+    };
 
-	switch (operation) {
-	case MENUOP_GETOPTIONCOUNT:
-		data->dropdown.value = ARRAYCOUNT(opts);
-		break;
-	case MENUOP_GETOPTIONTEXT:
-		return (intptr_t)opts[data->dropdown.value];
-	case MENUOP_SET:
-		inputSetGyroAxisMode(g_ExtMenuPlayer, data->dropdown.value);
-		break;
-	case MENUOP_GETSELECTEDINDEX:
-		data->dropdown.value = inputGetGyroAxisMode(g_ExtMenuPlayer);
-	}
-	return 0;
+    switch (operation) {
+    case MENUOP_GETOPTIONCOUNT:
+        data->dropdown.value = ARRAYCOUNT(opts);
+        break;
+    case MENUOP_GETOPTIONTEXT:
+        return (intptr_t)opts[data->dropdown.value];
+    case MENUOP_SET:
+        inputGyroSetAxisMode(g_ExtMenuPlayer, data->dropdown.value);
+        break;
+    case MENUOP_GETSELECTEDINDEX:
+        data->dropdown.value = inputGyroGetAxisMode(g_ExtMenuPlayer);
+    }
+    return 0;
 }
 
 static MenuItemHandlerResult menuhandlerGyroSensitivityX(s32 operation, struct menuitem* item, union handlerdata* data)

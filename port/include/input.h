@@ -307,8 +307,8 @@ void inputSetGyroAimMode(s32 cidx, s32 mode);
 void applyGyroAimMode(s32 cidx, f32* deltaX, f32* deltaY, f32* deltaZ);
 
 // Gyro Axis Mapping Management
-enum gyroaxismode inputGetGyroAxisMode(s32 cidx);
-void inputSetGyroAxisMode(s32 cidx, enum gyroaxismode mode);
+enum gyroaxismode inputGyroGetAxisMode(s32 cidx);
+void inputGyroSetAxisMode(s32 cidx, enum gyroaxismode mode);
 void applyGyroAxisMapping(s32 cidx, float gyroData[3], float accelData[3], f32* deltaX, f32* deltaY, f32* deltaZ);
 
 // Accelerometer Raw Data Access

@@ -1574,62 +1574,62 @@ void inputGyroEnable(s32 cidx, s32 enabled)
 	padsCfg[cidx].gyroEnabled = (enabled != 0);
 }
 
-enum gyroaxismode inputGetGyroAxisMode(s32 cidx)
+enum gyroaxismode inputGyroGetAxisMode(s32 cidx)
 {
-	return padsCfg[cidx].gyroAxisMode;
+    return padsCfg[cidx].gyroAxisMode;
 }
 
-void inputSetGyroAxisMode(s32 cidx, enum gyroaxismode mode)
+void inputGyroSetAxisMode(s32 cidx, enum gyroaxismode mode)
 {
-	padsCfg[cidx].gyroAxisMode = mode;
+    padsCfg[cidx].gyroAxisMode = mode;
 }
 
 void applyGyroAxisMapping(s32 cidx, float gyroData[3], float accelData[3], f32* deltaX, f32* deltaY, f32* deltaZ)
 {
-	if (!gpadMotion[cidx]) {
-		*deltaX = *deltaY = *deltaZ = 0.f;
-		return;
-	}
+    if (!gpadMotion[cidx]) {
+        *deltaX = *deltaY = *deltaZ = 0.f;
+        return;
+    }
 
-	float calibratedGyro[3] = {0.f};
-	GetCalibratedGyro(gpadMotion[cidx], &calibratedGyro[0], &calibratedGyro[1], &calibratedGyro[2]);
+    float calibratedGyro[3] = {0.f};
+    GetCalibratedGyro(gpadMotion[cidx], &calibratedGyro[0], &calibratedGyro[1], &calibratedGyro[2]);
 
-	switch (inputGetGyroAxisMode(cidx)) {
-	case GYRO_AXIS_YAW:
-		*deltaX = -calibratedGyro[1];
-		*deltaY = -calibratedGyro[0];
-		*deltaZ = 0.f;
-		break;
-	case GYRO_AXIS_ROLL:
-		*deltaX = calibratedGyro[2];
-		*deltaY = -calibratedGyro[0];
-		*deltaZ = 0.f;
-		break;
-	case GYRO_AXIS_LOCAL:
-		*deltaX = -calibratedGyro[1] + calibratedGyro[2];
-		*deltaY = -calibratedGyro[0];
-		*deltaZ = 0.f;
-		break;
-	case GYRO_AXIS_PLAYER: {
-		float x = 0.f, y = 0.f;
-		GetPlayerSpaceGyro(gpadMotion[cidx], &x, &y, 1.41f);
-		*deltaX = -y;
-		*deltaY = -x;
-		*deltaZ = 0.f;
-		break;
-	}
-	case GYRO_AXIS_WORLD: {
-		float x = 0.f, y = 0.f;
-		GetWorldSpaceGyro(gpadMotion[cidx], &x, &y, 0.125f);
-		*deltaX = -y;
-		*deltaY = -x;
-		*deltaZ = 0.f;
-		break;
-	}
-	default:
-		*deltaX = *deltaY = *deltaZ = 0.f;
-		break;
-	}
+    switch (inputGyroGetAxisMode(cidx)) {
+    case GYRO_AXIS_YAW:
+        *deltaX = -calibratedGyro[1];
+        *deltaY = -calibratedGyro[0];
+        *deltaZ = 0.f;
+        break;
+    case GYRO_AXIS_ROLL:
+        *deltaX = calibratedGyro[2];
+        *deltaY = -calibratedGyro[0];
+        *deltaZ = 0.f;
+        break;
+    case GYRO_AXIS_LOCAL:
+        *deltaX = -calibratedGyro[1] + calibratedGyro[2];
+        *deltaY = -calibratedGyro[0];
+        *deltaZ = 0.f;
+        break;
+    case GYRO_AXIS_PLAYER: {
+        float x = 0.f, y = 0.f;
+        GetPlayerSpaceGyro(gpadMotion[cidx], &x, &y, 1.41f);
+        *deltaX = -y;
+        *deltaY = -x;
+        *deltaZ = 0.f;
+        break;
+    }
+    case GYRO_AXIS_WORLD: {
+        float x = 0.f, y = 0.f;
+        GetWorldSpaceGyro(gpadMotion[cidx], &x, &y, 0.125f);
+        *deltaX = -y;
+        *deltaY = -x;
+        *deltaZ = 0.f;
+        break;
+    }
+    default:
+        *deltaX = *deltaY = *deltaZ = 0.f;
+        break;
+    }
 }
 
 s32 inputGetGyroAimMode(s32 cidx)
