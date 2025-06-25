@@ -2208,6 +2208,7 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 			// joystick is inactive, move crosshair using the mouse
 			f32 dx, dy;
 			inputMouseGetScaledDeltaCrosshair(&dx, &dy);
+            const f32 norm = g_Vars.lvupdate60freal;
 			f32 x = g_Vars.currentplayer->swivelpos[0] + dx;
 			f32 y = g_Vars.currentplayer->swivelpos[1] + dy;
 			if (x < -1.f) x = -1.f; else if (x > 1.f) x = 1.f;
