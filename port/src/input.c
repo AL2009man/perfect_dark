@@ -190,7 +190,7 @@ static const char *ckNames[CK_TOTAL_COUNT] = {
 	"STICK_YPOS",
 	"ACCEPT_BUTTON",
 	"CANCEL_BUTTON",
-    "CK_RESET_CAMERA",
+	"CK_RESET_CAMERA",
 	"CK_GYRO_MOD",
 	"CK_GYRO_CALIB",
 	"CK_0040",
@@ -426,25 +426,25 @@ static inline void inputInitController(const s32 cidx, const s32 jidx)
 
 padsCfg[cidx].gyroSensorActive = 0;
 #if SDL_VERSION_ATLEAST(2, 0, 14)
-	int sensorActive = 0;
+int sensorActive = 0;
 
-	// Try to enable both gyro and accelerometer sensors if available
-	const SDL_SensorType sensors[] = { SDL_SENSOR_GYRO, SDL_SENSOR_ACCEL };
-	const char* sensorNames[] = { "Gyro", "Accelerometer" };
+// Try to enable both gyro and accelerometer sensors if available
+const SDL_SensorType sensors[] = { SDL_SENSOR_GYRO, SDL_SENSOR_ACCEL };
+const char* sensorNames[] = { "Gyro", "Accelerometer" };
 
-	for (int i = 0; i < 2; ++i) {
-		if (SDL_GameControllerHasSensor(pads[cidx], sensors[i])) {
-			if (SDL_GameControllerSetSensorEnabled(pads[cidx], sensors[i], SDL_TRUE) == 0) {
-				sensorActive = 1;
-				sysLogPrintf(LOG_NOTE, "input: %s sensor enabled for controller %d", sensorNames[i], cidx);
-			} else {
-				sysLogPrintf(LOG_WARNING, "input: Failed to enable %s sensor for controller %d", sensorNames[i], cidx);
-			}
+for (int i = 0; i < 2; ++i) {
+	if (SDL_GameControllerHasSensor(pads[cidx], sensors[i])) {
+		if (SDL_GameControllerSetSensorEnabled(pads[cidx], sensors[i], SDL_TRUE) == 0) {
+			sensorActive = 1;
+			sysLogPrintf(LOG_NOTE, "input: %s sensor enabled for controller %d", sensorNames[i], cidx);
 		} else {
-			sysLogPrintf(LOG_NOTE, "input: Controller %d does not support %s sensor", cidx, sensorNames[i]);
+			sysLogPrintf(LOG_WARNING, "input: Failed to enable %s sensor for controller %d", sensorNames[i], cidx);
 		}
+	} else {
+		sysLogPrintf(LOG_NOTE, "input: Controller %d does not support %s sensor", cidx, sensorNames[i]);
 	}
-	padsCfg[cidx].gyroSensorActive = sensorActive;
+}
+padsCfg[cidx].gyroSensorActive = sensorActive;
 #endif
 }
 
@@ -461,7 +461,8 @@ static inline void inputCloseController(const s32 cidx)
 	pads[cidx] = NULL;
 	padsCfg[cidx].rumbleOn = 0;
 
-    // Zero out gyro deltas and orientation to prevent drift after disconnect
+	// Zero out gyro deltas and orientation to prevent drift after disconnect
+
 	gyroDeltaYaw[cidx] = gyroDeltaPitch[cidx] = gyroDeltaRoll[cidx] = 0.f;
 	gyroYaw[cidx] = gyroPitch[cidx] = gyroRoll[cidx] = 0.f;
 
@@ -1652,9 +1653,9 @@ void applyGyroAimMode(s32 cidx, f32* deltaX, f32* deltaY, f32* deltaZ)
 
 void inputGyroGetRawDelta(s32 cidx, s32* dx, s32* dy, s32* dz)
 {
-		if (dx) *dx = (s32)gyroDeltaYaw[cidx];
-		if (dy) *dy = (s32)gyroDeltaPitch[cidx];
-		if (dz) *dz = (s32)gyroDeltaRoll[cidx];
+	if (dx) *dx = (s32)gyroDeltaYaw[cidx];
+	if (dy) *dy = (s32)gyroDeltaPitch[cidx];
+	if (dz) *dz = (s32)gyroDeltaRoll[cidx];
 }
 
 static inline void applyGyroVHMixer(s32 cidx, f32* dx, f32* dy) {
@@ -1675,25 +1676,25 @@ static inline void applyGyroVHMixer(s32 cidx, f32* dx, f32* dy) {
 
 void inputGyroGetScaledDelta(s32 cidx, f32* dx, f32* dy, f32* dz)
 {
-    if (!dx || !dy || !dz) return;
+	if (!dx || !dy || !dz) return;
 
-    f32 gdx = 0.f, gdy = 0.f, gdz = 0.f;
+	f32 gdx = 0.f, gdy = 0.f, gdz = 0.f;
 
-    if (padsCfg[cidx].gyroEnabled) {
-        if (!isnan(gyroDeltaYaw[cidx]) && !isnan(gyroDeltaPitch[cidx]) && !isnan(gyroDeltaRoll[cidx])) {
-            gdx = gyroDeltaYaw[cidx] * padsCfg[cidx].gyroSensX;
-            if (padsCfg[cidx].gyroInvertX) gdx = -gdx;
-            gdy = gyroDeltaPitch[cidx] * padsCfg[cidx].gyroSensY;
-            if (padsCfg[cidx].gyroInvertY) gdy = -gdy;
-            gdz = gyroDeltaRoll[cidx] * padsCfg[cidx].gyroSensY;
-        }
-    }
+	if (padsCfg[cidx].gyroEnabled) {
+		if (!isnan(gyroDeltaYaw[cidx]) && !isnan(gyroDeltaPitch[cidx]) && !isnan(gyroDeltaRoll[cidx])) {
+			gdx = gyroDeltaYaw[cidx] * padsCfg[cidx].gyroSensX;
+			if (padsCfg[cidx].gyroInvertX) gdx = -gdx;
+			gdy = gyroDeltaPitch[cidx] * padsCfg[cidx].gyroSensY;
+			if (padsCfg[cidx].gyroInvertY) gdy = -gdy;
+			gdz = gyroDeltaRoll[cidx] * padsCfg[cidx].gyroSensY;
+		}
+	}
 
-    *dx = gdx;
-    *dy = gdy;
-    *dz = gdz;
+	*dx = gdx;
+	*dy = gdy;
+	*dz = gdz;
 
-    applyGyroVHMixer(cidx, dx, dy);
+	applyGyroVHMixer(cidx, dx, dy);
 }
 
 void inputGyroGetSpeed(s32 cidx, f32* x, f32* y)

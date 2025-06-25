@@ -154,9 +154,9 @@ typedef enum {
 } GyroCalibrationOp;
 
 typedef enum {
-		CALIBRATIONMODE_MANUAL = 0,
-		CALIBRATIONMODE_STILLNESS = 1,
-		CALIBRATIONMODE_SENSORFUSION = 2
+	CALIBRATIONMODE_MANUAL = 0,
+	CALIBRATIONMODE_STILLNESS = 1,
+	CALIBRATIONMODE_SENSORFUSION = 2
 } CalibrationMode;
 
 
@@ -235,7 +235,7 @@ const char *inputGetKeyName(s32 vk);
 // get CK_ value from human-readable name
 s32 inputGetContKeyByName(const char *name);
 
-// Returns 1 if the reset camera action is pressed for the given controller indexAdd commentMore actions
+// Returns 1 if the reset camera action is pressed for the given controller index
 s32 inputResetCameraPressed(s32 idx);
 
 // get human-readable name from CK_ value
