@@ -448,6 +448,27 @@ void bmoveUpdateSpeedThetaControl(f32 value)
 	}
 }
 
+#ifndef PLATFORM_N64
+// Helper to apply crosshair movement
+static void applyCrosshairDelta(float aimspeedx, float aimspeedy, float dx, float dy, float aspect, float lvupdate60freal, float *swivelpos)
+{
+    const float xcoeff = 320.f / 1080.f;
+    const float ycoeff = 240.f / 1080.f;
+    const float xscale = (aimspeedx * xcoeff * lvupdate60freal) / aspect;
+    const float yscale = aimspeedy * ycoeff * lvupdate60freal;
+
+    float x = swivelpos[0] + dx * xscale;
+    float y = swivelpos[1] + dy * yscale;
+
+    // Clamp to [-1, 1]
+    x = (x < -1.f) ? -1.f : ((x > 1.f) ? 1.f : x);
+    y = (y < -1.f) ? -1.f : ((y > 1.f) ? 1.f : y);
+
+    swivelpos[0] = x;
+    swivelpos[1] = y;
+}
+#endif
+
 /**
  * Calculate the lookahead angle.
  *
@@ -2319,45 +2340,38 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 		// when holding aim and moving stick
 		bgunSetAimType(0);
 #ifndef PLATFORM_N64
-			if (allowgcross && g_Vars.currentplayernum == 0) {
-				// Gyro is active, apply gyro movement FIRST
-				inputGyroGetScaledDeltaCrosshair(g_Vars.currentplayernum, &movedata.gyrolookdx, &movedata.gyrolookdy);
+    if (allowgcross && g_Vars.currentplayernum == 0) {
+        // Gyro is active, apply gyro movement FIRST
+        inputGyroGetScaledDeltaCrosshair(g_Vars.currentplayernum, &movedata.gyrolookdx, &movedata.gyrolookdy);
 
-				if (movedata.gyrolookdx != 0.0f || movedata.gyrolookdy != 0.0f) {
-					const float xcoeff = 320.f / 1080.f;
-					const float ycoeff = 240.f / 1080.f;
-					const float xscale = (PLAYER_EXTCFG().gyroaimsensx * xcoeff * g_Vars.lvupdate60freal) / g_Vars.currentplayer->aspect;
-					const float yscale = PLAYER_EXTCFG().gyroaimsensy * ycoeff * g_Vars.lvupdate60freal;
+        if (movedata.gyrolookdx != 0.0f || movedata.gyrolookdy != 0.0f) {
+            applyCrosshairDelta(
+                PLAYER_EXTCFG().gyroaimsensx,
+                PLAYER_EXTCFG().gyroaimsensy,
+                movedata.gyrolookdx,
+                movedata.gyrolookdy,
+                g_Vars.currentplayer->aspect,
+                g_Vars.lvupdate60freal,
+                g_Vars.currentplayer->swivelpos
+            );
+            return;
+        }
+    }
 
-					float x = g_Vars.currentplayer->swivelpos[0] + movedata.gyrolookdx * xscale;
-					float y = g_Vars.currentplayer->swivelpos[1] + movedata.gyrolookdy * yscale;
-
-					g_Vars.currentplayer->swivelpos[0] = x;
-					g_Vars.currentplayer->swivelpos[1] = y;
-
-					return;
-				}
-			}
-
-			// Mouse input (only if gyro input was inactive)
-			if (allowmcross) {
-					const f32 xcoeff = 320.f / 1080.f;
-					const f32 ycoeff = 240.f / 1080.f;
-					const f32 xscale = (PLAYER_EXTCFG().mouseaimspeedx * xcoeff) / g_Vars.currentplayer->aspect;
-					const f32 yscale = PLAYER_EXTCFG().mouseaimspeedy * ycoeff;
-
-					f32 x = g_Vars.currentplayer->swivelpos[0] + movedata.freelookdx * xscale;
-					f32 y = g_Vars.currentplayer->swivelpos[1] + movedata.freelookdy * yscale;
-
-					x = (x < -1.f) ? -1.f : ((x > 1.f) ? 1.f : x);
-					y = (y < -1.f) ? -1.f : ((y > 1.f) ? 1.f : y);
-
-					g_Vars.currentplayer->swivelpos[0] = x;
-					g_Vars.currentplayer->swivelpos[1] = y;
-					bgunSwivelWithDamp(x, y, 0.01f);
-
-					return;
-			}
+    // Mouse input (only if gyro input was inactive)
+    if (allowmcross) {
+        applyCrosshairDelta(
+            PLAYER_EXTCFG().mouseaimspeedx,
+            PLAYER_EXTCFG().mouseaimspeedy,
+            movedata.freelookdx,
+            movedata.freelookdy,
+            g_Vars.currentplayer->aspect,
+            1.0f, // Mouse input is not framerate scaled
+            g_Vars.currentplayer->swivelpos
+        );
+        bgunSwivelWithDamp(g_Vars.currentplayer->swivelpos[0], g_Vars.currentplayer->swivelpos[1], 0.01f);
+        return;
+    }
 #endif
 
 	// Default joystick-based movement if neither mouse nor gyro crosshair movement is active
