@@ -672,8 +672,9 @@ void bmoveResetMoveData(struct movedata *data)
  * 0, 0, 0, 1 = tickmode warp
  * 1, 1, 0, 1 = autowalk
  */
-void bmoveProcessInput(s32 cidx, bool allowc1x, bool allowc1y, bool allowc1buttons, bool ignorec2)
+void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool ignorec2)
 {
+	const s32 cidx = g_Vars.currentplayernum;
 	struct movedata movedata;
 	s32 controlmode;
 	s32 weaponnum;
@@ -2173,13 +2174,13 @@ void bmoveProcessInput(s32 cidx, bool allowc1x, bool allowc1y, bool allowc1butto
 			}
 
 #ifndef PLATFORM_N64
-	float recenterMult = (s_recenterfast ? 7.0f : 3.5f);
-	g_Vars.currentplayer->vv_verta += g_Vars.currentplayer->speedverta * g_Vars.lvupdate60freal * recenterMult;
-	if (s_recenterfast && !g_Vars.currentplayer->docentreupdown) {
-		s_recenterfast = 0;
-	}
+			float recenterMult = (s_recenterfast ? 7.0f : 3.5f);
+			g_Vars.currentplayer->vv_verta += g_Vars.currentplayer->speedverta * g_Vars.lvupdate60freal * recenterMult;
+			if (s_recenterfast && !g_Vars.currentplayer->docentreupdown) {
+				s_recenterfast = 0;
+			}
 #else
-	g_Vars.currentplayer->vv_verta += g_Vars.currentplayer->speedverta * g_Vars.lvupdate60freal * 3.5f;
+			g_Vars.currentplayer->vv_verta += g_Vars.currentplayer->speedverta * g_Vars.lvupdate60freal * 3.5f;
 #endif
 		}
 	}
@@ -2474,7 +2475,7 @@ void bmoveTick(bool allowc1x, bool allowc1y, bool allowc1buttons, bool ignorec2)
 	f32 zdiff;
 	f32 distance;
 
-	bmoveProcessInput(g_Vars.currentplayernum, allowc1x, allowc1y, allowc1buttons, ignorec2);
+	bmoveProcessInput(allowc1x, allowc1y, allowc1buttons, ignorec2);
 
 	if (g_Vars.currentplayer->bondmovemode == MOVEMODE_BIKE) {
 		bbikeTick();
