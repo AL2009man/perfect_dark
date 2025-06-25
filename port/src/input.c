@@ -42,7 +42,7 @@ static SDL_GameController *pads[INPUT_MAX_CONTROLLERS];
 	}, \
 	.sens = { 1.f, 1.f, 1.f, 1.f }, \
 	.deadzone = { DEFAULT_DEADZONE, DEFAULT_DEADZONE, DEFAULT_DEADZONE, DEFAULT_DEADZONE_RY }, \
-	.crosshairEdgeBoundary = 0.9f, \
+	.crosshairEdgeBoundary = 0.7f, \
 	.stickCButtons = 0, \
 	.swapSticks = 1, \
 	.deviceIndex = -1, \
@@ -1336,7 +1336,7 @@ f32 inputGetCrosshairEdgeBoundary(s32 cidx)
 
 void inputSetCrosshairEdgeBoundary(s32 cidx, f32 value)
 {
-    if (value < 0.1f) value = 0.1f;
+    if (value < 0.0f) value = 0.0f;
     if (value > 1.0f) value = 1.0f;
     padsCfg[cidx].crosshairEdgeBoundary = value;
 }
@@ -1542,7 +1542,7 @@ PD_CONSTRUCTOR static void inputConfigInit(void)
 		configRegisterFloat(strFmt("%s.LStickScaleY", secname), &padsCfg[c].sens[1], -10.f, 10.f);
 		configRegisterFloat(strFmt("%s.RStickScaleX", secname), &padsCfg[c].sens[2], -10.f, 10.f);
 		configRegisterFloat(strFmt("%s.RStickScaleY", secname), &padsCfg[c].sens[3], -10.f, 10.f);
-        configRegisterFloat(strFmt("%s.CrosshairEdgeBoundary", secname), &padsCfg[c].crosshairEdgeBoundary, 0.1f, 1.0f);
+        configRegisterFloat(strFmt("%s.CrosshairEdgeBoundary", secname), &padsCfg[c].crosshairEdgeBoundary, 0.0f, 1.0f);
 		configRegisterInt(strFmt("%s.StickCButtons", secname), &padsCfg[c].stickCButtons, 0, 1);
 		configRegisterInt(strFmt("%s.CancelCButtons", secname), &padsCfg[c].cancelCButtons, 0, 1);
 		configRegisterInt(strFmt("%s.SwapSticks", secname), &padsCfg[c].swapSticks, 0, 1);

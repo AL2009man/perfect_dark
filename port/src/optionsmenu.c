@@ -1532,7 +1532,7 @@ struct menuitem g_ExtendedGameMenuItems[] = {
 		MENUITEMTYPE_SLIDER,
 		0,
 		MENUITEMFLAG_LITERAL_TEXT | MENUITEMFLAG_SLIDER_WIDE,
-		(uintptr_t)"Crosshair Edge Boundary",
+		(uintptr_t)"Crosshair Edge Deadzone",
 		10,
 		menuhandlerCrosshairEdgeBoundary,
 	},
