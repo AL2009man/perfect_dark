@@ -1775,44 +1775,28 @@ void inputGyroSetAimSpeedY(s32 cidx, f32 y)
 	padsCfg[cidx].gyroAimSensY = y;
 }
 
-s32 inputGyroInvertXIsEnabled(s32 cidx)
+void inputGyroGetInvert(s32 cidx, s32* out_invertx, s32* out_inverty)
 {
-	return padsCfg[cidx].gyroInvertX;
+    if (out_invertx) *out_invertx = padsCfg[cidx].gyroInvertX;
+    if (out_inverty) *out_inverty = padsCfg[cidx].gyroInvertY;
 }
 
-void inputGyroInvertXEnable(s32 cidx, s32 enabled)
+void inputGyroSetInvert(s32 cidx, s32 invertx, s32 inverty)
 {
-	padsCfg[cidx].gyroInvertX = (enabled != 0);
+    padsCfg[cidx].gyroInvertX = invertx ? 1 : 0;
+    padsCfg[cidx].gyroInvertY = inverty ? 1 : 0;
 }
 
-s32 inputGyroInvertYIsEnabled(s32 cidx)
+void inputGyroGetAimInvert(s32 cidx, s32* out_invertx, s32* out_inverty)
 {
-	return padsCfg[cidx].gyroInvertY;
+    if (out_invertx) *out_invertx = padsCfg[cidx].gyroAimInvertX;
+    if (out_inverty) *out_inverty = padsCfg[cidx].gyroAimInvertY;
 }
 
-void inputGyroInvertYEnable(s32 cidx, s32 enabled)
+void inputGyroSetAimInvert(s32 cidx, s32 invertx, s32 inverty)
 {
-	padsCfg[cidx].gyroInvertY = (enabled != 0);
-}
-
-s32 inputGyroAimInvertXIsEnabled(s32 cidx)
-{
-	return padsCfg[cidx].gyroAimInvertX;
-}
-
-void inputGyroAimInvertXEnable(s32 cidx, s32 enabled)
-{
-	padsCfg[cidx].gyroAimInvertX = (enabled != 0);
-}
-
-s32 inputGyroAimInvertYIsEnabled(s32 cidx)
-{
-	return padsCfg[cidx].gyroAimInvertY;
-}
-
-void inputGyroAimInvertYEnable(s32 cidx, s32 enabled)
-{
-	padsCfg[cidx].gyroAimInvertY = (enabled != 0);
+    padsCfg[cidx].gyroAimInvertX = invertx ? 1 : 0;
+    padsCfg[cidx].gyroAimInvertY = inverty ? 1 : 0;
 }
 
 f32 inputGetGyroVHMixer(s32 cidx)

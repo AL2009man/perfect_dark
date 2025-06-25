@@ -337,14 +337,10 @@ f32 inputGyroGetCrosshairSpeedY(s32 cidx);
 void inputGyroSetCrosshairSpeedY(s32 cidx, f32 y);
 
 // Gyro Invert Management
-s32 inputGyroInvertXIsEnabled(s32 cidx);
-void inputGyroInvertXEnable(s32 cidx, s32 enabled);
-s32 inputGyroInvertYIsEnabled(s32 cidx);
-void inputGyroInvertYEnable(s32 cidx, s32 enabled);
-s32 inputGyroAimInvertXIsEnabled(s32 cidx);
-void inputGyroAimInvertXEnable(s32 cidx, s32 enabled);
-s32 inputGyroAimInvertYIsEnabled(s32 cidx);
-void inputGyroAimInvertYEnable(s32 cidx, s32 enabled);
+void inputGyroGetInvert(s32 cidx, s32* out_invertx, s32* out_inverty);
+void inputGyroSetInvert(s32 cidx, s32 invertx, s32 inverty);
+void inputGyroGetAimInvert(s32 cidx, s32* out_invertx, s32* out_inverty);
+void inputGyroSetAimInvert(s32 cidx, s32 invertx, s32 inverty);
 
 // Gyro Movement Threshold Management
 f32 inputGetGyroMinThreshold(s32 cidx);

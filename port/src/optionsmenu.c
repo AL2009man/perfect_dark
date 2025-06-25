@@ -690,26 +690,32 @@ static MenuItemHandlerResult menuhandlerGyroSensitivityY(s32 operation, struct m
 
 static MenuItemHandlerResult menuhandlerGyroInvertX(s32 operation, struct menuitem* item, union handlerdata* data)
 {
-	switch (operation) {
-	case MENUOP_GET:
-		return inputGyroInvertXIsEnabled(g_ExtMenuPlayer);
-	case MENUOP_SET:
-		inputGyroInvertXEnable(g_ExtMenuPlayer, data->checkbox.value);
-		break;
-	}
-	return 0;
+    s32 invertx, inverty;
+    switch (operation) {
+    case MENUOP_GET:
+        inputGyroGetInvert(g_ExtMenuPlayer, &invertx, NULL);
+        return invertx;
+    case MENUOP_SET:
+        inputGyroGetInvert(g_ExtMenuPlayer, NULL, &inverty);
+        inputGyroSetInvert(g_ExtMenuPlayer, data->checkbox.value, inverty);
+        break;
+    }
+    return 0;
 }
 
 static MenuItemHandlerResult menuhandlerGyroInvertY(s32 operation, struct menuitem* item, union handlerdata* data)
 {
-	switch (operation) {
-	case MENUOP_GET:
-		return inputGyroInvertYIsEnabled(g_ExtMenuPlayer);
-	case MENUOP_SET:
-		inputGyroInvertYEnable(g_ExtMenuPlayer, data->checkbox.value);
-		break;
-	}
-	return 0;
+    s32 invertx, inverty;
+    switch (operation) {
+    case MENUOP_GET:
+        inputGyroGetInvert(g_ExtMenuPlayer, NULL, &inverty);
+        return inverty;
+    case MENUOP_SET:
+        inputGyroGetInvert(g_ExtMenuPlayer, &invertx, NULL);
+        inputGyroSetInvert(g_ExtMenuPlayer, invertx, data->checkbox.value);
+        break;
+    }
+    return 0;
 }
 
 static MenuItemHandlerResult menuhandlerGyroCrosshairSpeedX(s32 operation, struct menuitem* item, union handlerdata* data)
@@ -746,26 +752,32 @@ static MenuItemHandlerResult menuhandlerGyroCrosshairSpeedY(s32 operation, struc
 
 static MenuItemHandlerResult menuhandlerGyroAimInvertX(s32 operation, struct menuitem* item, union handlerdata* data)
 {
-	switch (operation) {
-	case MENUOP_GET:
-		return inputGyroAimInvertXIsEnabled(g_ExtMenuPlayer);
-	case MENUOP_SET:
-		inputGyroAimInvertXEnable(g_ExtMenuPlayer, data->checkbox.value);
-		break;
-	}
-	return 0;
+    s32 invertx, inverty;
+    switch (operation) {
+    case MENUOP_GET:
+        inputGyroGetAimInvert(g_ExtMenuPlayer, &invertx, NULL);
+        return invertx;
+    case MENUOP_SET:
+        inputGyroGetAimInvert(g_ExtMenuPlayer, NULL, &inverty);
+        inputGyroSetAimInvert(g_ExtMenuPlayer, data->checkbox.value, inverty);
+        break;
+    }
+    return 0;
 }
 
 static MenuItemHandlerResult menuhandlerGyroAimInvertY(s32 operation, struct menuitem* item, union handlerdata* data)
 {
-	switch (operation) {
-	case MENUOP_GET:
-		return inputGyroAimInvertYIsEnabled(g_ExtMenuPlayer);
-	case MENUOP_SET:
-		inputGyroAimInvertYEnable(g_ExtMenuPlayer, data->checkbox.value);
-		break;
-	}
-	return 0;
+    s32 invertx, inverty;
+    switch (operation) {
+    case MENUOP_GET:
+        inputGyroGetAimInvert(g_ExtMenuPlayer, NULL, &inverty);
+        return inverty;
+    case MENUOP_SET:
+        inputGyroGetAimInvert(g_ExtMenuPlayer, &invertx, NULL);
+        inputGyroSetAimInvert(g_ExtMenuPlayer, invertx, data->checkbox.value);
+        break;
+    }
+    return 0;
 }
 
 static MenuItemHandlerResult menuhandlerGyroVHMixer(s32 operation, struct menuitem* item, union handlerdata* data)
