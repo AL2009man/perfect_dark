@@ -9,13 +9,11 @@
 #include "platform.h"
 #include "input.h"
 #include "../gamepadmotionhelper/GamepadMotion.h"
-#include "../include/types.h"
 #include "video.h"
 #include "config.h"
 #include "utils.h"
 #include "system.h"
 #include "fs.h"
-#include <math.h>
 
 #if !SDL_VERSION_ATLEAST(2, 0, 14)
 // this was added in 2.0.14
@@ -192,7 +190,7 @@ static const char *ckNames[CK_TOTAL_COUNT] = {
 	"STICK_YPOS",
 	"ACCEPT_BUTTON",
 	"CANCEL_BUTTON",
-  "CK_RESET_CAMERA",
+    "CK_RESET_CAMERA",
 	"CK_GYRO_MOD",
 	"CK_GYRO_CALIB",
 	"CK_0040",

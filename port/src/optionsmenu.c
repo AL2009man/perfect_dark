@@ -13,6 +13,7 @@
 #include "lib/joy.h"
 #include "video.h"
 #include "input.h"
+#include "config.h"
 
 static s32 g_ExtMenuPlayer = 0;
 static struct menudialogdef *g_ExtNextDialog = NULL;

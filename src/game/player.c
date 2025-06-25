@@ -3660,9 +3660,9 @@ void playerTick(bool arg0)
 #ifndef PLATFORM_N64
 				// respect the invert pitch setting
 				if (optionsGetForwardPitch(g_Vars.currentplayerstats->mpindex)) {
-						sp178 = -sp178;
+					sp178 = -sp178;
 				}
-				// Mouse control
+				// mouse control
 				if (g_Vars.currentplayernum == 0) {
 					f32 mdx, mdy;
 					inputMouseGetScaledDelta(&mdx, &mdy);

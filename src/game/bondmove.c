@@ -2310,10 +2310,10 @@ void bmoveProcessInput(s32 cidx, bool allowc1x, bool allowc1y, bool allowc1butto
 
 			bgunSwivelWithDamp(x, y, PAL ? 0.955f : 0.963f);
 		}
-	}
-	else if (movedata.canmanualaim) {
-			// adjust crosshair's position on screen when holding aim and moving stick
-			bgunSetAimType(0);
+	} else if (movedata.canmanualaim) {
+		// Adjust crosshair's position on screen
+		// when holding aim and moving stick
+		bgunSetAimType(0);
 #ifndef PLATFORM_N64
 			if (allowgcross && g_Vars.currentplayernum == 0) {
 					// Gyro is active, apply gyro movement FIRST
