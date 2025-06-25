@@ -190,9 +190,6 @@ static const char *ckNames[CK_TOTAL_COUNT] = {
 	"STICK_YPOS",
 	"ACCEPT_BUTTON",
 	"CANCEL_BUTTON",
-	"CK_RESET_CAMERA",
-	"CK_GYRO_MOD",
-	"CK_GYRO_CALIB",
 	"CK_0040",
 	"CK_0080",
 	"CK_0100",
@@ -281,8 +278,8 @@ void inputSetDefaultKeyBinds(s32 cidx, s32 n64mode)
 		{ CK_STICK_XPOS,    SDL_SCANCODE_RIGHT,  0                   },
 		{ CK_STICK_YNEG,    SDL_SCANCODE_DOWN,   0                   },
 		{ CK_STICK_YPOS,    SDL_SCANCODE_UP,     0                   },
-		{ CK_RESET_CAMERA,  SDL_SCANCODE_C,      0                   },
-		{ CK_GYRO_CALIB,    SDL_SCANCODE_F10,    0                   },		
+		{ CK_0040,  SDL_SCANCODE_C,      0                   },
+		{ CK_0100,          SDL_SCANCODE_F10,    0                   },		
 		{ CK_4000,          SDL_SCANCODE_LSHIFT, 0                   },
 		{ CK_2000,          SDL_SCANCODE_LCTRL,  0                   }
 	};
@@ -303,8 +300,8 @@ void inputSetDefaultKeyBinds(s32 cidx, s32 n64mode)
 		{ CK_C_L,    SDL_CONTROLLER_BUTTON_DPAD_LEFT     },
 		{ CK_ACCEPT, SDL_CONTROLLER_BUTTON_A             },
 		{ CK_CANCEL, SDL_CONTROLLER_BUTTON_B             },
-		{ CK_RESET_CAMERA, SDL_CONTROLLER_BUTTON_RIGHTSTICK  },
-		{ CK_GYRO_CALIB, SDL_CONTROLLER_BUTTON_MISC1     },
+		{ CK_0040, SDL_CONTROLLER_BUTTON_RIGHTSTICK  },
+		{ CK_0100, SDL_CONTROLLER_BUTTON_MISC1     },
 		{ CK_8000,   SDL_CONTROLLER_BUTTON_LEFTSTICK     },
 	};
 
@@ -1460,7 +1457,7 @@ s32 inputButtonPressed(s32 idx, u32 contbtn)
 
 s32 inputResetCameraPressed(s32 idx)
 {
-	return inputBindPressed(idx, CK_RESET_CAMERA);
+	return inputBindPressed(idx, CK_0040);
 }
 
 void inputLockMouse(s32 lock)
@@ -1844,7 +1841,7 @@ void applyGyroModifier(f32* deltaX, f32* deltaY, f32* deltaZ, s32 activationMode
 	static bool toggleState[INPUT_MAX_CONTROLLERS] = { true, true, true, true };
 	static int prevGyroMod[INPUT_MAX_CONTROLLERS] = { 0 };
 
-	const int modPressed = inputBindPressed(idx, CK_GYRO_MOD);
+	const int modPressed = inputBindPressed(idx, CK_0080);
 	const int justPressed = modPressed && !prevGyroMod[idx];
 	prevGyroMod[idx] = modPressed;
 
@@ -2048,7 +2045,7 @@ void inputUpdateGyroManualCalibration(void)
 			continue;
 		}
 
-		int pressed = inputBindPressed(cidx, CK_GYRO_CALIB);
+		int pressed = inputBindPressed(cidx, CK_0100);
 
 		if (pressed && !manualCalibrating[cidx]) {
 			manualCalibrating[cidx] = 1;
