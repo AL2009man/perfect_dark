@@ -1574,12 +1574,12 @@ void inputGyroEnable(s32 cidx, s32 enabled)
 	padsCfg[cidx].gyroEnabled = (enabled != 0);
 }
 
-enum gyroaxismode inputGyroGetAxisMode(s32 cidx)
+s32 inputGyroGetAxisMode(s32 cidx)
 {
     return padsCfg[cidx].gyroAxisMode;
 }
 
-void inputGyroSetAxisMode(s32 cidx, enum gyroaxismode mode)
+void inputGyroSetAxisMode(s32 cidx, s32 mode)
 {
     padsCfg[cidx].gyroAxisMode = mode;
 }
