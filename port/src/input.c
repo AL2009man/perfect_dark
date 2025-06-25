@@ -1696,34 +1696,14 @@ void inputGyroGetScaledDelta(s32 cidx, f32* dx, f32* dy, f32* dz)
 
 void inputGyroGetSpeed(s32 cidx, f32* x, f32* y)
 {
-	if (x) *x = padsCfg[cidx].gyroSensX;
-	if (y) *y = padsCfg[cidx].gyroSensY;
+    if (x) *x = padsCfg[cidx].gyroSensX;
+    if (y) *y = padsCfg[cidx].gyroSensY;
 }
 
 void inputGyroSetSpeed(s32 cidx, f32 x, f32 y)
 {
-	padsCfg[cidx].gyroSensX = x;
-	padsCfg[cidx].gyroSensY = y;
-}
-
-f32 inputGyroGetSpeedX(s32 cidx)
-{
-	return padsCfg[cidx].gyroSensX;
-}
-
-void inputGyroSetSpeedX(s32 cidx, f32 x)
-{
-	padsCfg[cidx].gyroSensX = x;
-}
-
-f32 inputGyroGetSpeedY(s32 cidx)
-{
-	return padsCfg[cidx].gyroSensY;
-}
-
-void inputGyroSetSpeedY(s32 cidx, f32 y)
-{
-	padsCfg[cidx].gyroSensY = y;
+    padsCfg[cidx].gyroSensX = x;
+    padsCfg[cidx].gyroSensY = y;
 }
 
 void inputGyroGetScaledDeltaCrosshair(s32 cidx, f32* dx, f32* dy)
@@ -1743,16 +1723,16 @@ void inputGyroGetScaledDeltaCrosshair(s32 cidx, f32* dx, f32* dy)
 	if (dx && dy) applyGyroVHMixer(cidx, dx, dy);
 }
 
-void inputGyroGetCrosshairSpeed(s32 cidx, f32* x, f32* y)
+void inputGyroGetAimSpeed(s32 cidx, f32* x, f32* y)
 {
-	if (x) *x = padsCfg[cidx].gyroAimSensX;
-	if (y) *y = padsCfg[cidx].gyroAimSensY;
+    if (x) *x = padsCfg[cidx].gyroAimSensX;
+    if (y) *y = padsCfg[cidx].gyroAimSensY;
 }
 
-void inputGyroSetCrosshairSpeed(s32 cidx, f32 x, f32 y)
+void inputGyroSetAimSpeed(s32 cidx, f32 x, f32 y)
 {
-	padsCfg[cidx].gyroAimSensX = x;
-	padsCfg[cidx].gyroAimSensY = y;
+    padsCfg[cidx].gyroAimSensX = x;
+    padsCfg[cidx].gyroAimSensY = y;
 }
 
 f32 inputGyroGetAimSpeedX(s32 cidx)

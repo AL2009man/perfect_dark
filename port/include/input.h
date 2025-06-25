@@ -292,23 +292,14 @@ void inputGyroGetScaledDelta(s32 cidx, f32* dx, f32* dy, f32* dz);
 
 // Gyro Crosshair Movement Retrieval & Adjustment
 void inputGyroGetScaledDeltaCrosshair(s32 cidx, f32* dx, f32* dy);
-void inputGyroGetCrosshairDelta(s32 cidx, f32* dx, f32* dy);
 
 // Gyro FreeLook Sensitivity Management
 void inputGyroGetSpeed(s32 cidx, f32* x, f32* y);
 void inputGyroSetSpeed(s32 cidx, f32 x, f32 y);
-f32 inputGyroGetSpeedX(s32 cidx);
-void inputGyroSetSpeedX(s32 cidx, f32 x);
-f32 inputGyroGetSpeedY(s32 cidx);
-void inputGyroSetSpeedY(s32 cidx, f32 y);
 
-// Gyro Aim Mode Sensitivity Management
+// Gyro Crosshair Sensitivity Management
 void inputGyroGetAimSpeed(s32 cidx, f32* x, f32* y);
 void inputGyroSetAimSpeed(s32 cidx, f32 x, f32 y);
-f32 inputGyroGetAimSpeedX(s32 cidx);
-void inputGyroSetAimSpeedX(s32 cidx, f32 x);
-f32 inputGyroGetAimSpeedY(s32 cidx);
-void inputGyroSetAimSpeedY(s32 cidx, f32 y);
 
 // Gyro Aim Mode Management
 s32 inputGetGyroAimMode(s32 cidx);
@@ -327,14 +318,6 @@ void inputAccelGetRawDelta(s32 cidx, f32* dx, f32* dy, f32* dz);
 s32 inputGetGyroModifier(s32 cidx);
 void inputSetGyroModifier(s32 cidx, s32 mode);
 void applyGyroModifier(f32* deltaX, f32* deltaY, f32* deltaZ, s32 activationMode, s32 idx);
-
-// Gyro Crosshair Sensitivity Management
-void inputGyroGetCrosshairSpeed(s32 cidx, f32* x, f32* y);
-void inputGyroSetCrosshairSpeed(s32 cidx, f32 x, f32 y);
-f32 inputGyroGetCrosshairSpeedX(s32 cidx);
-void inputGyroSetCrosshairSpeedX(s32 cidx, f32 x);
-f32 inputGyroGetCrosshairSpeedY(s32 cidx);
-void inputGyroSetCrosshairSpeedY(s32 cidx, f32 y);
 
 // Gyro Invert Management
 void inputGyroGetInvert(s32 cidx, s32* out_invertx, s32* out_inverty);

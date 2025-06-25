@@ -658,34 +658,42 @@ static MenuItemHandlerResult menuhandlerGyroAxisMode(s32 operation, struct menui
 
 static MenuItemHandlerResult menuhandlerGyroSensitivityX(s32 operation, struct menuitem* item, union handlerdata* data)
 {
-	switch (operation) {
-	case MENUOP_GETSLIDER:
-		data->slider.value = inputGyroGetSpeedX(g_ExtMenuPlayer) * 100.f + 0.1f;
-		break;
-	case MENUOP_SET:
-		inputGyroSetSpeedX(g_ExtMenuPlayer, (f32)data->slider.value / 100.f);
-		break;
-	case MENUOP_GETSLIDERLABEL:
-		sprintf(data->slider.label, "%.2f", inputGyroGetSpeedX(g_ExtMenuPlayer));
-		break;
-	}
-	return 0;
+    f32 x, y;
+    switch (operation) {
+    case MENUOP_GETSLIDER:
+        inputGyroGetSpeed(g_ExtMenuPlayer, &x, NULL);
+        data->slider.value = x * 100.f + 0.5f;
+        break;
+    case MENUOP_SET:
+        inputGyroGetSpeed(g_ExtMenuPlayer, NULL, &y);
+        inputGyroSetSpeed(g_ExtMenuPlayer, (f32)data->slider.value / 100.f, y);
+        break;
+    case MENUOP_GETSLIDERLABEL:
+        inputGyroGetSpeed(g_ExtMenuPlayer, &x, NULL);
+        sprintf(data->slider.label, "%.2f", x);
+        break;
+    }
+    return 0;
 }
 
 static MenuItemHandlerResult menuhandlerGyroSensitivityY(s32 operation, struct menuitem* item, union handlerdata* data)
 {
-	switch (operation) {
-	case MENUOP_GETSLIDER:
-		data->slider.value = inputGyroGetSpeedY(g_ExtMenuPlayer) * 100.f + 0.1f;
-		break;
-	case MENUOP_SET:
-		inputGyroSetSpeedY(g_ExtMenuPlayer, (f32)data->slider.value / 100.f);
-		break;
-	case MENUOP_GETSLIDERLABEL:
-		sprintf(data->slider.label, "%.2f", inputGyroGetSpeedY(g_ExtMenuPlayer));
-		break;
-	}
-	return 0;
+    f32 x, y;
+    switch (operation) {
+    case MENUOP_GETSLIDER:
+        inputGyroGetSpeed(g_ExtMenuPlayer, NULL, &y);
+        data->slider.value = y * 100.f + 0.5f;
+        break;
+    case MENUOP_SET:
+        inputGyroGetSpeed(g_ExtMenuPlayer, &x, NULL);
+        inputGyroSetSpeed(g_ExtMenuPlayer, x, (f32)data->slider.value / 100.f);
+        break;
+    case MENUOP_GETSLIDERLABEL:
+        inputGyroGetSpeed(g_ExtMenuPlayer, NULL, &y);
+        sprintf(data->slider.label, "%.2f", y);
+        break;
+    }
+    return 0;
 }
 
 static MenuItemHandlerResult menuhandlerGyroInvertX(s32 operation, struct menuitem* item, union handlerdata* data)
@@ -720,34 +728,42 @@ static MenuItemHandlerResult menuhandlerGyroInvertY(s32 operation, struct menuit
 
 static MenuItemHandlerResult menuhandlerGyroCrosshairSpeedX(s32 operation, struct menuitem* item, union handlerdata* data)
 {
-	switch (operation) {
-	case MENUOP_GETSLIDER:
-		data->slider.value = inputGyroGetAimSpeedX(g_ExtMenuPlayer) * 100.f + 0.5f;
-		break;
-	case MENUOP_SET:
-		inputGyroSetAimSpeedX(g_ExtMenuPlayer, (f32)data->slider.value / 100.f);
-		break;
-	case MENUOP_GETSLIDERLABEL:
-		sprintf(data->slider.label, "%.2f", inputGyroGetAimSpeedX(g_ExtMenuPlayer));
-		break;
-	}
-	return 0;
+    f32 x, y;
+    switch (operation) {
+    case MENUOP_GETSLIDER:
+        inputGyroGetAimSpeed(g_ExtMenuPlayer, &x, NULL);
+        data->slider.value = x * 100.f + 0.5f;
+        break;
+    case MENUOP_SET:
+        inputGyroGetAimSpeed(g_ExtMenuPlayer, NULL, &y);
+        inputGyroSetAimSpeed(g_ExtMenuPlayer, (f32)data->slider.value / 100.f, y);
+        break;
+    case MENUOP_GETSLIDERLABEL:
+        inputGyroGetAimSpeed(g_ExtMenuPlayer, &x, NULL);
+        sprintf(data->slider.label, "%.2f", x);
+        break;
+    }
+    return 0;
 }
 
 static MenuItemHandlerResult menuhandlerGyroCrosshairSpeedY(s32 operation, struct menuitem* item, union handlerdata* data)
 {
-	switch (operation) {
-	case MENUOP_GETSLIDER:
-		data->slider.value = inputGyroGetAimSpeedY(g_ExtMenuPlayer) * 100.f + 0.5f;
-		break;
-	case MENUOP_SET:
-		inputGyroSetAimSpeedY(g_ExtMenuPlayer, (f32)data->slider.value / 100.f);
-		break;
-	case MENUOP_GETSLIDERLABEL:
-		sprintf(data->slider.label, "%.2f", inputGyroGetAimSpeedY(g_ExtMenuPlayer));
-		break;
-	}
-	return 0;
+    f32 x, y;
+    switch (operation) {
+    case MENUOP_GETSLIDER:
+        inputGyroGetAimSpeed(g_ExtMenuPlayer, NULL, &y);
+        data->slider.value = y * 100.f + 0.5f;
+        break;
+    case MENUOP_SET:
+        inputGyroGetAimSpeed(g_ExtMenuPlayer, &x, NULL);
+        inputGyroSetAimSpeed(g_ExtMenuPlayer, x, (f32)data->slider.value / 100.f);
+        break;
+    case MENUOP_GETSLIDERLABEL:
+        inputGyroGetAimSpeed(g_ExtMenuPlayer, NULL, &y);
+        sprintf(data->slider.label, "%.2f", y);
+        break;
+    }
+    return 0;
 }
 
 static MenuItemHandlerResult menuhandlerGyroAimInvertX(s32 operation, struct menuitem* item, union handlerdata* data)
