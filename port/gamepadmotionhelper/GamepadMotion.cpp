@@ -278,12 +278,12 @@ private:
 // This is the C wrapper for the GamepadMotion class.
 extern "C" {
 	// Creates a new GamepadMotion object
-	GamepadMotion* CreateGamepadMotion() {
+	GamepadMotion* gmhCreateGamepadMotion() {
 		return new GamepadMotion();
 	}
 
 	// Delete a new GamepadMotion object
-	void DeleteGamepadMotion(GamepadMotion* motion)
+	void gmhDeleteGamepadMotion(GamepadMotion* motion)
 	{
 		if (motion != nullptr) {
 			delete motion;
@@ -292,14 +292,14 @@ extern "C" {
 	}
 
 	// Resets the GamepadMotion object
-	void ResetGamepadMotion(GamepadMotion* motion) {
+	void gmhResetGamepadMotion(GamepadMotion* motion) {
 		if (motion) {
 			motion->Reset();
 		}
 	}
 
 	// Processes motion input for the GamepadMotion object
-	void ProcessMotion(GamepadMotion* motion, float gyroX, float gyroY, float gyroZ,
+	void gmhProcessMotion(GamepadMotion* motion, float gyroX, float gyroY, float gyroZ,
 		float accelX, float accelY, float accelZ, float deltaTime) {
 		if (motion) {
 			motion->ProcessMotion(gyroX, gyroY, gyroZ, accelX, accelY, accelZ, deltaTime);
@@ -307,107 +307,107 @@ extern "C" {
 	}
 
 	// Wrapper methods to call GamepadMotion functions
-	void GetCalibratedGyro(GamepadMotion* motion, float* x, float* y, float* z) {
+	void gmhGetCalibratedGyro(GamepadMotion* motion, float* x, float* y, float* z) {
 		if (motion) {
 			motion->GetCalibratedGyro(*x, *y, *z);
 		}
 	}
 
-	void GetGravity(GamepadMotion* motion, float* x, float* y, float* z) {
+	void gmhGetGravity(GamepadMotion* motion, float* x, float* y, float* z) {
 		if (motion) {
 			motion->GetGravity(*x, *y, *z);
 		}
 	}
 
-	void GetProcessedAcceleration(GamepadMotion* motion, float* x, float* y, float* z) {
+	void gmhGetProcessedAcceleration(GamepadMotion* motion, float* x, float* y, float* z) {
 		if (motion) {
 			motion->GetProcessedAcceleration(*x, *y, *z);
 		}
 	}
 
-	void GetOrientation(GamepadMotion* motion, float* w, float* x, float* y, float* z) {
+	void gmhGetOrientation(GamepadMotion* motion, float* w, float* x, float* y, float* z) {
 		if (motion) {
 			motion->GetOrientation(*w, *x, *y, *z);
 		}
 	}
 
-	void GetPlayerSpaceGyro(GamepadMotion* motion, float* x, float* y, float yawRelaxFactor) {
+	void gmhGetPlayerSpaceGyro(GamepadMotion* motion, float* x, float* y, float yawRelaxFactor) {
 		if (motion) {
 			motion->GetPlayerSpaceGyro(*x, *y, yawRelaxFactor);
 		}
 	}
 
-	void GetWorldSpaceGyro(GamepadMotion* motion, float* x, float* y, float sideReductionThreshold) {
+	void gmhGetWorldSpaceGyro(GamepadMotion* motion, float* x, float* y, float sideReductionThreshold) {
 		if (motion) {
 			motion->GetWorldSpaceGyro(*x, *y, sideReductionThreshold);
 		}
 	}
 
 	// Gyro calibration functions
-	void StartContinuousCalibration(GamepadMotion* motion) {
+	void gmhStartContinuousCalibration(GamepadMotion* motion) {
 		if (motion) {
 			motion->StartContinuousCalibration();
 		}
 	}
 
-	void PauseContinuousCalibration(GamepadMotion* motion) {
+	void gmhPauseContinuousCalibration(GamepadMotion* motion) {
 		if (motion) {
 			motion->PauseContinuousCalibration();
 		}
 	}
 
-	void ResetContinuousCalibration(GamepadMotion* motion) {
+	void gmhResetContinuousCalibration(GamepadMotion* motion) {
 		if (motion) {
 			motion->ResetContinuousCalibration();
 		}
 	}
 
-	void GetCalibrationOffset(GamepadMotion* motion, float* xOffset, float* yOffset, float* zOffset) {
+	void gmhGetCalibrationOffset(GamepadMotion* motion, float* xOffset, float* yOffset, float* zOffset) {
 		if (motion) {
 			motion->GetCalibrationOffset(*xOffset, *yOffset, *zOffset);
 		}
 	}
 
-	void SetCalibrationOffset(GamepadMotion* motion, float xOffset, float yOffset, float zOffset, int weight) {
+	void gmhSetCalibrationOffset(GamepadMotion* motion, float xOffset, float yOffset, float zOffset, int weight) {
 		if (motion) {
 			motion->SetCalibrationOffset(xOffset, yOffset, zOffset, weight);
 		}
 	}
 
-	float GetAutoCalibrationConfidence(GamepadMotion* motion) {
+	float gmhGetAutoCalibrationConfidence(GamepadMotion* motion) {
 		if (motion) {
 			return motion->GetAutoCalibrationConfidence();
 		}
 		return 0.0f; // Default confidence value
 	}
 
-	void SetAutoCalibrationConfidence(GamepadMotion* motion, float newConfidence) {
+	void gmhSetAutoCalibrationConfidence(GamepadMotion* motion, float newConfidence) {
 		if (motion) {
 			motion->SetAutoCalibrationConfidence(newConfidence);
 		}
 	}
 
-	bool GetAutoCalibrationIsSteady(GamepadMotion* motion) {
+	bool gmhGetAutoCalibrationIsSteady(GamepadMotion* motion) {
 		if (motion) {
 			return motion->GetAutoCalibrationIsSteady();
 		}
 		return false; // Default steady state
 	}
 
-	int GetCalibrationMode(GamepadMotion* motion) {
+	int gmhGetCalibrationMode(GamepadMotion* motion) {
 		if (motion) {
 			return (int)motion->GetCalibrationMode();
 		}
 		return 0; // Default calibration mode (Manual)
 	}
 
-	void SetCalibrationMode(GamepadMotion* motion, int calibrationMode) {
+	void gmhSetCalibrationMode(GamepadMotion* motion, int calibrationMode) {
 		if (motion) {
 			motion->SetCalibrationMode((GamepadMotionHelpers::CalibrationMode)calibrationMode);
 		}
 	}
 
-	void ResetMotion(GamepadMotion* motion) {
+	void gmhResetMotion(GamepadMotion* motion) {
 		if (motion) {
 			motion->ResetMotion();
 		}
