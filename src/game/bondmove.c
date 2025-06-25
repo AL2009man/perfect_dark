@@ -44,8 +44,11 @@
 #include "video.h"
 
 // Provide a fallback implementation if needed
+#ifndef MAX
+#define MAX(a, b) ((a) > (b) ? (a) : (b))
+#endif
 #ifndef fmax
-#define fmax(a, b) ((a) > (b) ? (a) : (b))
+#define fmax(a, b) MAX(a, b)
 #endif
 
 #ifndef PLATFORM_N64
@@ -2028,10 +2031,10 @@ void bmoveProcessInput(s32 cidx, bool allowc1x, bool allowc1y, bool allowc1butto
 
 #ifndef PLATFORM_N64
 			// Camera recenter vertical binding
-			static bool prev_reset_pressed = false;
-			bool reset_pressed = inputResetCameraPressed(cidx);
+			static bool prevresetpressed = false;
+			bool resetpressed = inputResetCameraPressed(cidx);
 
-			if (reset_pressed && !prev_reset_pressed) {
+			if (resetpressed && !prevresetpressed) {
 				if (g_Vars.currentplayer) {
 					if (g_Vars.currentplayer->insightaimmode) {
 						// Recenter crosshair if in crosshair aim mode
@@ -2048,7 +2051,7 @@ void bmoveProcessInput(s32 cidx, bool allowc1x, bool allowc1y, bool allowc1butto
 					}
 				}
 			}
-			prev_reset_pressed = reset_pressed;
+			prevresetpressed = resetpressed;
 #endif
 
 		if (g_Vars.currentplayer->lookaheadcentreenabled) {
