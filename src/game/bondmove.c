@@ -1487,60 +1487,35 @@ void bmoveProcessInput(s32 cidx, bool allowc1x, bool allowc1y, bool allowc1butto
 					}
 
 #ifndef PLATFORM_N64
-					// Handle turning and looking up/down via mouselook or gyro when aiming
-					if (g_Vars.currentplayer->insightaimmode && (allowmcross || allowgcross) && bgunGetWeaponNum(HAND_RIGHT) != WEAPON_HORIZONSCANNER) {
-						// Mouse crosshair edge turning
-						if (allowmcross) {
-							if (g_Vars.currentplayer->swivelpos[0] > 0.9f) {
-								movedata.aimturnrightspeed = (g_Vars.currentplayer->swivelpos[0] - 0.9f) / 0.1f;
-								movedata.aimturnleftspeed = 0.f;
-							} else if (g_Vars.currentplayer->swivelpos[0] < -0.9f) {
-								movedata.aimturnleftspeed = (g_Vars.currentplayer->swivelpos[0] - -0.9f) / -0.1f;
-								movedata.aimturnrightspeed = 0.f;
-							}
-							f32 vertaup = 0.f, vertadown = 0.f;
-							if (g_Vars.currentplayer->swivelpos[1] > 0.9f) {
-								vertaup = (g_Vars.currentplayer->swivelpos[1] - 0.9f) / 0.1f;
-							} else if (g_Vars.currentplayer->swivelpos[1] < -0.9f) {
-								vertadown = (g_Vars.currentplayer->swivelpos[1] - -0.9f) / -0.1f;
-							}
-							// Uninvert pitch if needed
-							if (movedata.invertpitch) {
-								movedata.speedvertaup = vertadown;
-								movedata.speedvertadown = vertaup;
-							} else {
-								movedata.speedvertaup = vertaup;
-								movedata.speedvertadown = vertadown;
-							}
-						}
-						// Gyro crosshair edge turning
-						if (allowgcross) {
-							if (g_Vars.currentplayer->swivelpos[0] > 0.9f) {
-								movedata.aimturnrightspeed = (g_Vars.currentplayer->swivelpos[0] - 0.9f) / 0.1f;
-								movedata.aimturnleftspeed = 0.f;
-							} else if (g_Vars.currentplayer->swivelpos[0] < -0.9f) {
-								movedata.aimturnleftspeed = (g_Vars.currentplayer->swivelpos[0] - -0.9f) / -0.1f;
-								movedata.aimturnrightspeed = 0.f;
-							}
-							f32 vertaup = 0.f, vertadown = 0.f;
-							if (g_Vars.currentplayer->swivelpos[1] > 0.9f) {
-								vertaup = (g_Vars.currentplayer->swivelpos[1] - 0.9f) / 0.1f;
-							} else if (g_Vars.currentplayer->swivelpos[1] < -0.9f) {
-								vertadown = (g_Vars.currentplayer->swivelpos[1] - -0.9f) / -0.1f;
-							}
-							if (movedata.invertpitch) {
-								movedata.speedvertaup = vertadown;
-								movedata.speedvertadown = vertaup;
-							} else {
-								movedata.speedvertaup = vertaup;
-								movedata.speedvertadown = vertadown;
-							}
-						}
-					} else {
-						// Reset mouse/gyro aim position when not aiming
-						g_Vars.currentplayer->swivelpos[0] = 0.f;
-						g_Vars.currentplayer->swivelpos[1] = 0.f;
-					}
+                    // Handle turning and looking up/down via mouselook or gyro when aiming
+                    bool allowcross = allowmcross || allowgcross;
+                    if (g_Vars.currentplayer->insightaimmode && allowcross && bgunGetWeaponNum(HAND_RIGHT) != WEAPON_HORIZONSCANNER) {
+                        if (g_Vars.currentplayer->swivelpos[0] > 0.9f) {
+                            movedata.aimturnrightspeed = (g_Vars.currentplayer->swivelpos[0] - 0.9f) / 0.1f;
+                            movedata.aimturnleftspeed = 0.f;
+                        } else if (g_Vars.currentplayer->swivelpos[0] < -0.9f) {
+                            movedata.aimturnleftspeed = (g_Vars.currentplayer->swivelpos[0] - -0.9f) / -0.1f;
+                            movedata.aimturnrightspeed = 0.f;
+                        }
+                        f32 vertaup = 0.f, vertadown = 0.f;
+                        if (g_Vars.currentplayer->swivelpos[1] > 0.9f) {
+                            vertaup = (g_Vars.currentplayer->swivelpos[1] - 0.9f) / 0.1f;
+                        } else if (g_Vars.currentplayer->swivelpos[1] < -0.9f) {
+                            vertadown = (g_Vars.currentplayer->swivelpos[1] - -0.9f) / -0.1f;
+                        }
+                        // Uninvert pitch if needed
+                        if (movedata.invertpitch) {
+                            movedata.speedvertaup = vertadown;
+                            movedata.speedvertadown = vertaup;
+                        } else {
+                            movedata.speedvertaup = vertaup;
+                            movedata.speedvertadown = vertadown;
+                        }
+                    } else {
+                        // Reset mouse/gyro aim position when not aiming
+                        g_Vars.currentplayer->swivelpos[0] = 0.f;
+                        g_Vars.currentplayer->swivelpos[1] = 0.f;
+                    }
 #endif
 
 					// Handle A button
