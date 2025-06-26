@@ -729,9 +729,10 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 	const f32 mlookscale = g_Vars.lvupdate240 ? (4.f / (f32)g_Vars.lvupdate240) : 4.f;
 	const bool allowmlook = (g_Vars.currentplayernum == 0) && (allowc1x || allowc1y);
 
-	// Gyro sensitivity scaling
-	const f32 gyroBaseSens = 0.278f; // Fixed base sensitivity for gyro input
-	const f32 gyroscale = gyroBaseSens; // Ensure it is constant and independent of FPS
+	// Gyro sensitivity scaling - Natural sensitivity scale 
+	// Compensate for the FOV-based scaling to achieve near 1:1 rotation
+	const f32 gyrobasesens = 0.280f / (viGetFovY() / PLAYER_DEFAULT_FOV); 
+	const f32 gyroscale = gyrobasesens; // Natural sensitivity scale
 
 	const bool allowgyro = (g_Vars.players[cidx] != NULL) && (allowc1x || allowc1y);
 	bool allowmcross = false;

@@ -1052,13 +1052,16 @@ static inline void inputUpdateMouse(void)
 
 void inputUpdateGyro(s32 cidx)
 {
-	// Ensure DeltaTime is calculated correctly
+	// Calculate deltaTime and normalize for consistent GamepadMotionHelper behavior
 	static uint64_t lastUpdateTime[INPUT_MAX_CONTROLLERS] = {0};
 	uint64_t now = sysGetMicroseconds();
-	float deltaTime = 1.0f / 60.0f;
+	float deltaTime = 1.0f / 60.0f; // Default to 60fps baseline
 	if (lastUpdateTime[cidx] != 0) {
-		deltaTime = (now - lastUpdateTime[cidx]) / 1000000.0f;
-		if (deltaTime <= 0.0f || deltaTime > 0.5f) deltaTime = 1.0f / 60.0f;
+		float actualDeltaTime = (now - lastUpdateTime[cidx]) / 1000000.0f;
+		if (actualDeltaTime > 0.0f && actualDeltaTime <= 0.5f) {
+			// Use the actual deltaTime to ensure GamepadMotionHelper gets proper timing
+			deltaTime = actualDeltaTime;
+		}
 	}
 	lastUpdateTime[cidx] = now;
 
