@@ -232,7 +232,7 @@ const char *inputGetKeyName(s32 vk);
 // get CK_ value from human-readable name
 s32 inputGetContKeyByName(const char *name);
 
-// Returns 1 if the reset camera action is pressed for the given controller index
+// Returns 1 if the reset camera action is pressed for the given input index
 s32 inputResetCameraPressed(s32 idx);
 
 // get human-readable name from CK_ value

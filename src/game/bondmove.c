@@ -2040,12 +2040,11 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 			if (resetpressed && !prevresetpressed) {
 				if (g_Vars.currentplayer) {
 					if (g_Vars.currentplayer->insightaimmode) {
-						// Recenter crosshair if in crosshair aim mode
+						// Recenter crosshair if in crosshair aiming mode
 						g_Vars.currentplayer->swivelpos[0] = 0.0f;
 						g_Vars.currentplayer->swivelpos[1] = 0.0f;
-					}
-
-					if (offbike && !g_Vars.currentplayer->insightaimmode) {
+					} else if (offbike) {
+						// Recenter camera lookahead if not in crosshair aiming mode
 						g_Vars.currentplayer->cachedlookahead = bmoveCalculateLookahead();
 						g_Vars.currentplayer->docentreupdown = true;
 						g_Vars.currentplayer->automovecentre = false;
