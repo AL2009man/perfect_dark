@@ -52,7 +52,7 @@
 #endif
 
 #ifndef PLATFORM_N64
-static int s_recenterfast = 0;
+static int s_recentercamera = 0;
 #endif
 
 static void bgunProcessQuickDetonate(struct movedata *data, u32 c1buttons, u32 c1buttonsthisframe, u32 buttons1, u32 buttons2) {
@@ -2070,7 +2070,7 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 					camera.target = g_Vars.currentplayer->cachedlookahead;
 					g_Vars.currentplayer->docentreupdown = false;
 					g_Vars.currentplayer->automovecentre = false;
-					s_recenterfast = 1;
+					s_recentercamera = 1;
 				}
 			}
 			prev_reset_pressed = reset_pressed;
@@ -2228,10 +2228,10 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 			}
 
 #ifndef PLATFORM_N64
-			float recenterMult = (s_recenterfast ? 7.0f : 3.5f);
+			float recenterMult = (s_recentercamera ? 7.0f : 3.5f);
 			g_Vars.currentplayer->vv_verta += g_Vars.currentplayer->speedverta * g_Vars.lvupdate60freal * recenterMult;
-			if (s_recenterfast && !g_Vars.currentplayer->docentreupdown) {
-				s_recenterfast = 0;
+			if (s_recentercamera && !g_Vars.currentplayer->docentreupdown) {
+				s_recentercamera = 0;
 			}
 #else
 			g_Vars.currentplayer->vv_verta += g_Vars.currentplayer->speedverta * g_Vars.lvupdate60freal * 3.5f;
