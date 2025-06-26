@@ -2033,27 +2033,80 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 					|| g_Vars.currentplayer->bondmovemode == MOVEMODE_GRAB;
 
 #ifndef PLATFORM_N64
-			// Camera recenter vertical binding
-			static bool prevresetpressed = false;
-			bool resetpressed = inputResetCameraPressed(cidx);
+			// camera/crosshair recentering logic
+			static bool prev_reset_pressed = false;
+			bool reset_pressed = inputResetCameraPressed(cidx);
 
-			if (resetpressed && !prevresetpressed) {
-				if (g_Vars.currentplayer) {
-					if (g_Vars.currentplayer->insightaimmode) {
-						// Recenter crosshair if in crosshair aiming mode
-						g_Vars.currentplayer->swivelpos[0] = 0.0f;
-						g_Vars.currentplayer->swivelpos[1] = 0.0f;
-					} else if (offbike) {
-						// Recenter camera lookahead if not in crosshair aiming mode
-						g_Vars.currentplayer->cachedlookahead = bmoveCalculateLookahead();
-						g_Vars.currentplayer->docentreupdown = true;
-						g_Vars.currentplayer->automovecentre = false;
-						g_Vars.currentplayer->speedverta = (g_Vars.currentplayer->vv_verta < g_Vars.currentplayer->cachedlookahead) ? 7.0f : -7.0f;
-						s_recenterfast = 1;
+			// crosshair recenter state
+			static struct {
+				bool active;
+				float time;
+				const float duration;
+			} crosshair = { false, 0.0f, 0.30f };
+
+			// camera vertical recenter state
+			static struct {
+				bool active;
+				float time;
+				float start;
+				float target;
+				const float duration;
+			} camera = { false, 0.0f, 0.0f, 0.0f, 0.24f };
+
+			// start recentering on button press
+			if (reset_pressed && !prev_reset_pressed && g_Vars.currentplayer) {
+				if (g_Vars.currentplayer->insightaimmode) {
+					// crosshair recenter
+					if (fabsf(g_Vars.currentplayer->swivelpos[0]) > 0.01f || fabsf(g_Vars.currentplayer->swivelpos[1]) > 0.01f) {
+						crosshair.active = true;
+						crosshair.time = 0.0f;
 					}
+				} else if (offbike) {
+					// Camera vertical recenter
+					g_Vars.currentplayer->cachedlookahead = bmoveCalculateLookahead();
+					camera.active = true;
+					camera.time = 0.0f;
+					camera.start = g_Vars.currentplayer->vv_verta;
+					camera.target = g_Vars.currentplayer->cachedlookahead;
+					g_Vars.currentplayer->docentreupdown = false;
+					g_Vars.currentplayer->automovecentre = false;
+					s_recenterfast = 1;
 				}
 			}
-			prevresetpressed = resetpressed;
+			prev_reset_pressed = reset_pressed;
+
+			// animate crosshair recentering
+			if (crosshair.active && g_Vars.currentplayer && g_Vars.currentplayer->insightaimmode) {
+				float t = crosshair.time / crosshair.duration;
+				if (t > 1.0f) t = 1.0f;
+				float smooth = t * t * (3.0f - 2.0f * t); // smoothstep
+				g_Vars.currentplayer->swivelpos[0] *= (1.0f - smooth);
+				g_Vars.currentplayer->swivelpos[1] *= (1.0f - smooth);
+
+				crosshair.time += g_Vars.lvupdate60freal / 60.0f;
+				if (crosshair.time >= crosshair.duration ||
+					(fabsf(g_Vars.currentplayer->swivelpos[0]) < 0.01f && fabsf(g_Vars.currentplayer->swivelpos[1]) < 0.01f)) {
+					g_Vars.currentplayer->swivelpos[0] = 0.0f;
+					g_Vars.currentplayer->swivelpos[1] = 0.0f;
+					crosshair.active = false;
+				}
+			}
+
+			// animate camera vertical recentering
+			if (camera.active && g_Vars.currentplayer && !g_Vars.currentplayer->insightaimmode) {
+				float t = camera.time / camera.duration;
+				if (t > 1.0f) t = 1.0f;
+				float smooth = t * t * (3.0f - 2.0f * t); // smoothstep
+				g_Vars.currentplayer->vv_verta = camera.start + (camera.target - camera.start) * smooth;
+
+				camera.time += g_Vars.lvupdate60freal / 60.0f;
+				if (camera.time >= camera.duration ||
+					fabsf(g_Vars.currentplayer->vv_verta - camera.target) < 0.01f) {
+					g_Vars.currentplayer->vv_verta = camera.target;
+					g_Vars.currentplayer->speedverta = 0.0f;
+					camera.active = false;
+				}
+			}
 #endif
 
 		if (g_Vars.currentplayer->lookaheadcentreenabled) {
