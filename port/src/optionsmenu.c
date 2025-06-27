@@ -1293,18 +1293,18 @@ static MenuItemHandlerResult menuhandlerCrosshairSway(s32 operation, struct menu
 
 static MenuItemHandlerResult menuhandlerCrosshairEdgeBoundary(s32 operation, struct menuitem* item, union handlerdata *data)
 {
-    switch (operation) {
-    case MENUOP_GETSLIDER:
-        data->slider.value = (s32)(inputGetCrosshairEdgeBoundary(g_ExtMenuPlayer) * 10.f + 0.5f);
-        break;
-    case MENUOP_SET:
-        inputSetCrosshairEdgeBoundary(g_ExtMenuPlayer, (f32)data->slider.value / 10.f);
-        break;
-    case MENUOP_GETSLIDERLABEL:
-        sprintf(data->slider.label, "%d", (s32)data->slider.value);
-        break;
-    }
-    return 0;
+	switch (operation) {
+	case MENUOP_GETSLIDER:
+		data->slider.value = (s32)(g_PlayerExtCfg[g_ExtMenuPlayer].crosshairedgeboundary * 10.f + 0.5f);
+		break;
+	case MENUOP_SET:
+		g_PlayerExtCfg[g_ExtMenuPlayer].crosshairedgeboundary = (f32)data->slider.value / 10.f;
+		break;
+	case MENUOP_GETSLIDERLABEL:
+		sprintf(data->slider.label, "%d", (s32)data->slider.value);
+		break;
+	}
+	return 0;
 }
 
 static MenuItemHandlerResult menuhandlerCrosshairR(s32 operation, struct menuitem* item, union handlerdata* data)

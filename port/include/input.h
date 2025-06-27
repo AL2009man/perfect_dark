@@ -229,9 +229,6 @@ void inputMouseGetAbsScaledDelta(f32 *dx, f32 *dy);
 void inputMouseGetSpeed(f32 *x, f32 *y);
 void inputMouseSetSpeed(f32 x, f32 y);
 
-f32 inputGetCrosshairEdgeBoundary(s32 cidx);
-void inputSetCrosshairEdgeBoundary(s32 cidx, f32 value);
-
 s32 inputMouseIsEnabled(void);
 void inputMouseEnable(s32 enabled);
 
