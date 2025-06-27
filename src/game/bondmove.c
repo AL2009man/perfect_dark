@@ -1412,29 +1412,28 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 					}
 
 #ifndef PLATFORM_N64
-					// Handle turning and looking up/down via mouselook when aiming
-					if (g_Vars.currentplayer->insightaimmode && allowmcross && bgunGetWeaponNum(HAND_RIGHT) != WEAPON_HORIZONSCANNER) {
+					// Handle turning and looking (x/y) via mouselook when aiming
+					bool allowcross = allowmcross;
+					if (g_Vars.currentplayer->insightaimmode && allowcross && bgunGetWeaponNum(HAND_RIGHT) != WEAPON_HORIZONSCANNER) {
 						float edge_boundary = PLAYER_EXTCFG().crosshairedgeboundary;
 						if (g_Vars.currentplayer->swivelpos[0] > edge_boundary) {
-							movedata.aimturnrightspeed = (g_Vars.currentplayer->swivelpos[0] - edge_boundary) / (1.0f - edge_boundary);
-							movedata.aimturnleftspeed = 0.f;
+							movedata.aimturnrightspeed += (g_Vars.currentplayer->swivelpos[0] - edge_boundary) / (1.0f - edge_boundary);
 						} else if (g_Vars.currentplayer->swivelpos[0] < -edge_boundary) {
-							movedata.aimturnleftspeed = (g_Vars.currentplayer->swivelpos[0] - -edge_boundary) / -(1.0f - edge_boundary);
-							movedata.aimturnrightspeed = 0.f;
+							movedata.aimturnleftspeed += (g_Vars.currentplayer->swivelpos[0] + edge_boundary) / -(1.0f - edge_boundary);
 						}
 						f32 vertaup = 0.f, vertadown = 0.f;
 						if (g_Vars.currentplayer->swivelpos[1] > edge_boundary) {
 							vertaup = (g_Vars.currentplayer->swivelpos[1] - edge_boundary) / (1.0f - edge_boundary);
 						} else if (g_Vars.currentplayer->swivelpos[1] < -edge_boundary) {
-							vertadown = (g_Vars.currentplayer->swivelpos[1] - -edge_boundary) / -(1.0f - edge_boundary);
+							vertadown = (g_Vars.currentplayer->swivelpos[1] + edge_boundary) / -(1.0f - edge_boundary);
 						}
 						// Uninvert pitch if needed
 						if (movedata.invertpitch) {
-							movedata.speedvertaup = vertadown;
-							movedata.speedvertadown = vertaup;
+							movedata.speedvertaup += vertadown;
+							movedata.speedvertadown += vertaup;
 						} else {
-							movedata.speedvertaup = vertaup;
-							movedata.speedvertadown = vertadown;
+							movedata.speedvertaup += vertaup;
+							movedata.speedvertadown += vertadown;
 						}
 					} else {
 						// Reset mouse aim position when not aiming
