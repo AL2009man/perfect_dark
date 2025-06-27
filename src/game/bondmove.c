@@ -1493,15 +1493,13 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 					}
 
 #ifndef PLATFORM_N64
-					// Handle turning and looking up/down via mouselook or gyro when aiming
+					// Handle turning and looking (x/y) via mouselook or gyro when aiming
 					bool allowcross = allowmcross || allowgcross;
 					if (g_Vars.currentplayer->insightaimmode && allowcross && bgunGetWeaponNum(HAND_RIGHT) != WEAPON_HORIZONSCANNER) {
 						if (g_Vars.currentplayer->swivelpos[0] > 0.9f) {
-							movedata.aimturnrightspeed = (g_Vars.currentplayer->swivelpos[0] - 0.9f) / 0.1f;
-							movedata.aimturnleftspeed = 0.f;
+							movedata.aimturnrightspeed += (g_Vars.currentplayer->swivelpos[0] - 0.9f) / 0.1f;
 						} else if (g_Vars.currentplayer->swivelpos[0] < -0.9f) {
-							movedata.aimturnleftspeed = (g_Vars.currentplayer->swivelpos[0] - -0.9f) / -0.1f;
-							movedata.aimturnrightspeed = 0.f;
+							movedata.aimturnleftspeed += (g_Vars.currentplayer->swivelpos[0] - -0.9f) / -0.1f;
 						}
 						f32 vertaup = 0.f, vertadown = 0.f;
 						if (g_Vars.currentplayer->swivelpos[1] > 0.9f) {
@@ -1511,11 +1509,11 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 						}
 						// Uninvert pitch if needed
 						if (movedata.invertpitch) {
-							movedata.speedvertaup = vertadown;
-							movedata.speedvertadown = vertaup;
+							movedata.speedvertaup += vertadown;
+							movedata.speedvertadown += vertaup;
 						} else {
-							movedata.speedvertaup = vertaup;
-							movedata.speedvertadown = vertadown;
+							movedata.speedvertaup += vertaup;
+							movedata.speedvertadown += vertadown;
 						}
 					} else {
 						// Reset mouse/gyro aim position when not aiming
