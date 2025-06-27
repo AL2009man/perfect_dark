@@ -58,7 +58,6 @@ static struct controllercfg {
 	s32 swapSticks;
 	s32 deviceIndex;
 	s32 cancelCButtons;
-	f32 crosshairedgeboundary;
 } padsCfg[INPUT_MAX_CONTROLLERS] = {
 	CONTROLLERCFG_DEFAULT,
 	CONTROLLERCFG_DEFAULT,
