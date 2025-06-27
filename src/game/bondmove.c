@@ -1493,7 +1493,7 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 					}
 
 #ifndef PLATFORM_N64
-					// Handle joystick turning and looking (x/y) via mouselook or gyro when aiming
+					// Handle camera turning and looking via mouselook or gyro whille crosshair aiming
 					bool allowcross = allowmcross || allowgcross;
 					if (g_Vars.currentplayer->insightaimmode && allowcross && bgunGetWeaponNum(HAND_RIGHT) != WEAPON_HORIZONSCANNER) {
 						if (g_Vars.currentplayer->swivelpos[0] > 0.9f) {
