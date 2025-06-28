@@ -82,7 +82,8 @@ static SDL_GameController *pads[INPUT_MAX_CONTROLLERS];
 	.gyroInvertY = 0, \
 	.gyroAimInvertX = 0, \
 	.gyroAimInvertY = 0, \
-	.gyroMinThreshold = 0.07f, \
+	.gyroDeadzone = 0.07f, \
+    .gyroTightening = 0.06f,\
 	.gyroSmoothing = 0.15f, \
 	.gyroAutoCalibration = 0, \
 }
@@ -111,7 +112,8 @@ static struct controllercfg {
 	s32 gyroInvertY;
 	s32 gyroAimInvertX;
 	s32 gyroAimInvertY;
-	f32 gyroMinThreshold;
+	f32 gyroDeadzone;
+	f32 gyroTightening;
 	f32 gyroSmoothing;
 	s32 gyroAutoCalibration;
 } padsCfg[INPUT_MAX_CONTROLLERS] = {
@@ -1110,7 +1112,8 @@ void inputUpdateGyro(s32 cidx)
 	// Apply aim mode, modifier, and threshold
 	applyGyroAimMode(cidx, &deltaX, &deltaY, &deltaZ);
 	applyGyroModifier(&deltaX, &deltaY, &deltaZ, inputGetGyroModifier(cidx), cidx);
-    applyGyroThreshold(&deltaX, &deltaY, &deltaZ, inputGyroGetMinThreshold(cidx));
+    applyGyroDeadzone(&deltaX, &deltaY, &deltaZ, inputGyroGetDeadzone(cidx));
+	applyGyroTightening(&deltaX, &deltaY, &deltaZ, inputGyroGetTightening(cidx));
 	applyGyroSmoothing(&deltaX, &deltaY, &deltaZ, inputGetGyroSmoothing(cidx), cidx);
 
 	// Store processed gyro deltas
@@ -1842,27 +1845,51 @@ void applyGyroModifier(f32* deltaX, f32* deltaY, f32* deltaZ, s32 activationMode
 	}
 }
 
-f32 inputGyroGetMinThreshold(s32 cidx)
+f32 inputGyroGetDeadzone(s32 cidx)
 {
-    return padsCfg[cidx].gyroMinThreshold;
+    return padsCfg[cidx].gyroDeadzone;
 }
 
-void inputGyroSetMinThreshold(s32 cidx, f32 threshold)
+void inputGyroSetDeadzone(s32 cidx, f32 deadzone)
 {
-    if (threshold < 0.f) threshold = 0.f;
-    if (threshold > 1.f) threshold = 1.f;
+    if (deadzone < 0.f) deadzone = 0.f;
+    if (deadzone > 1.f) deadzone = 1.f;
 
-    if (threshold > 0.f && threshold < 0.01f) threshold = 0.01f;
-    padsCfg[cidx].gyroMinThreshold = threshold;
+    if (deadzone > 0.f && deadzone < 0.01f) deadzone = 0.01f;
+    padsCfg[cidx].gyroDeadzone = deadzone;
 }
 
-void applyGyroThreshold(f32* dx, f32* dy, f32* dz, f32 threshold)
+void applyGyroDeadzone(f32* dx, f32* dy, f32* dz, f32 deadzone)
 {
-    if (threshold > 0.f && dx && dy && dz) {
+    if (deadzone > 0.f && dx && dy && dz) {
         f32 mag = sqrtf((*dx) * (*dx) + (*dy) * (*dy) + (*dz) * (*dz));
-        if (mag < threshold) {
+        if (mag < deadzone) {
             *dx = *dy = *dz = 0.f;
         }
+    }
+}
+
+f32 inputGyroGetTightening(s32 cidx)
+{
+    return padsCfg[cidx].gyroTightening;
+}
+
+void inputGyroSetTightening(s32 cidx, f32 tightening)
+{
+    if (tightening < 0.f) tightening = 0.f;
+    padsCfg[cidx].gyroTightening = tightening;
+}
+
+void applyGyroTightening(f32* dx, f32* dy, f32* dz, f32 tightening)
+{
+    if (!dx || !dy || !dz || tightening <= 0.0f) return;
+
+    f32 mag = sqrtf((*dx) * (*dx) + (*dy) * (*dy) + (*dz) * (*dz));
+    if (mag < tightening && mag > 0.f) {
+        f32 scale = mag / tightening;
+        *dx *= scale;
+        *dy *= scale;
+        *dz *= scale;
     }
 }
 
@@ -2284,7 +2311,8 @@ PD_CONSTRUCTOR static void inputConfigInit(void)
 		configRegisterInt(strFmt("%s.GyroInvertY", secname), &padsCfg[c].gyroInvertY, 0, 1);
 		configRegisterInt(strFmt("%s.GyroAimInvertX", secname), &padsCfg[c].gyroAimInvertX, 0, 1);
 		configRegisterInt(strFmt("%s.GyroAimInvertY", secname), &padsCfg[c].gyroAimInvertY, 0, 1);
-		configRegisterFloat(strFmt("%s.GyroMinThreshold", secname), &padsCfg[c].gyroMinThreshold, 0.f, 1.f);
+		configRegisterFloat(strFmt("%s.GyroDeadzone", secname), &padsCfg[c].gyroDeadzone, 0.f, 1.f);
+		configRegisterFloat(strFmt("%s.GyroTightening", secname), &padsCfg[c].gyroTightening, 0.f, 10.f);
 		configRegisterFloat(strFmt("%s.GyroSmoothing", secname), &padsCfg[c].gyroSmoothing, 0.f, 1.f);
 		configRegisterInt(strFmt("%s.GyroAutoCalibration", secname), &padsCfg[c].gyroAutoCalibration, 0, 1);
 		configRegisterInt(strFmt("%s.StickCButtons", secname), &padsCfg[c].stickCButtons, 0, 1);

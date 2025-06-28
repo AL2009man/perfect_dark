@@ -829,17 +829,33 @@ static MenuItemHandlerResult menuhandlerGyroSmoothing(s32 operation, struct menu
 		return 0;
 }
 
-static MenuItemHandlerResult menuhandlerGyroMinThreshold(s32 operation, struct menuitem* item, union handlerdata* data)
+static MenuItemHandlerResult menuhandlerGyroTightening(s32 operation, struct menuitem* item, union handlerdata* data)
 {
     switch (operation) {
     case MENUOP_GETSLIDER:
-        data->slider.value = inputGyroGetMinThreshold(g_ExtMenuPlayer) * 100.0f;
+        data->slider.value = inputGyroGetTightening(g_ExtMenuPlayer) * 100.0f;
         break;
     case MENUOP_SET:
-        inputGyroSetMinThreshold(g_ExtMenuPlayer, (f32)data->slider.value / 100.0f);
+        inputGyroSetTightening(g_ExtMenuPlayer, (f32)data->slider.value / 100.0f);
         break;
     case MENUOP_GETSLIDERLABEL:
-        sprintf(data->slider.label, "%.2f", inputGyroGetMinThreshold(g_ExtMenuPlayer));
+        sprintf(data->slider.label, "%.2f", inputGyroGetTightening(g_ExtMenuPlayer));
+        break;
+    }
+    return 0;
+}
+
+static MenuItemHandlerResult menuhandlerGyroDeadzone(s32 operation, struct menuitem* item, union handlerdata* data)
+{
+    switch (operation) {
+    case MENUOP_GETSLIDER:
+        data->slider.value = inputGyroGetDeadzone(g_ExtMenuPlayer) * 100.0f;
+        break;
+    case MENUOP_SET:
+        inputGyroSetDeadzone(g_ExtMenuPlayer, (f32)data->slider.value / 100.0f);
+        break;
+    case MENUOP_GETSLIDERLABEL:
+        sprintf(data->slider.label, "%.2f", inputGyroGetDeadzone(g_ExtMenuPlayer));
         break;
     }
     return 0;
@@ -1006,7 +1022,7 @@ struct menuitem g_ExtendedGyroMenuItems[] = {
 		MENUITEMTYPE_SLIDER,
 		0,
 		MENUITEMFLAG_LITERAL_TEXT | MENUITEMFLAG_SLIDER_WIDE,
-		(uintptr_t)"Gyro Smoothing",
+		(uintptr_t)"Gyro Smoothing Threshold",
 		100,
 		menuhandlerGyroSmoothing,
 	},
@@ -1014,9 +1030,17 @@ struct menuitem g_ExtendedGyroMenuItems[] = {
 		MENUITEMTYPE_SLIDER,
 		0,
 		MENUITEMFLAG_LITERAL_TEXT | MENUITEMFLAG_SLIDER_WIDE,
-		(uintptr_t)"Gyro Movement Threshold",
+		(uintptr_t)"Gyro Tightening Threshold",
 		100,
-		menuhandlerGyroMinThreshold,
+		menuhandlerGyroTightening,
+	},
+	{
+		MENUITEMTYPE_SLIDER,
+		0,
+		MENUITEMFLAG_LITERAL_TEXT | MENUITEMFLAG_SLIDER_WIDE,
+		(uintptr_t)"Gyro Deadzone Threshold",
+		100,
+		menuhandlerGyroDeadzone,
 	},
 	{
 		MENUITEMTYPE_SEPARATOR,
