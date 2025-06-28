@@ -1876,8 +1876,9 @@ f32 inputGyroGetTightening(s32 cidx)
 
 void inputGyroSetTightening(s32 cidx, f32 tightening)
 {
-    if (tightening < 0.f) tightening = 0.f;
-    padsCfg[cidx].gyroTightening = tightening;
+	if (tightening < 0.f) tightening = 0.f;
+	if (tightening > 1.f) tightening = 1.f;
+	padsCfg[cidx].gyroTightening = tightening;
 }
 
 void applyGyroTightening(f32* dx, f32* dy, f32* dz, f32 tightening)
@@ -1909,22 +1910,19 @@ void applyGyroSmoothing(f32* deltaX, f32* deltaY, f32* deltaZ, f32 smoothing, s3
 {
 	if (!deltaX || !deltaY || !deltaZ) return;
 
-	// Clamp smoothing to (0.99) to avoid freezing at 1.0
-	f32 smoothFactor = smoothing;
-	if (smoothFactor < 0.0f) smoothFactor = 0.0f;
-	if (smoothFactor >= 1.0f) smoothFactor = 0.99f;
+	// Clamp smoothing to [0, 0.99] to avoid division by zero
+	if (smoothing < 0.0f) smoothing = 0.0f;
+	if (smoothing > 0.99f) smoothing = 0.99f;
 
-	static f32 smoothedDeltaX[INPUT_MAX_CONTROLLERS] = { 0.0f };
-	static f32 smoothedDeltaY[INPUT_MAX_CONTROLLERS] = { 0.0f };
-	static f32 smoothedDeltaZ[INPUT_MAX_CONTROLLERS] = { 0.0f };
+	static f32 prevX[INPUT_MAX_CONTROLLERS] = {0}, prevY[INPUT_MAX_CONTROLLERS] = {0}, prevZ[INPUT_MAX_CONTROLLERS] = {0};
 
-	smoothedDeltaX[cidx] = smoothedDeltaX[cidx] * smoothFactor + (*deltaX) * (1.0f - smoothFactor);
-	smoothedDeltaY[cidx] = smoothedDeltaY[cidx] * smoothFactor + (*deltaY) * (1.0f - smoothFactor);
-	smoothedDeltaZ[cidx] = smoothedDeltaZ[cidx] * smoothFactor + (*deltaZ) * (1.0f - smoothFactor);
+	prevX[cidx] = prevX[cidx] * smoothing + (*deltaX) * (1.0f - smoothing);
+	prevY[cidx] = prevY[cidx] * smoothing + (*deltaY) * (1.0f - smoothing);
+	prevZ[cidx] = prevZ[cidx] * smoothing + (*deltaZ) * (1.0f - smoothing);
 
-	*deltaX = smoothedDeltaX[cidx];
-	*deltaY = smoothedDeltaY[cidx];
-	*deltaZ = smoothedDeltaZ[cidx];
+	*deltaX = prevX[cidx];
+	*deltaY = prevY[cidx];
+	*deltaZ = prevZ[cidx];
 }
 
 void inputGyroCalibration(s32 cidx, GyroCalibrationOp op, float* out_confidence, int* out_steady)
