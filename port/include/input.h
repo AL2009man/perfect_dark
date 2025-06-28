@@ -121,6 +121,42 @@ enum mouselockmode {
 	MLOCK_AUTO = 2
 };
 
+enum gyroactivation {
+	GYRO_ALWAYS_ON = 0,
+	GYRO_TOGGLE = 1,
+	GYRO_ENABLE_HELD = 2,
+	GYRO_DISABLE_HELD = 3
+};
+
+enum gyroaxismode {
+	GYRO_YAW = 0,
+	GYRO_ROLL = 1,
+	GYRO_LOCAL = 2,
+	GYRO_PLAYER = 3,
+	GYRO_WORLD = 4
+};
+
+enum gyroaimmode {
+	GYRO_AIM_MODE_CAMERA = 0,
+	GYRO_AIM_MODE_CROSSHAIR = 1,
+	GYRO_AIM_MODE_BOTH = 2
+};
+
+typedef enum {
+	GYRO_CALIB_START,
+	GYRO_CALIB_FINISH,
+	GYRO_CALIB_RESET,
+	GYRO_CALIB_QUERY,
+	GYRO_CALIB_AUTO
+} GyroCalibrationOp;
+
+typedef enum {
+	CALIBRATIONMODE_MANUAL = 0,
+	CALIBRATIONMODE_STILLNESS = 1,
+	CALIBRATIONMODE_SENSORFUSION = 2
+} CalibrationMode;
+
+
 // returns bitmask of connected controllers or -1 if failed
 s32 inputInit(void);
 
@@ -196,6 +232,9 @@ const char *inputGetKeyName(s32 vk);
 // get CK_ value from human-readable name
 s32 inputGetContKeyByName(const char *name);
 
+// Returns 1 if the reset camera action is pressed for the given input index
+s32 inputResetCameraPressed(s32 idx);
+
 // get human-readable name from CK_ value
 const char *inputGetContKeyName(u32 ck);
 
@@ -231,6 +270,63 @@ void inputMouseSetSpeed(f32 x, f32 y);
 
 s32 inputMouseIsEnabled(void);
 void inputMouseEnable(s32 enabled);
+
+// Scaled Gyro Movement Retrieval
+void inputGyroGetScaledDelta(s32 cidx, f32* dx, f32* dy, f32* dz);
+void inputGyroGetScaledDeltaCrosshair(s32 cidx, f32* dx, f32* dy);
+
+// Gyro Enable/Disable
+s32 inputGyroIsEnabled(s32 cidx);
+void inputGyroEnable(s32 cidx, s32 enabled);
+
+// Gyro Aim Mode Management
+void inputSetGyroAimMode(s32 cidx, s32 mode);
+s32 inputGetGyroAimMode(s32 cidx);
+
+// Gyro Modifier Management
+void inputSetGyroModifier(s32 cidx, s32 mode);
+s32 inputGetGyroModifier(s32 cidx);
+
+// Gyro Axis Mode Management
+void inputGyroSetAxisMode(s32 cidx, s32 mode);
+s32 inputGyroGetAxisMode(s32 cidx);
+
+// Gyro Speed Management
+void inputGyroGetSpeed(s32 cidx, float* x, float* y);
+void inputGyroSetSpeed(s32 cidx, float x, float y);
+void inputGyroGetAimSpeed(s32 cidx, float* x, float* y);
+void inputGyroSetAimSpeed(s32 cidx, float x, float y);
+
+// Gyro Invert Management
+void inputGyroGetInvert(s32 cidx, s32* invertx, s32* inverty);
+void inputGyroSetInvert(s32 cidx, s32 invertx, s32 inverty);
+void inputGyroGetAimInvert(s32 cidx, s32* invertx, s32* inverty);
+void inputGyroSetAimInvert(s32 cidx, s32 invertx, s32 inverty);
+
+//Gyro Mixer, Smoothing, and Threshold
+float inputGetGyroVHMixer(s32 cidx);
+void inputSetGyroVHMixer(s32 cidx, float value);
+
+float inputGetGyroSmoothing(s32 cidx);
+void inputSetGyroSmoothing(s32 cidx, float value);
+
+float inputGyroGetMinThreshold(s32 cidx);
+void inputGyroSetMinThreshold(s32 cidx, float value);
+
+// Gyro Auto Calibration
+s32 inputGyroGetAutoCalibration(s32 cidx);
+void inputGyroSetAutoCalibration(s32 cidx, s32 enabled);
+
+// Gyro Calibration Management
+void inputUpdateGyroManualCalibration(void);
+
+// Gyro Processing Utilities -
+void applyGyroAxisMapping(s32 cidx, float gyroData[3], float accelData[3], f32* deltaX, f32* deltaY, f32* deltaZ);
+void applyGyroAimMode(s32 cidx, f32* deltaX, f32* deltaY, f32* deltaZ);
+void applyGyroModifier(f32* deltaX, f32* deltaY, f32* deltaZ, s32 activationMode, s32 idx);
+void applyGyroThreshold(f32* dx, f32* dy, f32* dz, f32 threshold);
+void applyGyroSmoothing(f32* deltaX, f32* deltaY, f32* deltaZ, f32 smoothing, s32 cidx);
+
 
 // call this every frame
 void inputUpdate(void);
