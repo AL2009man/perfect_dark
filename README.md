@@ -229,7 +229,9 @@ It might be possible to build and run the game on platforms that are not specifi
 * [Ship of Harkinian team](https://github.com/Kenix3/libultraship/tree/main/src/graphic/Fast3D), Emill and MaikelChan for the libultraship version of fast3d that this port uses;
 * lieff for [minimp3](https://github.com/lieff/minimp3);
 * Mouse Injector and 1964GEPD authors for some of the 60FPS- and mouselook-related fixes;
-* [GamepadMotionHelpers](https://github.com/JibbSmart/GamepadMotionHelpers) authors for motion sensor-related tools like sensor fusion, gyro space and gyro calibration.
+* [n64emu-SDL2GyroInjector](https://github.com/TauAkiou/n64emu-SDL2GyroInjector) author for inspirations on Gyro Aiming feature sets.
+* [GamepadMotionHelpers](https://github.com/JibbSmart/GamepadMotionHelpers) author for motion sensor-related tools like sensor fusion, gyro space and gyro calibration.
+  * additionally: Jibb Smart for some of the Gyro resources via [GyroWiki](http://gyrowiki.jibbsmart.com/). 
 * Raf for the 64-bit port;
 * NicNamSam for the icon;
 * everyone who has submitted pull requests and issues to this repository and tested the port;
