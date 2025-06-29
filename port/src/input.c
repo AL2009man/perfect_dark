@@ -1667,12 +1667,6 @@ static inline void applyGyroVHMixer(s32 cidx, f32* dx, f32* dy) {
 	float hScale = 1.0f - fmaxf(0.0f, mix);
 	float vScale = 1.0f + fminf(0.0f, mix);
 
-	float norm = hScale + vScale;
-	if (norm > 0.0f) {
-		hScale /= norm / 2.0f;
-		vScale /= norm / 2.0f;
-	}
-
 	*dx *= hScale;
 	*dy *= vScale;
 }
