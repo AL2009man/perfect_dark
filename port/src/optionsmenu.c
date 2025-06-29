@@ -17,6 +17,7 @@
 
 static s32 g_ExtMenuPlayer = 0;
 static struct menudialogdef *g_ExtNextDialog = NULL;
+static s32 g_GyroCalibrationState[INPUT_MAX_CONTROLLERS] = {0};
 static bool g_GyroCalibrationComplete[INPUT_MAX_CONTROLLERS] = {0};
 
 static s32 g_BindIndex = 0;
@@ -876,23 +877,39 @@ static MenuItemHandlerResult menuhandlerGyroAutoCalibration(s32 operation, struc
 
 static const char *menutextGyroManualCalibration(struct menuitem *item)
 {
-    if (g_GyroCalibrationComplete[g_ExtMenuPlayer]) {
-        return "Gyro Calibration Complete\n";
+    switch (g_GyroCalibrationState[g_ExtMenuPlayer]) {
+    case 1:
+        return "Place controller on surface,\nthen press ACCEPT action.\n";
+    case 2:
+        return "Gyro Calibration Complete!\n";
+    default:
+        return "Calibrate Gyro\n";
     }
-    return "Calibrate Gyro\n";
 }
 
 static MenuItemHandlerResult menuhandlerGyroManualCalibration(s32 operation, struct menuitem* item, union handlerdata* data)
 {
     switch (operation) {
     case MENUOP_OPEN:
-        // Reset the text when the menu is opened
-        g_GyroCalibrationComplete[g_ExtMenuPlayer] = false;
+        // Reset the state when the menu is opened
+        g_GyroCalibrationState[g_ExtMenuPlayer] = 0;
         break;
     case MENUOP_SET:
-        // Calibrate and set the flag to show the "Complete" message
-        inputGyroSetManualCalibration(g_ExtMenuPlayer);
-        g_GyroCalibrationComplete[g_ExtMenuPlayer] = true;
+        switch (g_GyroCalibrationState[g_ExtMenuPlayer]) {
+        case 0:
+            // Initial press, move to pending state
+            g_GyroCalibrationState[g_ExtMenuPlayer] = 1;
+            break;
+        case 1:
+            // Second press, calibrate and set to complete
+            inputGyroSetManualCalibration(g_ExtMenuPlayer);
+            g_GyroCalibrationState[g_ExtMenuPlayer] = 2;
+            break;
+        case 2:
+            // Already complete, reset to initial state
+            g_GyroCalibrationState[g_ExtMenuPlayer] = 0;
+            break;
+        }
         break;
     }
     return 0;
@@ -1094,13 +1111,21 @@ struct menuitem g_ExtendedGyroMenuItems[] = {
 	{ MENUITEMTYPE_END },
 };
 
+static s32 menuhandlerExtendedGyroMenu(s32 operation, struct menudialogdef *dialog, union handlerdata *data)
+{
+    if (operation == MENUOP_CLOSE) {
+        g_GyroCalibrationState[g_ExtMenuPlayer] = 0;
+    }
+    return 0;
+}
+
 struct menudialogdef g_ExtendedGyroMenuDialog = {
-		MENUDIALOGTYPE_DEFAULT,
-		(uintptr_t)"Gyro Settings",
-		g_ExtendedGyroMenuItems,
-		NULL,
-		MENUDIALOGFLAG_LITERAL_TEXT,
-		NULL,
+        MENUDIALOGTYPE_DEFAULT,
+        (uintptr_t)"Gyro Settings",
+        g_ExtendedGyroMenuItems,
+        menuhandlerExtendedGyroMenu,
+        MENUDIALOGFLAG_LITERAL_TEXT,
+        NULL,
 };
 
 static MenuItemHandlerResult menuhandlerController(s32 operation, struct menuitem *item, union handlerdata *data)
