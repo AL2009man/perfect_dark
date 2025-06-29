@@ -881,7 +881,7 @@ static const char *menutextGyroManualCalibration(struct menuitem *item)
     case 1:
         return "Place controller on surface,\nthen press ACCEPT action.\n";
     case 2:
-        return "Gyro Calibration Complete!\n";
+        return "Gyro Calibration Complete!\n \nPress ACCEPT action to reset.\n";
     default:
         return "Calibrate Gyro\n";
     }
