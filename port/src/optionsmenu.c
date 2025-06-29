@@ -17,6 +17,7 @@
 
 static s32 g_ExtMenuPlayer = 0;
 static struct menudialogdef *g_ExtNextDialog = NULL;
+static bool g_GyroCalibrationComplete[INPUT_MAX_CONTROLLERS] = {0};
 
 static s32 g_BindIndex = 0;
 static u32 g_BindContKey = 0;
@@ -873,10 +874,26 @@ static MenuItemHandlerResult menuhandlerGyroAutoCalibration(s32 operation, struc
 		return 0;
 }
 
+static const char *menutextGyroManualCalibration(struct menuitem *item)
+{
+    if (g_GyroCalibrationComplete[g_ExtMenuPlayer]) {
+        return "Gyro Calibration Complete\n";
+    }
+    return "Calibrate Gyro\n";
+}
+
 static MenuItemHandlerResult menuhandlerGyroManualCalibration(s32 operation, struct menuitem* item, union handlerdata* data)
 {
-    if (operation == MENUOP_SET) {
+    switch (operation) {
+    case MENUOP_OPEN:
+        // Reset the text when the menu is opened
+        g_GyroCalibrationComplete[g_ExtMenuPlayer] = false;
+        break;
+    case MENUOP_SET:
+        // Calibrate and set the flag to show the "Complete" message
         inputGyroSetManualCalibration(g_ExtMenuPlayer);
+        g_GyroCalibrationComplete[g_ExtMenuPlayer] = true;
+        break;
     }
     return 0;
 }
@@ -933,8 +950,8 @@ struct menuitem g_ExtendedGyroMenuItems[] = {
     {
         MENUITEMTYPE_SELECTABLE,
         0,
-        MENUITEMFLAG_LITERAL_TEXT,
-        (uintptr_t)"Calibrate Gyro\n",
+        0, // Remove MENUITEMFLAG_LITERAL_TEXT
+        (uintptr_t)menutextGyroManualCalibration,
         0,
         menuhandlerGyroManualCalibration,
     },
