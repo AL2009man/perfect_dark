@@ -162,6 +162,8 @@ static Uint32 gyroSteadyStartTime[INPUT_MAX_CONTROLLERS] = {0};
 static bool gyroJustFinishedCalibrating[INPUT_MAX_CONTROLLERS] = {false};
 static bool isCalibrating[INPUT_MAX_CONTROLLERS] = {false}; // Tracks if auto-calibration is active for the current steady period
 void inputGyroCalibration(s32 cidx, GyroCalibrationOp op, float* out_confidence, int* out_steady);
+static int manualGyroCalibrating[INPUT_MAX_CONTROLLERS] = {0};
+static Uint32 manualGyroCalibStartTime[INPUT_MAX_CONTROLLERS] = {0};
 
 static s32 lastKey = 0;
 static char lastChar = 0;
@@ -2009,36 +2011,56 @@ void inputGyroCalibration(s32 cidx, GyroCalibrationOp op, float* out_confidence,
 	}
 }
 
+s32 inputGyroGetManualCalibration(s32 cidx)
+{
+	if (cidx < 0 || cidx >= INPUT_MAX_CONTROLLERS) return 0;
+	return manualGyroCalibrating[cidx];
+}
+
+void inputGyroSetManualCalibration(s32 cidx)
+{
+	if (cidx < 0 || cidx >= INPUT_MAX_CONTROLLERS) return;
+	if (!pads[cidx] || !gpadMotion[cidx]) return;
+
+	// Do not allow manual calibration if auto-calibration is active and controller is steady
+	if (padsCfg[cidx].gyroAutoCalibration && wasSteady[cidx]) return;
+
+	manualGyroCalibrating[cidx] = 1;
+	manualGyroCalibStartTime[cidx] = SDL_GetTicks();
+	inputGyroCalibration(cidx, GYRO_CALIB_START, NULL, NULL);
+	gyroJustFinishedCalibrating[cidx] = true;
+}
+
+// Handles manual calibration state for all controllers (call every frame)
 void inputUpdateGyroManualCalibration(void)
 {
-	static int manualCalibrating[INPUT_MAX_CONTROLLERS] = {0};
-	static Uint32 manualCalibStartTime[INPUT_MAX_CONTROLLERS] = {0};
-
 	for (s32 cidx = 0; cidx < INPUT_MAX_CONTROLLERS; ++cidx) {
-		if (!pads[cidx] || !gpadMotion[cidx])
+		if (!pads[cidx] || !gpadMotion[cidx]) {
+			manualGyroCalibrating[cidx] = 0;
 			continue;
+		}
 
 		// Do not allow manual calibration if auto-calibration is active and controller is steady
 		if (padsCfg[cidx].gyroAutoCalibration && wasSteady[cidx]) {
-			if (manualCalibrating[cidx]) {
-				manualCalibrating[cidx] = 0;
+			if (manualGyroCalibrating[cidx]) {
+				manualGyroCalibrating[cidx] = 0;
 			}
 			continue;
 		}
 
 		int pressed = inputBindPressed(cidx, CK_0100);
 
-		if (pressed && !manualCalibrating[cidx]) {
-			manualCalibrating[cidx] = 1;
-			manualCalibStartTime[cidx] = SDL_GetTicks();
+		if (pressed && !manualGyroCalibrating[cidx]) {
+			manualGyroCalibrating[cidx] = 1;
+			manualGyroCalibStartTime[cidx] = SDL_GetTicks();
 			inputGyroCalibration(cidx, GYRO_CALIB_START, NULL, NULL);
 			gyroJustFinishedCalibrating[cidx] = true;
-		} else if (!pressed && manualCalibrating[cidx]) {
-			Uint32 elapsed = SDL_GetTicks() - manualCalibStartTime[cidx];
+		} else if (!pressed && manualGyroCalibrating[cidx]) {
+			Uint32 elapsed = SDL_GetTicks() - manualGyroCalibStartTime[cidx];
 			if (elapsed >= 500) {
-				manualCalibrating[cidx] = 0;
+				manualGyroCalibrating[cidx] = 0;
 				inputGyroCalibration(cidx, GYRO_CALIB_FINISH, NULL, NULL);
-				gyroJustFinishedCalibrating[cidx] = true; 
+				gyroJustFinishedCalibrating[cidx] = true;
 			}
 		}
 	}

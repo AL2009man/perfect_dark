@@ -873,6 +873,14 @@ static MenuItemHandlerResult menuhandlerGyroAutoCalibration(s32 operation, struc
 		return 0;
 }
 
+static MenuItemHandlerResult menuhandlerGyroManualCalibration(s32 operation, struct menuitem* item, union handlerdata* data)
+{
+    if (operation == MENUOP_SET) {
+        inputGyroSetManualCalibration(g_ExtMenuPlayer);
+    }
+    return 0;
+}
+
 struct menuitem g_ExtendedGyroMenuItems[] = {
 	{
 		MENUITEMTYPE_CHECKBOX,
@@ -922,12 +930,20 @@ struct menuitem g_ExtendedGyroMenuItems[] = {
 		0,
 		menuhandlerGyroAutoCalibration,
 	},
+    {
+        MENUITEMTYPE_SELECTABLE,
+        0,
+        MENUITEMFLAG_LITERAL_TEXT,
+        (uintptr_t)"Calibrate Gyro\n",
+        0,
+        menuhandlerGyroManualCalibration,
+    },
 	{
 		MENUITEMTYPE_SEPARATOR,
-		0,
-		0,
-		0,
-		0,
+        0,
+        0,
+        0,
+        0,
 		NULL,
 	},
 	{
