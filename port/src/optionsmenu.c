@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
+#include <SDL.h>
 #include <PR/ultratypes.h>
 #include "platform.h"
 #include "data.h"
@@ -14,10 +15,12 @@
 #include "video.h"
 #include "input.h"
 #include "config.h"
+#include "time.h"
 
 static s32 g_ExtMenuPlayer = 0;
 static struct menudialogdef *g_ExtNextDialog = NULL;
 static s32 g_GyroCalibrationState[INPUT_MAX_CONTROLLERS] = {0};
+static u32 g_GyroCalibrationStartTime[INPUT_MAX_CONTROLLERS] = {0};
 static bool g_GyroCalibrationComplete[INPUT_MAX_CONTROLLERS] = {0};
 
 static s32 g_BindIndex = 0;
@@ -877,13 +880,43 @@ static MenuItemHandlerResult menuhandlerGyroAutoCalibration(s32 operation, struc
 
 static const char *menutextGyroManualCalibration(struct menuitem *item)
 {
+    static char timer_text[64];
     switch (g_GyroCalibrationState[g_ExtMenuPlayer]) {
     case 1:
-        return "Place controller on surface,\nthen press ACCEPT action.\n";
+        {
+            u32 elapsed_ms = SDL_GetTicks() - g_GyroCalibrationStartTime[g_ExtMenuPlayer];
+            s32 seconds_left = 5 - (elapsed_ms / 1000);
+            if (seconds_left < 0) seconds_left = 0;
+            sprintf(timer_text, "Gyro Calibrating in %d...\nPlace controller on a flat surface.\n", seconds_left);
+            return timer_text;
+        }
     case 2:
-        return "Gyro Calibration Complete!\n \nPress ACCEPT action to reset.\n";
+        {
+            static char reset_text[128];
+            const u32 *accept_binds = inputKeyGetBinds(g_ExtMenuPlayer, CK_ACCEPT);
+            const u32 *ztrig_binds = inputKeyGetBinds(g_ExtMenuPlayer, CK_ZTRIG);
+            const char *gamepad_key_name = "ACCEPT";
+            const char *keyboard_key_name = "Z TRIG";
+
+            if (accept_binds && accept_binds[0]) {
+                gamepad_key_name = inputGetKeyName(accept_binds[0]);
+            }
+
+            if (ztrig_binds && ztrig_binds[0]) {
+                // Find the first keyboard/mouse bind
+                for (int i = 0; i < INPUT_MAX_BINDS && ztrig_binds[i] != 0; ++i) {
+                    if (ztrig_binds[i] < VK_JOY_BEGIN) {
+                        keyboard_key_name = inputGetKeyName(ztrig_binds[i]);
+                        break;
+                    }
+                }
+            }
+
+            sprintf(reset_text, "Gyro Calibration Complete!\nPress %s or %s to reset.\n", gamepad_key_name, keyboard_key_name);
+            return reset_text;
+        }
     default:
-        return "Calibrate Gyro\n";
+        return "Initiate Gyro Calibration\n";
     }
 }
 
@@ -897,13 +930,13 @@ static MenuItemHandlerResult menuhandlerGyroManualCalibration(s32 operation, str
     case MENUOP_SET:
         switch (g_GyroCalibrationState[g_ExtMenuPlayer]) {
         case 0:
-            // Initial press, move to pending state
+            // Initial press, move to pending state and start timer
             g_GyroCalibrationState[g_ExtMenuPlayer] = 1;
+            g_GyroCalibrationStartTime[g_ExtMenuPlayer] = SDL_GetTicks();
             break;
         case 1:
-            // Second press, calibrate and set to complete
-            inputGyroSetManualCalibration(g_ExtMenuPlayer);
-            g_GyroCalibrationState[g_ExtMenuPlayer] = 2;
+            // Pressing while timer is active cancels it
+            g_GyroCalibrationState[g_ExtMenuPlayer] = 0;
             break;
         case 2:
             // Already complete, reset to initial state
@@ -1116,8 +1149,18 @@ static s32 menuhandlerExtendedGyroMenu(s32 operation, struct menudialogdef *dial
     if (operation == MENUOP_CLOSE) {
         g_GyroCalibrationState[g_ExtMenuPlayer] = 0;
     }
+
+    if (operation == MENUOP_TICK) {
+        if (g_GyroCalibrationState[g_ExtMenuPlayer] == 1) {
+            if (SDL_GetTicks() - g_GyroCalibrationStartTime[g_ExtMenuPlayer] >= 5000) {
+                inputGyroSetManualCalibration(g_ExtMenuPlayer);
+                g_GyroCalibrationState[g_ExtMenuPlayer] = 2;
+            }
+        }
+    }
     return 0;
 }
+
 
 struct menudialogdef g_ExtendedGyroMenuDialog = {
         MENUDIALOGTYPE_DEFAULT,
