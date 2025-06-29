@@ -15,7 +15,6 @@
 #include "video.h"
 #include "input.h"
 #include "config.h"
-#include "time.h"
 
 static s32 g_ExtMenuPlayer = 0;
 static struct menudialogdef *g_ExtNextDialog = NULL;
@@ -887,7 +886,7 @@ static const char *menutextGyroManualCalibration(struct menuitem *item)
             u32 elapsed_ms = SDL_GetTicks() - g_GyroCalibrationStartTime[g_ExtMenuPlayer];
             s32 seconds_left = 5 - (elapsed_ms / 1000);
             if (seconds_left < 0) seconds_left = 0;
-            sprintf(timer_text, "Gyro Calibrating in %d...\nPlace controller on a flat surface.\n", seconds_left);
+            sprintf(timer_text, "Gyro Calibrating in %d...\nPlace the controller on a flat surface.\n", seconds_left);
             return timer_text;
         }
     case 2:
@@ -912,7 +911,7 @@ static const char *menutextGyroManualCalibration(struct menuitem *item)
                 }
             }
 
-            sprintf(reset_text, "Gyro Calibration Complete!\nPress %s or %s to reset.\n", gamepad_key_name, keyboard_key_name);
+            sprintf(reset_text, "Gyro Calibration Complete!\nPress %s/%s to restart.\n", gamepad_key_name, keyboard_key_name);
             return reset_text;
         }
     default:
