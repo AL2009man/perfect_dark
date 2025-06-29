@@ -36,6 +36,7 @@ static SDL_GameController *pads[INPUT_MAX_CONTROLLERS];
 #define CONTROLLERCFG_DEFAULT { \
 	.rumbleOn = 0, \
 	.rumbleScale = 0.5f, \
+	.weaponRumbleScale = 0.5f, \
 	.axisMap = { \
 		{ SDL_CONTROLLER_AXIS_LEFTX,  SDL_CONTROLLER_AXIS_LEFTY  }, \
 		{ SDL_CONTROLLER_AXIS_RIGHTX, SDL_CONTROLLER_AXIS_RIGHTY }, \
@@ -51,6 +52,7 @@ static SDL_GameController *pads[INPUT_MAX_CONTROLLERS];
 static struct controllercfg {
 	s32 rumbleOn;
 	f32 rumbleScale;
+	f32 weaponRumbleScale; 
 	u32 axisMap[2][2];
 	f32 sens[4];
 	s32 deadzone[4];
@@ -962,6 +964,51 @@ void inputRumbleSetStrength(s32 cidx, f32 val)
 	padsCfg[cidx].rumbleScale = val;
 }
 
+s32 inputTriggerRumbleSupported(s32 idx)
+{
+    if (idx < 0 || idx >= INPUT_MAX_CONTROLLERS) {
+        return 0;
+    }
+    // You may want to check for a separate enable flag, but this matches your config
+    return padsCfg[idx].weaponRumbleScale;
+}
+
+void inputRumbleTriggers(s32 idx, f32 left_strength, f32 right_strength, f32 time)
+{
+    if (idx < 0 || idx >= INPUT_MAX_CONTROLLERS || !pads[idx]) {
+        return;
+    }
+
+    if (padsCfg[idx].weaponRumbleScale <= 0.f) {
+        return;
+    }
+
+    if (padsCfg[idx].rumbleOn) {
+        left_strength  *= padsCfg[idx].weaponRumbleScale;
+        right_strength *= padsCfg[idx].weaponRumbleScale;
+
+        if (left_strength <= 0.f && right_strength <= 0.f) {
+            left_strength = right_strength = 0.f;
+            time = 0.f;
+        } else {
+            left_strength  *= 65535.f;
+            right_strength *= 65535.f;
+            time *= 1000.f;
+        }
+        SDL_GameControllerRumbleTriggers(pads[idx], (u16)left_strength, (u16)right_strength, (u32)time);
+    }
+}
+
+f32 inputWeaponRumbleGetStrength(s32 cidx)
+{
+    return padsCfg[cidx].weaponRumbleScale;
+}
+
+void inputWeaponRumbleSetStrength(s32 cidx, f32 val)
+{
+    padsCfg[cidx].weaponRumbleScale = val;
+}
+
 s32 inputControllerMask(void)
 {
 	return connectedMask;
@@ -1520,6 +1567,7 @@ PD_CONSTRUCTOR static void inputConfigInit(void)
 		secname[12] = '1' + c;
 		secname[13] = '\0';
 		configRegisterFloat(strFmt("%s.RumbleScale", secname), &padsCfg[c].rumbleScale, 0.f, 1.f);
+		configRegisterFloat(strFmt("%s.TriggerRumbleScale", secname), &padsCfg[c].weaponRumbleScale, 0.f, 1.f);
 		configRegisterInt(strFmt("%s.LStickDeadzoneX", secname), &padsCfg[c].deadzone[0], 0, 32767);
 		configRegisterInt(strFmt("%s.LStickDeadzoneY", secname), &padsCfg[c].deadzone[1], 0, 32767);
 		configRegisterInt(strFmt("%s.RStickDeadzoneX", secname), &padsCfg[c].deadzone[2], 0, 32767);

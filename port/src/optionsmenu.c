@@ -546,6 +546,26 @@ static MenuItemHandlerResult menuhandlerVibration(s32 operation, struct menuitem
 	return 0;
 }
 
+static MenuItemHandlerResult menuhandlerTriggerVibration(s32 operation, struct menuitem *item, union handlerdata *data)
+{
+	switch (operation) {
+	case MENUOP_GETSLIDER:
+		data->slider.value = inputWeaponRumbleGetStrength(g_ExtMenuPlayer) * 10.f + 0.5f;
+		break;
+	case MENUOP_SET:
+		inputWeaponRumbleSetStrength(g_ExtMenuPlayer, (f32)data->slider.value / 10.f);
+		break;
+	case MENUOP_CHECKHIDDEN:
+	case MENUOP_CHECKDISABLED:
+		if (!inputRumbleSupported(g_ExtMenuPlayer)) {
+			return true;
+		}
+		break;
+	}
+
+	return 0;
+}
+
 static MenuItemHandlerResult menuhandlerAnalogMovement(s32 operation, struct menuitem *item, union handlerdata *data)
 {
 	switch (operation) {
@@ -656,6 +676,14 @@ struct menuitem g_ExtendedControllerMenuItems[] = {
 		(uintptr_t)"Vibration",
 		10,
 		menuhandlerVibration,
+	},
+	{
+		MENUITEMTYPE_SLIDER,
+		0,
+		MENUITEMFLAG_LITERAL_TEXT,
+		(uintptr_t)"Triger Vibration",
+		10,
+		menuhandlerTriggerVibration,
 	},
 	{
 		MENUITEMTYPE_SEPARATOR,

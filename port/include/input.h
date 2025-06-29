@@ -205,6 +205,15 @@ void inputRumble(s32 idx, f32 strength, f32 time);
 f32 inputRumbleGetStrength(s32 cidx);
 void inputRumbleSetStrength(s32 cidx, f32 val);
 
+// returns 1 if trigger/weapon rumble is supported for specified player's controller
+s32 inputTriggerRumbleSupported(s32 idx);
+
+// strength is 0 .. 1; 0 strength turns it off
+void inputRumbleTriggers(s32 idx, f32 left_strength, f32 right_strength, f32 time);
+
+f32 inputWeaponRumbleGetStrength(s32 cidx);
+void inputWeaponRumbleSetStrength(s32 cidx, f32 val);
+
 // locks the mouse cursor in the window and makes it invisible if argument is true
 void inputLockMouse(s32 lock);
 
