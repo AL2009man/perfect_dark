@@ -449,6 +449,13 @@ padsCfg[cidx].gyroSensorActive = sensorActive;
 #endif
 }
 
+// Pause gyro deltas and orientation to prevent gyro input leak
+static inline void inputPauseGyro(s32 cidx)
+{
+    gyroDeltaYaw[cidx] = gyroDeltaPitch[cidx] = gyroDeltaRoll[cidx] = 0.f;
+    gyroYaw[cidx] = gyroPitch[cidx] = gyroRoll[cidx] = 0.f;
+}
+
 static inline void inputCloseController(const s32 cidx)
 {
 	sysLogPrintf(LOG_NOTE, "input: removed controller '%d: (%s)' (id %d) from player %d",
@@ -462,10 +469,7 @@ static inline void inputCloseController(const s32 cidx)
 	pads[cidx] = NULL;
 	padsCfg[cidx].rumbleOn = 0;
 
-	// Zero out gyro deltas and orientation to prevent drift after disconnect
-
-	gyroDeltaYaw[cidx] = gyroDeltaPitch[cidx] = gyroDeltaRoll[cidx] = 0.f;
-	gyroYaw[cidx] = gyroPitch[cidx] = gyroRoll[cidx] = 0.f;
+    inputPauseGyro(cidx);
 
 	if (cidx) {
 		connectedMask &= ~(1 << cidx);
@@ -1114,7 +1118,7 @@ void inputUpdateGyro(s32 cidx)
 	// Apply aim mode, modifier, and threshold
 	applyGyroAimMode(cidx, &deltaX, &deltaY, &deltaZ);
 	applyGyroModifier(&deltaX, &deltaY, &deltaZ, inputGetGyroModifier(cidx), cidx);
-  applyGyroDeadzone(&deltaX, &deltaY, &deltaZ, inputGyroGetDeadzone(cidx));
+    applyGyroDeadzone(&deltaX, &deltaY, &deltaZ, inputGyroGetDeadzone(cidx));
 	applyGyroTightening(&deltaX, &deltaY, &deltaZ, inputGyroGetTightening(cidx));
 	applyGyroSmoothing(&deltaX, &deltaY, &deltaZ, inputGetGyroSmoothing(cidx), cidx);
 
