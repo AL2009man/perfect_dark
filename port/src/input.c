@@ -1096,9 +1096,11 @@ void inputUpdateGyro(s32 cidx)
 		accelData[0] / SDL_STANDARD_GRAVITY, accelData[1] / SDL_STANDARD_GRAVITY, accelData[2] / SDL_STANDARD_GRAVITY,
 		deltaTime);
 
-    // Map axes directly using the latest processed data
-    f32 deltaX = 0.f, deltaY = 0.f, deltaZ = 0.f;
-    applyGyroAxisMapping(cidx, gyroData, accelData, &deltaX, &deltaY, &deltaZ);
+	// Get calibrated gyro output and map axes
+	f32 deltaX = 0.f, deltaY = 0.f, deltaZ = 0.f;
+	float calibratedGyro[3] = {0.f};
+	gmhGetCalibratedGyro(gpadMotion[cidx], &calibratedGyro[0], &calibratedGyro[1], &calibratedGyro[2]);
+	applyGyroAxisMapping(cidx, calibratedGyro, accelData, &deltaX, &deltaY, &deltaZ);
 
 	// If calibration just finished, ignore the first delta to prevent jump
 	if (gyroJustFinishedCalibrating[cidx]) {
@@ -1112,7 +1114,7 @@ void inputUpdateGyro(s32 cidx)
 	// Apply aim mode, modifier, and threshold
 	applyGyroAimMode(cidx, &deltaX, &deltaY, &deltaZ);
 	applyGyroModifier(&deltaX, &deltaY, &deltaZ, inputGetGyroModifier(cidx), cidx);
-    applyGyroDeadzone(&deltaX, &deltaY, &deltaZ, inputGyroGetDeadzone(cidx));
+  applyGyroDeadzone(&deltaX, &deltaY, &deltaZ, inputGyroGetDeadzone(cidx));
 	applyGyroTightening(&deltaX, &deltaY, &deltaZ, inputGyroGetTightening(cidx));
 	applyGyroSmoothing(&deltaX, &deltaY, &deltaZ, inputGetGyroSmoothing(cidx), cidx);
 
@@ -1597,20 +1599,23 @@ void applyGyroAxisMapping(s32 cidx, float gyroData[3], float accelData[3], f32* 
         return;
     }
 
+    float calibratedGyro[3] = {0.f};
+    gmhGetCalibratedGyro(gpadMotion[cidx], &calibratedGyro[0], &calibratedGyro[1], &calibratedGyro[2]);
+
     switch (inputGyroGetAxisMode(cidx)) {
     case GYRO_AXIS_YAW:
-        *deltaX = -gyroData[1];
-        *deltaY = -gyroData[0];
+        *deltaX = -calibratedGyro[1];
+        *deltaY = -calibratedGyro[0];
         *deltaZ = 0.f;
         break;
     case GYRO_AXIS_ROLL:
-        *deltaX = gyroData[2];
-        *deltaY = -gyroData[0];
+        *deltaX = calibratedGyro[2];
+        *deltaY = -calibratedGyro[0];
         *deltaZ = 0.f;
         break;
     case GYRO_AXIS_LOCAL:
-        *deltaX = -gyroData[1] + gyroData[2];
-        *deltaY = -gyroData[0];
+        *deltaX = -calibratedGyro[1] + calibratedGyro[2];
+        *deltaY = -calibratedGyro[0];
         *deltaZ = 0.f;
         break;
     case GYRO_AXIS_PLAYER: {
