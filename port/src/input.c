@@ -1096,9 +1096,11 @@ void inputUpdateGyro(s32 cidx)
 		accelData[0] / SDL_STANDARD_GRAVITY, accelData[1] / SDL_STANDARD_GRAVITY, accelData[2] / SDL_STANDARD_GRAVITY,
 		deltaTime);
 
-    // Map axes directly using the latest processed data
-    f32 deltaX = 0.f, deltaY = 0.f, deltaZ = 0.f;
-    applyGyroAxisMapping(cidx, gyroData, accelData, &deltaX, &deltaY, &deltaZ);
+	// Get calibrated gyro output and map axes
+	f32 deltaX = 0.f, deltaY = 0.f, deltaZ = 0.f;
+	float calibratedGyro[3] = {0.f};
+	gmhGetCalibratedGyro(gpadMotion[cidx], &calibratedGyro[0], &calibratedGyro[1], &calibratedGyro[2]);
+	applyGyroAxisMapping(cidx, calibratedGyro, accelData, &deltaX, &deltaY, &deltaZ);
 
 	// If calibration just finished, ignore the first delta to prevent jump
 	if (gyroJustFinishedCalibrating[cidx]) {
@@ -1127,20 +1129,6 @@ void inputUpdateGyro(s32 cidx)
 	gyroRoll[cidx] += deltaZ;
 }
 
-void inputUpdateGyroCalibration(void)
-{
-	// Update manual gyro calibration state for all controllers
-	inputUpdateGyroManualCalibration();
-
-	// Run auto-calibration for all controllers if enabled
-	for (s32 cidx = 0; cidx < INPUT_MAX_CONTROLLERS; ++cidx) {
-		if (padsCfg[cidx].gyroEnabled && padsCfg[cidx].gyroSensorActive && padsCfg[cidx].gyroAutoCalibration) {
-			inputGyroCalibration(cidx, GYRO_CALIB_AUTO, NULL, NULL);
-		}
-	}
-}
-
-
 void inputUpdate(void)
 {
 	SDL_GameControllerUpdate();
@@ -1149,15 +1137,28 @@ void inputUpdate(void)
 		inputUpdateMouse();
 	}
 
-	// Update gyro calibration for all controllers
-	inputUpdateGyroCalibration();
+	// Handle gyro calibration binds and state
+	inputUpdateGyroManualCalibration();
 
-	// Update gyro calibration and sensor data for each controller
+	// Gyro calibration and update logic
 	for (s32 cidx = 0; cidx < INPUT_MAX_CONTROLLERS; ++cidx) {
 		if (padsCfg[cidx].gyroEnabled && padsCfg[cidx].gyroSensorActive) {
+			// Always run auto-calibration step if enabled
+			if (padsCfg[cidx].gyroAutoCalibration) {
+				inputGyroCalibration(cidx, GYRO_CALIB_AUTO, NULL, NULL);
+			}
+
+			// Update gyro sensor data and deltas
 			inputUpdateGyro(cidx);
 		}
 	}
+}
+
+// This function only updates gyro calibration state
+void inputUpdateGyroCalibrationOnly(void)
+{
+	// Only handle gyro calibration binds and state
+	inputUpdateGyroManualCalibration();
 }
 
 s32 inputControllerConnected(s32 idx)
@@ -1598,20 +1599,23 @@ void applyGyroAxisMapping(s32 cidx, float gyroData[3], float accelData[3], f32* 
         return;
     }
 
+    float calibratedGyro[3] = {0.f};
+    gmhGetCalibratedGyro(gpadMotion[cidx], &calibratedGyro[0], &calibratedGyro[1], &calibratedGyro[2]);
+
     switch (inputGyroGetAxisMode(cidx)) {
     case GYRO_AXIS_YAW:
-        *deltaX = -gyroData[1];
-        *deltaY = -gyroData[0];
+        *deltaX = -calibratedGyro[1];
+        *deltaY = -calibratedGyro[0];
         *deltaZ = 0.f;
         break;
     case GYRO_AXIS_ROLL:
-        *deltaX = gyroData[2];
-        *deltaY = -gyroData[0];
+        *deltaX = calibratedGyro[2];
+        *deltaY = -calibratedGyro[0];
         *deltaZ = 0.f;
         break;
     case GYRO_AXIS_LOCAL:
-        *deltaX = -gyroData[1] + gyroData[2];
-        *deltaY = -gyroData[0];
+        *deltaX = -calibratedGyro[1] + calibratedGyro[2];
+        *deltaY = -calibratedGyro[0];
         *deltaZ = 0.f;
         break;
     case GYRO_AXIS_PLAYER: {
@@ -1995,7 +1999,9 @@ void inputGyroCalibration(s32 cidx, GyroCalibrationOp op, float* out_confidence,
 	
 		// Get current gyro data
 		float gyroData[3] = {0.f};
+		float accelData[3] = {0.f};
 		SDL_GameControllerGetSensorData(pads[cidx], SDL_SENSOR_GYRO, gyroData, 3);
+		SDL_GameControllerGetSensorData(pads[cidx], SDL_SENSOR_ACCEL, accelData, 3);
 	
 		if (isSteadyNow) {
 			if (!wasSteady[cidx]) {
@@ -2057,7 +2063,7 @@ void inputGyroSetManualCalibration(s32 cidx)
 	gyroJustFinishedCalibrating[cidx] = true;
 }
 
-// Handles manual calibration state for all controllers
+// Handles manual calibration state for all controllers (call every frame)
 void inputUpdateGyroManualCalibration(void)
 {
 	for (s32 cidx = 0; cidx < INPUT_MAX_CONTROLLERS; ++cidx) {
