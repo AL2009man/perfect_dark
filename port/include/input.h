@@ -318,6 +318,7 @@ void inputGyroSetTightening(s32 cidx, float value);
 
 // Gyro Calibration Management
 void inputGyroCalibration(s32 cidx, GyroCalibrationOp op, float* out_confidence, int* out_steady);
+void inputUpdateGyroCalibration(void);
 void inputUpdateGyroManualCalibration(void);
 
 // Gyro Auto Calibration
