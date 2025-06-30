@@ -2017,14 +2017,19 @@ void inputGyroCalibration(s32 cidx, GyroCalibrationOp op, float* out_confidence,
 				lastGyro[cidx][i] = gyroData[i];
 			}
 			if (delta > maxGyroDelta[cidx]) maxGyroDelta[cidx] = delta;
-	
 			// Only calibrate if steady for >1.0s and noise is low
-			const float NOISE_THRESHOLD = 0.02f; // tune as needed
-			if (now - steadyStart[cidx] > 1000 && !isCalibrating[cidx] && maxGyroDelta[cidx] < NOISE_THRESHOLD) {
-				sysLogPrintf(LOG_NOTE, "Gyro auto-calibration: Controller %d steady for >1.2s and low noise, calibrating.", cidx);
-				gyroJustFinishedCalibrating[cidx] = true;
-				isCalibrating[cidx] = true;
-			}
+		const float NOISE_THRESHOLD = 0.02f; // tune as needed
+		if (now - steadyStart[cidx] > 1000 && !isCalibrating[cidx] && maxGyroDelta[cidx] < NOISE_THRESHOLD) {
+			sysLogPrintf(LOG_NOTE, "Gyro auto-calibration: Controller %d steady for >1.0s and low noise, calibrating.", cidx);
+			gyroJustFinishedCalibrating[cidx] = true;
+			isCalibrating[cidx] = true;
+		}
+		
+		// Reset calibration state after being steady for an additional period
+		if (isCalibrating[cidx] && now - steadyStart[cidx] > 3000) {
+			sysLogPrintf(LOG_NOTE, "Gyro auto-calibration: Controller %d calibration period complete, ready for next calibration.", cidx);
+			isCalibrating[cidx] = false;
+		}
 		} else {
 			steadyStart[cidx] = now;
 			maxGyroDelta[cidx] = 0.f;
