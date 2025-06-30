@@ -316,12 +316,17 @@ void inputGyroSetDeadzone(s32 cidx, float value);
 float inputGyroGetTightening(s32 cidx);
 void inputGyroSetTightening(s32 cidx, float value);
 
+// Gyro Calibration Management
+void inputGyroCalibration(s32 cidx, GyroCalibrationOp op, float* out_confidence, int* out_steady);
+void inputUpdateGyroManualCalibration(void);
+
 // Gyro Auto Calibration
 s32 inputGyroGetAutoCalibration(s32 cidx);
 void inputGyroSetAutoCalibration(s32 cidx, s32 enabled);
 
-// Gyro Calibration Management
-void inputUpdateGyroManualCalibration(void);
+// Gyro Manual Calibration
+s32 inputGyroGetManualCalibration(s32 cidx);
+void inputGyroSetManualCalibration(s32 cidx);
 
 // Gyro Processing Utilities
 void applyGyroAxisMapping(s32 cidx, float gyroData[3], float accelData[3], f32* deltaX, f32* deltaY, f32* deltaZ);

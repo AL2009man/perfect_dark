@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
+#include <SDL.h>
 #include <PR/ultratypes.h>
 #include "platform.h"
 #include "data.h"
@@ -17,6 +18,9 @@
 
 static s32 g_ExtMenuPlayer = 0;
 static struct menudialogdef *g_ExtNextDialog = NULL;
+static s32 g_GyroCalibrationState[INPUT_MAX_CONTROLLERS] = {0};
+static u32 g_GyroCalibrationStartTime[INPUT_MAX_CONTROLLERS] = {0};
+static bool g_GyroCalibrationComplete[INPUT_MAX_CONTROLLERS] = {0};
 
 static s32 g_BindIndex = 0;
 static u32 g_BindContKey = 0;
@@ -873,6 +877,76 @@ static MenuItemHandlerResult menuhandlerGyroAutoCalibration(s32 operation, struc
 		return 0;
 }
 
+static const char *menutextGyroManualCalibration(struct menuitem *item)
+{
+    static char timer_text[128];
+    switch (g_GyroCalibrationState[g_ExtMenuPlayer]) {
+    case 1:
+        {
+            u32 elapsed_ms = SDL_GetTicks() - g_GyroCalibrationStartTime[g_ExtMenuPlayer];
+            s32 seconds_left = 5 - (elapsed_ms / 1000);
+            if (seconds_left < 0) seconds_left = 0;
+            sprintf(timer_text, "Gyro Calibrating in %d...\nPlace the controller on a flat surface.\n", seconds_left);
+            return timer_text;
+        }
+    case 2:
+        {
+            static char reset_text[128];
+            const u32 *accept_binds = inputKeyGetBinds(g_ExtMenuPlayer, CK_ACCEPT);
+            const u32 *ztrig_binds = inputKeyGetBinds(g_ExtMenuPlayer, CK_ZTRIG);
+            const char *gamepad_key_name = "ACCEPT";
+            const char *keyboard_key_name = "Z TRIG";
+
+            if (accept_binds && accept_binds[0]) {
+                gamepad_key_name = inputGetKeyName(accept_binds[0]);
+            }
+
+            if (ztrig_binds && ztrig_binds[0]) {
+                // Find the first keyboard/mouse bind
+                for (int i = 0; i < INPUT_MAX_BINDS && ztrig_binds[i] != 0; ++i) {
+                    if (ztrig_binds[i] < VK_JOY_BEGIN) {
+                        keyboard_key_name = inputGetKeyName(ztrig_binds[i]);
+                        break;
+                    }
+                }
+            }
+
+            sprintf(reset_text, "Gyro Calibration Complete!\nPress %s/%s to restart.\n", gamepad_key_name, keyboard_key_name);
+            return reset_text;
+        }
+    default:
+        return "Initiate Gyro Calibration...\n";
+    }
+}
+
+static MenuItemHandlerResult menuhandlerGyroManualCalibration(s32 operation, struct menuitem* item, union handlerdata* data)
+{
+    switch (operation) {
+    case MENUOP_OPEN:
+        // Reset the state when the menu is opened
+        g_GyroCalibrationState[g_ExtMenuPlayer] = 0;
+        break;
+    case MENUOP_SET:
+        switch (g_GyroCalibrationState[g_ExtMenuPlayer]) {
+        case 0:
+            // Initial press, will start timer
+            g_GyroCalibrationState[g_ExtMenuPlayer] = 1;
+            g_GyroCalibrationStartTime[g_ExtMenuPlayer] = SDL_GetTicks();
+            break;
+        case 1:
+            // Timer is active, wait for 5 seconds
+            break;
+        case 2:
+            // already completed, restart the calibration
+            g_GyroCalibrationState[g_ExtMenuPlayer] = 1;
+            g_GyroCalibrationStartTime[g_ExtMenuPlayer] = SDL_GetTicks();
+            break;
+        }
+        break;
+    }
+    return 0;
+}
+
 struct menuitem g_ExtendedGyroMenuItems[] = {
 	{
 		MENUITEMTYPE_CHECKBOX,
@@ -922,12 +996,20 @@ struct menuitem g_ExtendedGyroMenuItems[] = {
 		0,
 		menuhandlerGyroAutoCalibration,
 	},
+    {
+        MENUITEMTYPE_SELECTABLE,
+        0,
+        0,
+        (uintptr_t)menutextGyroManualCalibration,
+        0,
+        menuhandlerGyroManualCalibration,
+    },
 	{
 		MENUITEMTYPE_SEPARATOR,
-		0,
-		0,
-		0,
-		0,
+        0,
+        0,
+        0,
+        0,
 		NULL,
 	},
 	{
@@ -1061,13 +1143,31 @@ struct menuitem g_ExtendedGyroMenuItems[] = {
 	{ MENUITEMTYPE_END },
 };
 
+static s32 menuhandlerExtendedGyroMenu(s32 operation, struct menudialogdef *dialog, union handlerdata *data)
+{
+    if (operation == MENUOP_CLOSE) {
+        g_GyroCalibrationState[g_ExtMenuPlayer] = 0;
+    }
+
+    if (operation == MENUOP_TICK) {
+        if (g_GyroCalibrationState[g_ExtMenuPlayer] == 1) {
+            if (SDL_GetTicks() - g_GyroCalibrationStartTime[g_ExtMenuPlayer] >= 5000) {
+                inputGyroSetManualCalibration(g_ExtMenuPlayer);
+                g_GyroCalibrationState[g_ExtMenuPlayer] = 2;
+            }
+        }
+    }
+    return 0;
+}
+
+
 struct menudialogdef g_ExtendedGyroMenuDialog = {
-		MENUDIALOGTYPE_DEFAULT,
-		(uintptr_t)"Gyro Settings",
-		g_ExtendedGyroMenuItems,
-		NULL,
-		MENUDIALOGFLAG_LITERAL_TEXT,
-		NULL,
+        MENUDIALOGTYPE_DEFAULT,
+        (uintptr_t)"Gyro Settings",
+        g_ExtendedGyroMenuItems,
+        menuhandlerExtendedGyroMenu,
+        MENUDIALOGFLAG_LITERAL_TEXT,
+        NULL,
 };
 
 static MenuItemHandlerResult menuhandlerController(s32 operation, struct menuitem *item, union handlerdata *data)
@@ -2133,30 +2233,30 @@ struct menubind {
 };
 
 static const struct menubind menuBinds[] = {
-	{ CK_ZTRIG,      "Fire [ZT]\n",                   "N64 Z Trigger\n" },
-	{ CK_LTRIG,      "Fire Mode [LT]\n",              "N64 L Trigger\n" },
-	{ CK_RTRIG,      "Aim Mode [RT]\n",               "N64 R Trigger\n" },
-	{ CK_A,          "Use / Accept [A]\n",            "N64 A Button\n" },
-	{ CK_B,          "Use / Cancel [B]\n",            "N64 B Button\n" },
-	{ CK_START,      "Pause Menu [ST]\n",             "N64 Start\n" },
-	{ CK_DPAD_U,     "D-Pad Up [DU]\n",               "N64 D-Pad Up\n" },
-	{ CK_DPAD_R,     "D-Pad Right [DR]\n",            "N64 D-Pad Right\n" },
-	{ CK_DPAD_L,     "Prev Weapon [DL]\n",            "N64 D-Pad Left\n" },
-	{ CK_DPAD_D,     "Radial Menu [DD]\n",            "N64 D-Pad Down\n" },
-	{ CK_C_U,        "Forward [CU]\n",                "N64 C-Up\n" },
-	{ CK_C_D,        "Backward [CD]\n",               "N64 C-Down\n" },
-	{ CK_C_R,        "Strafe Right [CR]\n",           "N64 C-Right\n" },
-	{ CK_C_L,        "Strafe Left [CL]\n",            "N64 C-Left\n" },
-	{ CK_X,          "Reload [X]\n",                  "N64 Ext X\n" },
-	{ CK_Y,          "Next Weapon [Y]\n",             "N64 Ext Y\n" },
-	{ CK_8000,       "Cycle Crouch [+]\n",            "N64 Ext 8000\n" },
-	{ CK_4000,       "Half Crouch [+]\n",             "N64 Ext 4000\n" },
-	{ CK_2000,       "Full Crouch [+]\n",             "N64 Ext 2000\n" },
-	{ CK_0040, "Reset Camera/Crosshair [+]\n", "EXT Reset Camera/Crosshair\n" },
-	{ CK_0080,   "Gyro Modifier [+]\n",           "EXT Gyro Modifier\n" },
-	{ CK_0100, "Gyro Calibration (Manual) [+]\n","EXT Gyro Calibration (Manual)[+]\n" },
-	{ CK_ACCEPT,     "UI Accept [+]\n",               "EXT UI Accept\n" },
-	{ CK_CANCEL,     "UI Cancel [+]\n",               "EXT UI Cancel\n" },
+	{ CK_ZTRIG,   "Fire [ZT]\n",                    "N64 Z Trigger\n" },
+	{ CK_LTRIG,   "Fire Mode [LT]\n",               "N64 L Trigger\n" },
+	{ CK_RTRIG,   "Aim Mode [RT]\n",                "N64 R Trigger\n" },
+	{ CK_A,       "Use / Accept [A]\n",             "N64 A Button\n" },
+	{ CK_B,       "Use / Cancel [B]\n",             "N64 B Button\n" },
+	{ CK_START,   "Pause Menu [ST]\n",              "N64 Start\n" },
+	{ CK_DPAD_U,  "D-Pad Up [DU]\n",                "N64 D-Pad Up\n" },
+	{ CK_DPAD_R,  "D-Pad Right [DR]\n",             "N64 D-Pad Right\n" },
+	{ CK_DPAD_L,  "Prev Weapon [DL]\n",             "N64 D-Pad Left\n" },
+	{ CK_DPAD_D,  "Radial Menu [DD]\n",             "N64 D-Pad Down\n" },
+	{ CK_C_U,     "Forward [CU]\n",                 "N64 C-Up\n" },
+	{ CK_C_D,     "Backward [CD]\n",                "N64 C-Down\n" },
+	{ CK_C_R,     "Strafe Right [CR]\n",            "N64 C-Right\n" },
+	{ CK_C_L,     "Strafe Left [CL]\n",             "N64 C-Left\n" },
+	{ CK_X,       "Reload [X]\n",                   "N64 Ext X\n" },
+	{ CK_Y,       "Next Weapon [Y]\n",              "N64 Ext Y\n" },
+	{ CK_8000,    "Cycle Crouch [+]\n",             "N64 Ext 8000\n" },
+	{ CK_4000,    "Half Crouch [+]\n",              "N64 Ext 4000\n" },
+	{ CK_2000,    "Full Crouch [+]\n",              "N64 Ext 2000\n" },
+	{ CK_0040,    "Reset Camera/Crosshair [+]\n",   "EXT Reset Camera/Crosshair\n" },
+	{ CK_0080,    "Gyro Modifier [+]\n",            "EXT Gyro Modifier\n" },
+	{ CK_0100,    "Gyro Calibration (Manual) [+]\n", "EXT Gyro Calibration (Manual)[+]\n" },
+	{ CK_ACCEPT,  "UI Accept [+]\n",                "EXT UI Accept\n" },
+	{ CK_CANCEL,  "UI Cancel [+]\n",                "EXT UI Cancel\n" },
 };
 
 static const char *menutextBind(struct menuitem *item);
