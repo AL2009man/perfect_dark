@@ -2062,12 +2062,11 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 						crosshair.time = 0.0f;
 					}
 				} else if (offbike) {
-					// Camera vertical recenter
-					g_Vars.currentplayer->cachedlookahead = bmoveCalculateLookahead();
+					// Camera vertical recenter - reset to horizontal
 					camera.active = true;
 					camera.time = 0.0f;
 					camera.start = g_Vars.currentplayer->vv_verta;
-					camera.target = g_Vars.currentplayer->cachedlookahead;
+					camera.target = 0.0f; // Reset to horizon instead of using terrain-based lookahead
 					g_Vars.currentplayer->docentreupdown = false;
 					g_Vars.currentplayer->automovecentre = false;
 					s_recentercamera = 1;
