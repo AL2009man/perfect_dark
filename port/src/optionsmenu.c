@@ -879,7 +879,7 @@ static MenuItemHandlerResult menuhandlerGyroAutoCalibration(s32 operation, struc
 
 static const char *menutextGyroManualCalibration(struct menuitem *item)
 {
-    static char timer_text[64];
+    static char timer_text[128];
     switch (g_GyroCalibrationState[g_ExtMenuPlayer]) {
     case 1:
         {
@@ -915,7 +915,7 @@ static const char *menutextGyroManualCalibration(struct menuitem *item)
             return reset_text;
         }
     default:
-        return "Initiate Gyro Calibration\n";
+        return "Initiate Gyro Calibration...\n";
     }
 }
 
@@ -929,17 +929,17 @@ static MenuItemHandlerResult menuhandlerGyroManualCalibration(s32 operation, str
     case MENUOP_SET:
         switch (g_GyroCalibrationState[g_ExtMenuPlayer]) {
         case 0:
-            // Initial press, move to pending state and start timer
+            // Initial press, will start timer
             g_GyroCalibrationState[g_ExtMenuPlayer] = 1;
             g_GyroCalibrationStartTime[g_ExtMenuPlayer] = SDL_GetTicks();
             break;
         case 1:
-            // Pressing while timer is active cancels it
-            g_GyroCalibrationState[g_ExtMenuPlayer] = 0;
+            // Timer is active, wait for 5 seconds
             break;
         case 2:
-            // Already complete, reset to initial state
-            g_GyroCalibrationState[g_ExtMenuPlayer] = 0;
+            // already completed, restart the calibration
+            g_GyroCalibrationState[g_ExtMenuPlayer] = 1;
+            g_GyroCalibrationStartTime[g_ExtMenuPlayer] = SDL_GetTicks();
             break;
         }
         break;
@@ -999,7 +999,7 @@ struct menuitem g_ExtendedGyroMenuItems[] = {
     {
         MENUITEMTYPE_SELECTABLE,
         0,
-        0, // Remove MENUITEMFLAG_LITERAL_TEXT
+        0,
         (uintptr_t)menutextGyroManualCalibration,
         0,
         menuhandlerGyroManualCalibration,
