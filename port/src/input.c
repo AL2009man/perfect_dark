@@ -446,6 +446,18 @@ for (int i = 0; i < 2; ++i) {
 	}
 }
 padsCfg[cidx].gyroSensorActive = sensorActive;
+
+// Initialize GamepadMotion instance immediately if sensors are active
+if (sensorActive) {
+	if (!gpadMotion[cidx]) {
+		gpadMotion[cidx] = gmhCreateGamepadMotion();
+		if (gpadMotion[cidx]) {
+			sysLogPrintf(LOG_NOTE, "input: GamepadMotion instance created for controller %d", cidx);
+		} else {
+			sysLogPrintf(LOG_WARNING, "input: Failed to create GamepadMotion instance for controller %d", cidx);
+		}
+	}
+}
 #endif
 }
 
@@ -468,6 +480,14 @@ static inline void inputCloseController(const s32 cidx)
 
 	pads[cidx] = NULL;
 	padsCfg[cidx].rumbleOn = 0;
+	padsCfg[cidx].gyroSensorActive = 0;
+
+	// Clean up GamepadMotion instance
+	if (gpadMotion[cidx]) {
+		gmhDeleteGamepadMotion(gpadMotion[cidx]);
+		gpadMotion[cidx] = NULL;
+		sysLogPrintf(LOG_NOTE, "input: GamepadMotion instance cleaned up for controller %d", cidx);
+	}
 
     inputPauseGyro(cidx);
 
@@ -785,50 +805,6 @@ static inline void inputLoadBinds(void)
 	}
 }
 
-void inputHandleGyroController(s32 cidx)
-{
-	if (!pads[cidx]) {
-		sysLogPrintf(LOG_WARNING, "No controller assigned to index %d.", cidx);
-		return;
-	}
-
-#if SDL_VERSION_ATLEAST(2, 0, 14)
-	// Enable gyroscopic sensor if available
-	if (SDL_GameControllerHasSensor(pads[cidx], SDL_SENSOR_GYRO)) {
-		if (SDL_GameControllerSetSensorEnabled(pads[cidx], SDL_SENSOR_GYRO, SDL_TRUE) != 0) {
-			sysLogPrintf(LOG_WARNING, "Failed to enable gyro sensor for controller %d.", cidx);
-		}
-	}
-	// Enable accelerometer sensor if available
-	if (SDL_GameControllerHasSensor(pads[cidx], SDL_SENSOR_ACCEL)) {
-		if (SDL_GameControllerSetSensorEnabled(pads[cidx], SDL_SENSOR_ACCEL, SDL_TRUE) != 0) {
-			sysLogPrintf(LOG_WARNING, "Failed to enable accelerometer sensor for controller %d.", cidx);
-		}
-	}
-#endif
-
-	// Ensure GamepadMotion instance exists for this controller
-	if (!gpadMotion[cidx]) {
-		gpadMotion[cidx] = gmhCreateGamepadMotion();
-	}
-}
-
-void inputCloseGyroController(s32 cidx)
-{
-	if (pads[cidx]) {
-#if SDL_VERSION_ATLEAST(2, 0, 14)
-		SDL_GameControllerSetSensorEnabled(pads[cidx], SDL_SENSOR_GYRO, SDL_FALSE);
-		SDL_GameControllerSetSensorEnabled(pads[cidx], SDL_SENSOR_ACCEL, SDL_FALSE);
-#endif
-		// Clean up GamepadMotion instance
-		if (gpadMotion[cidx]) {
-			gmhDeleteGamepadMotion(gpadMotion[cidx]);
-			gpadMotion[cidx] = NULL;
-		}
-		sysLogPrintf(LOG_NOTE, "Gyro sensors and GamepadMotion cleaned up for controller %d.", cidx);
-	}
-}
-
 s32 inputInit(void)
 {
 	// Set SDL hints before initializing the controller subsystem.
@@ -1085,9 +1061,11 @@ void inputUpdateGyro(s32 cidx)
 		return;
 	}
 
-	// Ensure GamepadMotion instance exists
-	if (!gpadMotion[cidx])
-		gpadMotion[cidx] = gmhCreateGamepadMotion();
+	// GamepadMotion instance should already exist from controller initialization
+	if (!gpadMotion[cidx]) {
+		sysLogPrintf(LOG_WARNING, "GamepadMotion instance missing for controller %d, gyro will not function", cidx);
+		return;
+	}
 
 	// Retrieve sensor data
 	float gyroData[3] = {0.f}, accelData[3] = {0.f};
