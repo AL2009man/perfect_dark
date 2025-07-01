@@ -39,6 +39,8 @@
 #define SDL_STANDARD_GRAVITY 9.80665f
 #endif
 
+#define GYRO_NOISE_THRESHOLD 0.03f
+
 #define GYRO_ALWAYS_ON 0 // Gyro is always enabled, regardless of button state
 #define GYRO_TOGGLE 1 // Gyro is toggled on/off with a button press
 #define GYRO_ENABLE_HELD 2 // Gyro is enabled while a button is held down
@@ -149,30 +151,26 @@ static s32 mouseShowCursor = 1;
 static f32 mouseSensX = 2.5f;
 static f32 mouseSensY = 2.5f;
 
-// GamepadMotion handles for each controller
+// GamepadMotion handles and gyro state arrays
 static GamepadMotionHandle gpadMotion[INPUT_MAX_CONTROLLERS] = { NULL };
-
-// Gyro orientation state
 static f32 gyroYaw[INPUT_MAX_CONTROLLERS], gyroPitch[INPUT_MAX_CONTROLLERS], gyroRoll[INPUT_MAX_CONTROLLERS];
 static f32 gyroDeltaYaw[INPUT_MAX_CONTROLLERS], gyroDeltaPitch[INPUT_MAX_CONTROLLERS], gyroDeltaRoll[INPUT_MAX_CONTROLLERS];
 static f32 accelDeltaX[INPUT_MAX_CONTROLLERS], accelDeltaY[INPUT_MAX_CONTROLLERS], accelDeltaZ[INPUT_MAX_CONTROLLERS];
 
-// Manual calibration state
+// Gyro calibration state
 static int manualGyroCalibrating[INPUT_MAX_CONTROLLERS] = {0};
 static Uint32 manualGyroCalibStartTime[INPUT_MAX_CONTROLLERS] = {0};
-
-// Auto-calibration state
 static int wasSteady[INPUT_MAX_CONTROLLERS] = {0};
 static bool isCalibrating[INPUT_MAX_CONTROLLERS] = {false};
 static bool gyroJustFinishedCalibrating[INPUT_MAX_CONTROLLERS] = {false};
 
-// Manual calibration offsets (saved at runtime)
+// Runtime manual calibration data
 static f32 gyroManualCalibOffsetX[INPUT_MAX_CONTROLLERS] = {0.0f};
 static f32 gyroManualCalibOffsetY[INPUT_MAX_CONTROLLERS] = {0.0f};
 static f32 gyroManualCalibOffsetZ[INPUT_MAX_CONTROLLERS] = {0.0f};
 static s32 gyroManualCalibWeight[INPUT_MAX_CONTROLLERS] = {0};
 
-// Forward declarations
+// Forward declarations for gyro functions
 static void inputUpdateGyroCalibrationHandle(void);
 void inputGyroCalibration(s32 cidx, GyroCalibrationOp op, float* out_confidence, int* out_steady);
 
@@ -1072,7 +1070,7 @@ void inputUpdateGyro(s32 cidx)
 		return;
 	}
 
-	// GamepadMotion instance should already exist from controller initialization
+	// Ensure GamepadMotion instance exists
 	if (!gpadMotion[cidx]) {
 		sysLogPrintf(LOG_WARNING, "GamepadMotion instance missing for controller %d, gyro will not function", cidx);
 		return;
@@ -1955,8 +1953,7 @@ static void inputGyroAutoCalibrationUpdate(s32 cidx)
 		if (delta > maxGyroDelta[cidx]) maxGyroDelta[cidx] = delta;
 
 		// Only calibrate if steady for >1.0s and noise is low
-		const float NOISE_THRESHOLD = 0.02f;
-		if (now - steadyStart[cidx] > 1000 && !isCalibrating[cidx] && maxGyroDelta[cidx] < NOISE_THRESHOLD) {
+		if (now - steadyStart[cidx] > 1000 && !isCalibrating[cidx] && maxGyroDelta[cidx] < GYRO_NOISE_THRESHOLD) {
 			sysLogPrintf(LOG_NOTE, "Gyro auto-calibration: Controller %d steady for >1.0s and low noise, calibrating.", cidx);
 			gyroJustFinishedCalibrating[cidx] = true;
 			isCalibrating[cidx] = true;
