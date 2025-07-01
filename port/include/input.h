@@ -329,6 +329,9 @@ void inputGyroSetAutoCalibration(s32 cidx, s32 enabled);
 s32 inputGyroGetManualCalibration(s32 cidx);
 void inputGyroSetManualCalibration(s32 cidx);
 
+void inputApplyRuntimeCalibrationOffset(s32 cidx);
+
+
 // Gyro Processing Utilities
 void applyGyroAxisMapping(s32 cidx, float gyroData[3], float accelData[3], f32* deltaX, f32* deltaY, f32* deltaZ);
 void applyGyroAimMode(s32 cidx, f32* deltaX, f32* deltaY, f32* deltaZ);

@@ -1081,6 +1081,9 @@ void inputUpdateGyro(s32 cidx)
 	SDL_GameControllerGetSensorData(pads[cidx], SDL_SENSOR_GYRO, gyroData, 3);
 	SDL_GameControllerGetSensorData(pads[cidx], SDL_SENSOR_ACCEL, accelData, 3);
 
+	// Apply runtime manual calibration offset before processing if available
+	inputApplyRuntimeCalibrationOffset(cidx);
+
 	// Feed data to GamepadMotionHelper
 	gmhProcessMotion(gpadMotion[cidx],
 		gyroData[0], gyroData[1], gyroData[2],
@@ -2126,6 +2129,24 @@ void inputGyroCalibration(s32 cidx, GyroCalibrationOp op, float* out_confidence,
 	}
 	default:
 		break;
+	}
+}
+
+// Runtime-based SetCalibrationOffset that applies stored manual calibration offset
+void inputApplyRuntimeCalibrationOffset(s32 cidx)
+{
+	if (cidx < 0 || cidx >= INPUT_MAX_CONTROLLERS) return;
+	if (!gpadMotion[cidx]) return;
+	
+	// Apply runtime manual calibration offset if available and auto-calibration is disabled
+	if (gyroManualCalibWeight[cidx] > 0 && !padsCfg[cidx].gyroAutoCalibration) {
+		gmhSetCalibrationOffset(gpadMotion[cidx], 
+			gyroManualCalibOffsetX[cidx],
+			gyroManualCalibOffsetY[cidx],
+			gyroManualCalibOffsetZ[cidx], 
+			gyroManualCalibWeight[cidx]);
+		sysLogPrintf(LOG_NOTE, "Applied runtime manual calibration offset to controller %d: (%.3f, %.3f, %.3f)", 
+			cidx, gyroManualCalibOffsetX[cidx], gyroManualCalibOffsetY[cidx], gyroManualCalibOffsetZ[cidx]);
 	}
 }
 
