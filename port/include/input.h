@@ -329,7 +329,7 @@ void inputGyroSetAutoCalibration(s32 cidx, s32 enabled);
 s32 inputGyroGetManualCalibration(s32 cidx);
 void inputGyroSetManualCalibration(s32 cidx);
 
-void inputApplyRuntimeCalibrationOffset(s32 cidx);
+void inputApplyRuntimeGyroCalibrationOffset(s32 cidx);
 
 
 // Gyro Processing Utilities

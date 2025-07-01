@@ -1081,9 +1081,6 @@ void inputUpdateGyro(s32 cidx)
 	SDL_GameControllerGetSensorData(pads[cidx], SDL_SENSOR_GYRO, gyroData, 3);
 	SDL_GameControllerGetSensorData(pads[cidx], SDL_SENSOR_ACCEL, accelData, 3);
 
-	// Apply runtime manual calibration offset before processing if available
-	inputApplyRuntimeCalibrationOffset(cidx);
-
 	// Feed data to GamepadMotionHelper
 	gmhProcessMotion(gpadMotion[cidx],
 		gyroData[0], gyroData[1], gyroData[2],
@@ -2020,13 +2017,20 @@ void inputGyroSetAutoCalibration(s32 cidx, s32 enabled)
 			// No motion handle exists, create one and trigger full reset
 			inputGyroCalibration(cidx, GYRO_CALIB_RESET, NULL, NULL);
 		} else if (padsCfg[cidx].gyroAutoCalibration) {
-			// Switching to auto-calibration - trigger full reset to clear manual offsets
-			inputGyroCalibration(cidx, GYRO_CALIB_RESET, NULL, NULL);
+			// Switching to auto-calibration - preserve manual calibration data but clear GamepadMotionHelper's state
+			gmhSetCalibrationOffset(gpadMotion[cidx], 0.0f, 0.0f, 0.0f, 1);
+			gmhSetCalibrationMode(gpadMotion[cidx], CALIBRATIONMODE_STILLNESS);
+			gmhResetContinuousCalibration(gpadMotion[cidx]);
+			gmhPauseContinuousCalibration(gpadMotion[cidx]);
+			sysLogPrintf(LOG_NOTE, "Gyro auto-calibration: Controller %d switched to auto mode (preserving manual calibration data).", cidx);
 		} else {
 			// Switching to manual mode - start fresh, don't restore old offsets
 			gmhSetCalibrationMode(gpadMotion[cidx], CALIBRATIONMODE_MANUAL);
 			gmhPauseContinuousCalibration(gpadMotion[cidx]);
 			sysLogPrintf(LOG_NOTE, "Gyro auto-calibration: Controller %d switched to manual mode (starting fresh).", cidx);
+			
+			// Apply any existing manual calibration offset
+			inputApplyRuntimeGyroCalibrationOffset(cidx);
 		}
 	} else if (gpadMotion[cidx]) {
 		if (padsCfg[cidx].gyroAutoCalibration) {
@@ -2035,6 +2039,9 @@ void inputGyroSetAutoCalibration(s32 cidx, s32 enabled)
 		} else {
 			gmhSetCalibrationMode(gpadMotion[cidx], CALIBRATIONMODE_MANUAL);
 			gmhPauseContinuousCalibration(gpadMotion[cidx]);
+			
+			// Apply any existing manual calibration offset when switching to manual mode
+			inputApplyRuntimeGyroCalibrationOffset(cidx);
 		}
 	}
 }
@@ -2072,6 +2079,9 @@ void inputGyroCalibration(s32 cidx, GyroCalibrationOp op, float* out_confidence,
 				gyroManualCalibWeight[cidx] = 100; // High confidence for manual calibration
 				sysLogPrintf(LOG_NOTE, "Gyro manual calibration: Controller %d offset saved to runtime (%.3f, %.3f, %.3f).", 
 					cidx, gyroManualCalibOffsetX[cidx], gyroManualCalibOffsetY[cidx], gyroManualCalibOffsetZ[cidx]);
+				
+				// Apply the stored manual calibration offset immediately
+				inputApplyRuntimeGyroCalibrationOffset(cidx);
 			} else {
 				sysLogPrintf(LOG_NOTE, "Gyro manual calibration: Controller %d calibration complete (auto-calibration enabled, not saving).", cidx);
 			}
@@ -2132,21 +2142,28 @@ void inputGyroCalibration(s32 cidx, GyroCalibrationOp op, float* out_confidence,
 	}
 }
 
-// Runtime-based SetCalibrationOffset that applies stored manual calibration offset
-void inputApplyRuntimeCalibrationOffset(s32 cidx)
+void inputApplyRuntimeGyroCalibrationOffset(s32 cidx)
 {
 	if (cidx < 0 || cidx >= INPUT_MAX_CONTROLLERS) return;
 	if (!gpadMotion[cidx]) return;
 	
-	// Apply runtime manual calibration offset if available and auto-calibration is disabled
-	if (gyroManualCalibWeight[cidx] > 0 && !padsCfg[cidx].gyroAutoCalibration) {
-		gmhSetCalibrationOffset(gpadMotion[cidx], 
-			gyroManualCalibOffsetX[cidx],
-			gyroManualCalibOffsetY[cidx],
-			gyroManualCalibOffsetZ[cidx], 
-			gyroManualCalibWeight[cidx]);
-		sysLogPrintf(LOG_NOTE, "Applied runtime manual calibration offset to controller %d: (%.3f, %.3f, %.3f)", 
-			cidx, gyroManualCalibOffsetX[cidx], gyroManualCalibOffsetY[cidx], gyroManualCalibOffsetZ[cidx]);
+	if (!padsCfg[cidx].gyroAutoCalibration) {
+		// Manual calibration mode: Apply ONLY our stored manual calibration offset
+		if (gyroManualCalibWeight[cidx] > 0) {
+			// Apply our stored manual calibration offset
+			gmhSetCalibrationOffset(gpadMotion[cidx], 
+				gyroManualCalibOffsetX[cidx],
+				gyroManualCalibOffsetY[cidx],
+				gyroManualCalibOffsetZ[cidx], 
+				gyroManualCalibWeight[cidx]);
+		} else {
+			// No manual calibration data, ensure no offset is applied
+			gmhSetCalibrationOffset(gpadMotion[cidx], 0.0f, 0.0f, 0.0f, 1);
+		}
+	} else {
+		// Auto-calibration mode: Let GamepadMotionHelper handle calibration internally
+		// Don't interfere with auto-calibration by setting manual offsets
+		// GamepadMotionHelper will manage its own calibration offset
 	}
 }
 
