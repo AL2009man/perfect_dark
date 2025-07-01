@@ -462,6 +462,20 @@ if (sensorActive) {
 		gpadMotion[cidx] = gmhCreateGamepadMotion();
 		if (gpadMotion[cidx]) {
 			sysLogPrintf(LOG_NOTE, "input: GamepadMotion instance created for controller %d", cidx);
+			
+			// Restore manual calibration state after controller reconnection
+			if (!padsCfg[cidx].gyroAutoCalibration && gyroManualCalibWeight[cidx] > 0) {
+				// Set calibration mode to manual first
+				gmhSetCalibrationMode(gpadMotion[cidx], CALIBRATIONMODE_MANUAL);
+				gmhPauseContinuousCalibration(gpadMotion[cidx]);
+				
+				// Restore the stored manual calibration offset (if controller were reconnected after calibration)
+				inputApplyRuntimeGyroCalibrationOffset(cidx);
+			} else {
+				// Manual mode (no stored calibration offset, if controllerr was reconnected after calibration)
+				gmhSetCalibrationMode(gpadMotion[cidx], CALIBRATIONMODE_MANUAL);
+				gmhPauseContinuousCalibration(gpadMotion[cidx]);
+			}
 		} else {
 			sysLogPrintf(LOG_WARNING, "input: Failed to create GamepadMotion instance for controller %d", cidx);
 		}
@@ -2160,10 +2174,6 @@ void inputApplyRuntimeGyroCalibrationOffset(s32 cidx)
 			// No manual calibration data, ensure no offset is applied
 			gmhSetCalibrationOffset(gpadMotion[cidx], 0.0f, 0.0f, 0.0f, 1);
 		}
-	} else {
-		// Auto-calibration mode: Let GamepadMotionHelper handle calibration internally
-		// Don't interfere with auto-calibration by setting manual offsets
-		// GamepadMotionHelper will manage its own calibration offset
 	}
 }
 
