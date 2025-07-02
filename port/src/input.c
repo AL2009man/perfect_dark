@@ -77,8 +77,8 @@ static SDL_GameController *pads[INPUT_MAX_CONTROLLERS];
 	.gyroModifier = GYRO_ALWAYS_ON, \
 	.gyroSensX = 2.5f, \
 	.gyroSensY = 2.5f, \
-	.gyroAimSensX = 2.5f, \
-	.gyroAimSensY = 2.5f, \
+	.gyroAimSensX = 5.0f, \
+	.gyroAimSensY = 5.0f, \
 	.gyroVHMixer = 0.0f, \
 	.gyroInvertX = 0, \
 	.gyroInvertY = 0, \
@@ -1709,9 +1709,9 @@ void inputGyroGetScaledDeltaCrosshair(s32 cidx, f32* dx, f32* dy)
 	f32 gdx = 0.f, gdy = 0.f;
 
 	if (padsCfg[cidx].gyroEnabled) {
-		gdx = gyroDeltaYaw[cidx] * (0.022f / 1.0f) * padsCfg[cidx].gyroAimSensX;
+		gdx = gyroDeltaYaw[cidx] * (0.022f / 2.0f) * padsCfg[cidx].gyroAimSensX;
 		if (padsCfg[cidx].gyroAimInvertX) gdx = -gdx;
-		gdy = gyroDeltaPitch[cidx] * (0.022f / 1.0f) * padsCfg[cidx].gyroAimSensY;
+		gdy = gyroDeltaPitch[cidx] * (0.022f / 2.0f) * padsCfg[cidx].gyroAimSensY;
 		if (padsCfg[cidx].gyroAimInvertY) gdy = -gdy;
 	}
 
