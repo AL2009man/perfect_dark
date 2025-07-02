@@ -721,25 +721,21 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 	f32 increment2;
 	f32 newverta;
 #ifndef PLATFORM_N64
-	// Mouse sensitivity scaling
-	const f32 mlookscale = g_Vars.lvupdate240 ? (4.f / (f32)g_Vars.lvupdate240) : 4.f;
-	const bool allowmlook = (g_Vars.currentplayernum == 0) && (allowc1x || allowc1y);
+    // Mouse sensitivity scaling
+    const f32 mlookscale = g_Vars.lvupdate240 ? (4.f / (f32)g_Vars.lvupdate240) : 4.f;
+    const bool allowmlook = (g_Vars.currentplayernum == 0) && (allowc1x || allowc1y);
 
-	// Gyro sensitivity scaling - Natural sensitivity scale 
-	// Compensate for the FOV-based scaling to achieve near 1:1 rotation
-	const f32 gyrobasesens = 0.280f / (viGetFovY() / PLAYER_DEFAULT_FOV); 
-	const f32 gyroscale = gyrobasesens; // Natural sensitivity scale
+    // Gyro sensitivity scaling - Natural sensitivity scale 
+    // Compensate for the FOV-based scaling to achieve near 1:1 rotation
+    const f32 gyrobasesens = 1.105f / (viGetFovY() / PLAYER_DEFAULT_FOV);
+    const f32 gyroscale = g_Vars.lvupdate240 ? (gyrobasesens / (f32)g_Vars.lvupdate240) : gyrobasesens;
+    const bool allowgyro = (g_Vars.players[cidx] != NULL) && (allowc1x || allowc1y);
 
-	const bool allowgyro = (g_Vars.players[cidx] != NULL) && (allowc1x || allowc1y);
-	bool allowmcross = false;
-	bool allowgcross = (g_Vars.players[cidx] != NULL) &&
-			(allowc1x || allowc1y) &&
-			(PLAYER_EXTCFG().gyroaimmode == GYRO_AIM_MODE_CROSSHAIR ||
-					PLAYER_EXTCFG().gyroaimmode == GYRO_AIM_MODE_BOTH);
-
-	// frameScale for other calculations
-	const f32 targetFPS = 60.f;
-	const f32 frameScale = g_Vars.lvupdate240 ? (targetFPS / (f32)g_Vars.lvupdate240) : 1.0f;
+    bool allowmcross = false;
+    bool allowgcross = (g_Vars.players[cidx] != NULL) &&
+            (allowc1x || allowc1y) &&
+            (PLAYER_EXTCFG().gyroaimmode == GYRO_AIM_MODE_CROSSHAIR ||
+                    PLAYER_EXTCFG().gyroaimmode == GYRO_AIM_MODE_BOTH);
 #endif
 
 	controlmode = optionsGetControlMode(g_Vars.currentplayerstats->mpindex);
@@ -838,8 +834,9 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 
 		if (gyroAimMode == GYRO_AIM_MODE_CAMERA || gyroAimMode == GYRO_AIM_MODE_BOTH) {
 			inputGyroGetScaledDelta(cidx, &gyroCamDx, &gyroCamDy, &gyroCamDz);
-			movedata.gyrolookdx += gyroCamDx;
-			movedata.gyrolookdy += gyroCamDy;
+			const f32 norm = g_Vars.lvupdate60freal;
+			movedata.gyrolookdx += gyroCamDx * norm;
+			movedata.gyrolookdy += gyroCamDy * norm;
 		}
 
 		if (gyroAimMode == GYRO_AIM_MODE_CROSSHAIR || gyroAimMode == GYRO_AIM_MODE_BOTH) {
