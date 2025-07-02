@@ -271,6 +271,10 @@ void inputMouseSetSpeed(f32 x, f32 y);
 s32 inputMouseIsEnabled(void);
 void inputMouseEnable(s32 enabled);
 
+// Updates the gyro data for the specified controller index
+void inputUpdateGyro(s32 cidx);
+void inputUpdateGyroCalibrationOnly(void);
+
 // Scaled Gyro Movement Retrieval
 void inputGyroGetScaledDelta(s32 cidx, f32* dx, f32* dy, f32* dz);
 void inputGyroGetScaledDeltaCrosshair(s32 cidx, f32* dx, f32* dy);

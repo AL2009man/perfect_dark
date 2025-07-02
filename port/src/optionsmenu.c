@@ -591,9 +591,9 @@ static MenuItemHandlerResult menuhandlerGyroEnabled(s32 operation, struct menuit
 static MenuItemHandlerResult menuhandlerGyroAimMode(s32 operation, struct menuitem* item, union handlerdata* data)
 {
 	static const char* opts[] = {
-		"Camera",
-		"Crosshair",
-		"Camera+Crosshair"
+		"Camera only",
+		"Crosshair only",
+		"Camera & Crosshair"
 	};
 
 	switch (operation) {
@@ -968,7 +968,7 @@ struct menuitem g_ExtendedGyroMenuItems[] = {
 		MENUITEMTYPE_DROPDOWN,
 		0,
 		MENUITEMFLAG_LITERAL_TEXT,
-		(uintptr_t)"Aim Mode",
+		(uintptr_t)"Aiming Mode",
 		0,
 		menuhandlerGyroAimMode,
 	},
@@ -984,7 +984,7 @@ struct menuitem g_ExtendedGyroMenuItems[] = {
 		MENUITEMTYPE_DROPDOWN,
 		0,
 		MENUITEMFLAG_LITERAL_TEXT,
-		(uintptr_t)"Axis Orientation",
+		(uintptr_t)"Turning Axis Orientation",
 		0,
 		menuhandlerGyroAxisMode,
 	},
@@ -1104,7 +1104,7 @@ struct menuitem g_ExtendedGyroMenuItems[] = {
 		MENUITEMTYPE_SLIDER,
 		0,
 		MENUITEMFLAG_LITERAL_TEXT | MENUITEMFLAG_SLIDER_WIDE,
-		(uintptr_t)"Gyro Smoothing Threshold",
+		(uintptr_t)"Smoothing Threshold",
 		100,
 		menuhandlerGyroSmoothing,
 	},
@@ -1112,7 +1112,7 @@ struct menuitem g_ExtendedGyroMenuItems[] = {
 		MENUITEMTYPE_SLIDER,
 		0,
 		MENUITEMFLAG_LITERAL_TEXT | MENUITEMFLAG_SLIDER_WIDE,
-		(uintptr_t)"Gyro Tightening Threshold",
+		(uintptr_t)"Tightening Threshold",
 		100,
 		menuhandlerGyroTightening,
 	},
@@ -1120,7 +1120,7 @@ struct menuitem g_ExtendedGyroMenuItems[] = {
 		MENUITEMTYPE_SLIDER,
 		0,
 		MENUITEMFLAG_LITERAL_TEXT | MENUITEMFLAG_SLIDER_WIDE,
-		(uintptr_t)"Gyro Deadzone Threshold",
+		(uintptr_t)"Deadzone Threshold",
 		100,
 		menuhandlerGyroDeadzone,
 	},

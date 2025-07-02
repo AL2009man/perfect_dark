@@ -85,7 +85,7 @@ static SDL_GameController *pads[INPUT_MAX_CONTROLLERS];
 	.gyroAimInvertX = 0, \
 	.gyroAimInvertY = 0, \
 	.gyroDeadzone = 0.07f, \
-    .gyroTightening = 0.03f,\
+	.gyroTightening = 0.03f, \
 	.gyroSmoothing = 0.20f, \
 	.gyroAutoCalibration = 0, \
 }
@@ -459,6 +459,14 @@ for (int i = 0; i < 2; ++i) {
 		if (SDL_GameControllerSetSensorEnabled(pads[cidx], sensors[i], SDL_TRUE) == 0) {
 			sensorActive = 1;
 			sysLogPrintf(LOG_NOTE, "input: %s sensor enabled for controller %d", sensorNames[i], cidx);
+			
+#if SDL_VERSION_ATLEAST(2, 0, 16)
+			// Log sensor data rate if available
+			float sensorRate = SDL_GameControllerGetSensorDataRate(pads[cidx], sensors[i]);
+			if (sensorRate > 0.0f) {
+				sysLogPrintf(LOG_NOTE, "input: %s sensor rate: %.1f Hz for controller %d", sensorNames[i], sensorRate, cidx);
+			}
+#endif
 		} else {
 			sysLogPrintf(LOG_WARNING, "input: Failed to enable %s sensor for controller %d", sensorNames[i], cidx);
 		}
@@ -1069,12 +1077,22 @@ static inline void inputUpdateMouse(void)
 	}
 }
 
-void inputUpdateGyro(s32 cidx)
+static float inputCalculateGyroDeltaTime(s32 cidx)
 {
-	// Calculate deltaTime and normalize for consistent GamepadMotionHelper behavior
 	static uint64_t lastUpdateTime[INPUT_MAX_CONTROLLERS] = {0};
 	uint64_t now = sysGetMicroseconds();
 	float deltaTime = 1.0f / 60.0f; // Default to 60fps baseline
+	
+#if SDL_VERSION_ATLEAST(2, 0, 16)
+	// Use actual sensor data rate for more accurate baseline timing if available
+	if (pads[cidx]) {
+		float gyroRate = SDL_GameControllerGetSensorDataRate(pads[cidx], SDL_SENSOR_GYRO);
+		if (gyroRate > 0.0f) {
+			deltaTime = 1.0f / gyroRate; // Use actual sensor rate as baseline
+		}
+	}
+#endif
+	
 	if (lastUpdateTime[cidx] != 0) {
 		float actualDeltaTime = (now - lastUpdateTime[cidx]) / 1000000.0f;
 		if (actualDeltaTime > 0.0f && actualDeltaTime <= 0.5f) {
@@ -1083,9 +1101,16 @@ void inputUpdateGyro(s32 cidx)
 		}
 	}
 	lastUpdateTime[cidx] = now;
+	
+	return deltaTime;
+}
 
-	if (!padsCfg[cidx].gyroEnabled || !padsCfg[cidx].gyroSensorActive)
-		return;
+static bool inputValidateGyroPrerequisites(s32 cidx)
+{
+	// Check if gyro is enabled and sensors are active
+	if (!padsCfg[cidx].gyroEnabled || !padsCfg[cidx].gyroSensorActive) {
+		return false;
+	}
 
 	// Check if the controller is still connected
 	if (!pads[cidx] || SDL_GameControllerGetAttached(pads[cidx]) == SDL_FALSE) {
@@ -1093,15 +1118,20 @@ void inputUpdateGyro(s32 cidx)
 			gmhDeleteGamepadMotion(gpadMotion[cidx]);
 			gpadMotion[cidx] = NULL;
 		}
-		return;
+		return false;
 	}
 
 	// Ensure GamepadMotion instance exists
 	if (!gpadMotion[cidx]) {
 		sysLogPrintf(LOG_WARNING, "GamepadMotion instance missing for controller %d, gyro will not function", cidx);
-		return;
+		return false;
 	}
+	
+	return true;
+}
 
+static void inputProcessSensorData(s32 cidx, float deltaTime, f32* deltaX, f32* deltaY, f32* deltaZ)
+{
 	// Retrieve sensor data
 	float gyroData[3] = {0.f}, accelData[3] = {0.f};
 	SDL_GameControllerGetSensorData(pads[cidx], SDL_SENSOR_GYRO, gyroData, 3);
@@ -1114,26 +1144,47 @@ void inputUpdateGyro(s32 cidx)
 		deltaTime);
 
 	// Get calibrated gyro output and map axes
-	f32 deltaX = 0.f, deltaY = 0.f, deltaZ = 0.f;
 	float calibratedGyro[3] = {0.f};
 	gmhGetCalibratedGyro(gpadMotion[cidx], &calibratedGyro[0], &calibratedGyro[1], &calibratedGyro[2]);
-	applyGyroAxisMapping(cidx, calibratedGyro, accelData, &deltaX, &deltaY, &deltaZ);
+	applyGyroAxisMapping(cidx, calibratedGyro, accelData, deltaX, deltaY, deltaZ);
+}
 
-	// If calibration just finished, ignore the first delta to prevent jump
+static void inputApplyGyroProcessing(s32 cidx, f32* deltaX, f32* deltaY, f32* deltaZ)
+{
+	// Handle post-calibration jump prevention
 	if (gyroCalibState[cidx].justFinishedCalibrating) {
-		deltaX = 0.f;
-		deltaY = 0.f;
-		deltaZ = 0.f;
+		*deltaX = 0.f;
+		*deltaY = 0.f;
+		*deltaZ = 0.f;
 		gyroCalibState[cidx].justFinishedCalibrating = false;
-		sysLogPrintf(LOG_NOTE, "Gyro auto-calibration: Controller %d ignoring first delta post-calibration to prevent jump.", cidx);
+		sysLogPrintf(LOG_NOTE, "Gyro: Controller %d ignoring first delta post-calibration to prevent jump.", cidx);
+		return;
 	}
 
-	// Apply aim mode, modifier, and threshold
-	applyGyroAimMode(cidx, &deltaX, &deltaY, &deltaZ);
-	applyGyroModifier(&deltaX, &deltaY, &deltaZ, inputGetGyroModifier(cidx), cidx);
-    applyGyroDeadzone(&deltaX, &deltaY, &deltaZ, inputGyroGetDeadzone(cidx));
-	applyGyroTightening(&deltaX, &deltaY, &deltaZ, inputGyroGetTightening(cidx));
-	applyGyroSmoothing(&deltaX, &deltaY, &deltaZ, inputGetGyroSmoothing(cidx), cidx);
+	// Apply gyro processing pipeline
+	applyGyroAimMode(cidx, deltaX, deltaY, deltaZ);
+	applyGyroModifier(deltaX, deltaY, deltaZ, inputGetGyroModifier(cidx), cidx);
+	applyGyroDeadzone(deltaX, deltaY, deltaZ, inputGyroGetDeadzone(cidx));
+	applyGyroTightening(deltaX, deltaY, deltaZ, inputGyroGetTightening(cidx));
+	applyGyroSmoothing(deltaX, deltaY, deltaZ, inputGetGyroSmoothing(cidx), cidx);
+}
+
+void inputUpdateGyro(s32 cidx)
+{
+	// Calculate accurate deltaTime
+	float deltaTime = inputCalculateGyroDeltaTime(cidx);
+	
+	// Validate prerequisites
+	if (!inputValidateGyroPrerequisites(cidx)) {
+		return;
+	}
+	
+	// Process sensor data through GamepadMotionHelper
+	f32 deltaX = 0.f, deltaY = 0.f, deltaZ = 0.f;
+	inputProcessSensorData(cidx, deltaTime, &deltaX, &deltaY, &deltaZ);
+	
+	// Apply gyro processing pipeline
+	inputApplyGyroProcessing(cidx, &deltaX, &deltaY, &deltaZ);
 
 	// Store processed gyro deltas
 	gyroDeltaYaw[cidx] = deltaX;
@@ -1163,7 +1214,6 @@ void inputUpdate(void)
 	}
 }
 
-// This function only updates gyro calibration state
 void inputUpdateGyroCalibrationOnly(void)
 {
 	inputUpdateGyroCalibrationHandle();
