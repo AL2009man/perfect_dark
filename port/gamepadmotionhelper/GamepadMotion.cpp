@@ -275,30 +275,27 @@ private:
 	void GetCalibratedSensor(float& gyroOffsetX, float& gyroOffsetY, float& gyroOffsetZ, float& accelMagnitude);
 };
 
-// This is the C wrapper for the GamepadMotion class.
+// C wrapper for the GamepadMotion API class.
 extern "C" {
-	// Creates a new GamepadMotion object
+
 	GamepadMotion* gmhCreateGamepadMotion() {
 		return new GamepadMotion();
 	}
 
-	// Delete a new GamepadMotion object
 	void gmhDeleteGamepadMotion(GamepadMotion* motion)
 	{
 		if (motion != nullptr) {
 			delete motion;
-			motion = nullptr; // Optional: Set the pointer to nullptr to avoid dangling references
+			motion = nullptr;
 		}
 	}
 
-	// Resets the GamepadMotion object
 	void gmhResetGamepadMotion(GamepadMotion* motion) {
 		if (motion) {
 			motion->Reset();
 		}
 	}
 
-	// Processes motion input for the GamepadMotion object
 	void gmhProcessMotion(GamepadMotion* motion, float gyroX, float gyroY, float gyroZ,
 		float accelX, float accelY, float accelZ, float deltaTime) {
 		if (motion) {
@@ -306,7 +303,6 @@ extern "C" {
 		}
 	}
 
-	// Wrapper methods to call GamepadMotion functions
 	void gmhGetCalibratedGyro(GamepadMotion* motion, float* x, float* y, float* z) {
 		if (motion) {
 			motion->GetCalibratedGyro(*x, *y, *z);
@@ -378,7 +374,7 @@ extern "C" {
 		if (motion) {
 			return motion->GetAutoCalibrationConfidence();
 		}
-		return 0.0f; // Default confidence value
+		return 0.0f;
 	}
 
 	void gmhSetAutoCalibrationConfidence(GamepadMotion* motion, float newConfidence) {
@@ -391,14 +387,14 @@ extern "C" {
 		if (motion) {
 			return motion->GetAutoCalibrationIsSteady();
 		}
-		return false; // Default steady state
+		return false;
 	}
 
 	int gmhGetCalibrationMode(GamepadMotion* motion) {
 		if (motion) {
 			return (int)motion->GetCalibrationMode();
 		}
-		return 0; // Default calibration mode (Manual)
+		return 0;
 	}
 
 	void gmhSetCalibrationMode(GamepadMotion* motion, int calibrationMode) {

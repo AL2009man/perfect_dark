@@ -36,10 +36,10 @@
 // standard gravity constants
 // Note: this may break GamepadMotion's Gyro Calibration systems on platforms without SDL_sensor.h
 #ifndef SDL_STANDARD_GRAVITY
-#define SDL_STANDARD_GRAVITY 9.80665f
+#define SDL_STANDARD_GRAVITY 9.80665f // standard gravity in m/s^2
 #endif
 
-#define GYRO_NOISE_THRESHOLD 0.03f
+#define GYRO_NOISE_THRESHOLD 0.03f // threshold for gyro noise filtering
 
 #define GYRO_ALWAYS_ON 0 // Gyro is always enabled, regardless of button state
 #define GYRO_TOGGLE 1 // Gyro is toggled on/off with a button press
