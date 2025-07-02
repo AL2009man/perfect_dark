@@ -1981,13 +1981,22 @@ static void inputUpdateAutoCalibration(s32 cidx)
 	gmhSetCalibrationMode(gpadMotion[cidx], CALIBRATIONMODE_STILLNESS);
 	bool isStableByGMH = gmhGetAutoCalibrationIsSteady(gpadMotion[cidx]);
 	
-	// Get current gyro data for noise analysis
+	// Get current gyro and accel data for noise analysis
 	float gyroData[3] = {0.f};
+	float accelData[3] = {0.f};
 	SDL_GameControllerGetSensorData(pads[cidx], SDL_SENSOR_GYRO, gyroData, 3);
+	SDL_GameControllerGetSensorData(pads[cidx], SDL_SENSOR_ACCEL, accelData, 3);
 	
 	// Calculate gyro magnitude for noise threshold check
 	float gyroMagnitude = sqrtf(gyroData[0] * gyroData[0] + gyroData[1] * gyroData[1] + gyroData[2] * gyroData[2]);
-	bool isBelowNoiseThreshold = (gyroMagnitude < GYRO_NOISE_THRESHOLD);
+	
+	// Calculate accel deviation from gravity for stability check
+	float accelMagnitude = sqrtf(accelData[0] * accelData[0] + accelData[1] * accelData[1] + accelData[2] * accelData[2]);
+	float accelDeviation = fabsf(accelMagnitude - SDL_STANDARD_GRAVITY);
+	
+	bool isGyroQuiet = (gyroMagnitude < GYRO_NOISE_THRESHOLD);
+	bool isAccelStable = (accelDeviation < GYRO_NOISE_THRESHOLD * 2.0f); // Allow more tolerance for accel
+	bool isBelowNoiseThreshold = isGyroQuiet && isAccelStable;
 	
 	// Controller is truly stable only if both conditions are met
 	bool isTrulyStable = isStableByGMH && isBelowNoiseThreshold;
@@ -2007,7 +2016,7 @@ static void inputUpdateAutoCalibration(s32 cidx)
 		bool cooldownMet = (now - state->lastAutoCalibTime) > 10000;     // 10 seconds since last calibration
 		
 		if (timeRequirementMet && cooldownMet) {
-			sysLogPrintf(LOG_NOTE, "Gyro auto-calibration: Controller %d calibrating now (magnitude: %.6f).", cidx, gyroMagnitude);
+			sysLogPrintf(LOG_NOTE, "Gyro auto-calibration: Controller %d calibrating now (gyro: %.6f, accel dev: %.6f).", cidx, gyroMagnitude, accelDeviation);
 			
 			// Perform calibration
 			gmhStartContinuousCalibration(gpadMotion[cidx]);
