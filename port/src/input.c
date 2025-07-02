@@ -1733,26 +1733,6 @@ void inputGyroSetAimSpeed(s32 cidx, f32 x, f32 y)
     padsCfg[cidx].gyroAimSensY = y;
 }
 
-f32 inputGyroGetAimSpeedX(s32 cidx)
-{
-	return padsCfg[cidx].gyroAimSensX;
-}
-
-void inputGyroSetAimSpeedX(s32 cidx, f32 x)
-{
-	padsCfg[cidx].gyroAimSensX = x;
-}
-
-f32 inputGyroGetAimSpeedY(s32 cidx)
-{
-	return padsCfg[cidx].gyroAimSensY;
-}
-
-void inputGyroSetAimSpeedY(s32 cidx, f32 y)
-{
-	padsCfg[cidx].gyroAimSensY = y;
-}
-
 void inputGyroGetInvert(s32 cidx, s32* out_invertx, s32* out_inverty)
 {
     if (out_invertx) *out_invertx = padsCfg[cidx].gyroInvertX;
