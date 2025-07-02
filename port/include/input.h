@@ -292,10 +292,10 @@ void inputGyroSetAxisMode(s32 cidx, s32 mode);
 s32 inputGyroGetAxisMode(s32 cidx);
 
 // Gyro Speed Management
-void inputGyroGetSpeed(s32 cidx, float* x, float* y);
-void inputGyroSetSpeed(s32 cidx, float x, float y);
-void inputGyroGetAimSpeed(s32 cidx, float* x, float* y);
-void inputGyroSetAimSpeed(s32 cidx, float x, float y);
+void inputGyroGetSpeed(s32 cidx, f32* x, f32* y);
+void inputGyroSetSpeed(s32 cidx, f32 x, f32 y);
+void inputGyroGetAimSpeed(s32 cidx, f32* x, f32* y);
+void inputGyroSetAimSpeed(s32 cidx, f32 x, f32 y);
 
 // Gyro Invert Management
 void inputGyroGetInvert(s32 cidx, s32* invertx, s32* inverty);
@@ -304,22 +304,20 @@ void inputGyroGetAimInvert(s32 cidx, s32* invertx, s32* inverty);
 void inputGyroSetAimInvert(s32 cidx, s32 invertx, s32 inverty);
 
 //Gyro Mixer, Smoothing, and Thresholds
-float inputGetGyroVHMixer(s32 cidx);
-void inputSetGyroVHMixer(s32 cidx, float value);
+f32 inputGetGyroVHMixer(s32 cidx);
+void inputSetGyroVHMixer(s32 cidx, f32 value);
 
-float inputGetGyroSmoothing(s32 cidx);
-void inputSetGyroSmoothing(s32 cidx, float value);
+f32 inputGetGyroSmoothing(s32 cidx);
+void inputSetGyroSmoothing(s32 cidx, f32 value);
 
-float inputGyroGetDeadzone(s32 cidx);
-void inputGyroSetDeadzone(s32 cidx, float value);
+f32 inputGyroGetDeadzone(s32 cidx);
+void inputGyroSetDeadzone(s32 cidx, f32 value);
 
-float inputGyroGetTightening(s32 cidx);
-void inputGyroSetTightening(s32 cidx, float value);
+f32 inputGyroGetTightening(s32 cidx);
+void inputGyroSetTightening(s32 cidx, f32 value);
 
 // Gyro Calibration Management
 void inputGyroCalibration(s32 cidx, GyroCalibrationOp op, float* out_confidence, int* out_steady);
-void inputUpdateGyroCalibration(void);
-void inputUpdateGyroManualCalibration(void);
 
 // Gyro Auto Calibration
 s32 inputGyroGetAutoCalibration(s32 cidx);
@@ -329,15 +327,13 @@ void inputGyroSetAutoCalibration(s32 cidx, s32 enabled);
 s32 inputGyroGetManualCalibration(s32 cidx);
 void inputGyroSetManualCalibration(s32 cidx);
 
-void inputApplyRuntimeGyroCalibrationOffset(s32 cidx);
-
 
 // Gyro Processing Utilities
-void applyGyroAxisMapping(s32 cidx, float gyroData[3], float accelData[3], f32* deltaX, f32* deltaY, f32* deltaZ);
+void applyGyroAxisMapping(s32 cidx, f32 gyroData[3], f32 accelData[3], f32* deltaX, f32* deltaY, f32* deltaZ);
 void applyGyroAimMode(s32 cidx, f32* deltaX, f32* deltaY, f32* deltaZ);
 void applyGyroModifier(f32* deltaX, f32* deltaY, f32* deltaZ, s32 activationMode, s32 idx);
 void applyGyroDeadzone(f32* dx, f32* dy, f32* dz, f32 deadzone);
-void applyGyroTightening(float* dx, float* dy, float* dz, float tightening);
+void applyGyroTightening(f32* dx, f32* dy, f32* dz, f32 tightening);
 void applyGyroSmoothing(f32* deltaX, f32* deltaY, f32* deltaZ, f32 smoothing, s32 cidx);
 
 // call this every frame
