@@ -86,7 +86,7 @@ static SDL_GameController *pads[INPUT_MAX_CONTROLLERS];
 	.gyroAimInvertY = 0, \
 	.gyroDeadzone = 0.07f, \
     .gyroTightening = 0.04f,\
-	.gyroSmoothing = 0.25f, \
+	.gyroSmoothing = 0.12f, \
 	.gyroAutoCalibration = 0, \
 }
 
@@ -1905,21 +1905,36 @@ void inputSetGyroSmoothing(s32 cidx, f32 smoothing)
 
 void applyGyroSmoothing(f32* deltaX, f32* deltaY, f32* deltaZ, f32 smoothing, s32 cidx)
 {
-	if (!deltaX || !deltaY || !deltaZ) return;
+    if (!deltaX || !deltaY || !deltaZ) return;
 
-	// Clamp smoothing to [0, 0.99] to avoid division by zero
-	if (smoothing < 0.0f) smoothing = 0.0f;
-	if (smoothing > 0.99f) smoothing = 0.99f;
-
-	static f32 prevX[INPUT_MAX_CONTROLLERS] = {0}, prevY[INPUT_MAX_CONTROLLERS] = {0}, prevZ[INPUT_MAX_CONTROLLERS] = {0};
-
-	prevX[cidx] = prevX[cidx] * smoothing + (*deltaX) * (1.0f - smoothing);
-	prevY[cidx] = prevY[cidx] * smoothing + (*deltaY) * (1.0f - smoothing);
-	prevZ[cidx] = prevZ[cidx] * smoothing + (*deltaZ) * (1.0f - smoothing);
-
-	*deltaX = prevX[cidx];
-	*deltaY = prevY[cidx];
-	*deltaZ = prevZ[cidx];
+    // Increase the window size range for stronger smoothing effect
+    static f32 history[INPUT_MAX_CONTROLLERS][3][16] = {0}; // Increased to 16-sample history
+    static s32 historyIndex[INPUT_MAX_CONTROLLERS] = {0};
+    
+    // Convert smoothing percentage to window size (1-16 samples for stronger effect)
+    s32 windowSize = 1 + (s32)(smoothing * 15.0f); // 1 to 16 samples
+    
+    // Store current sample in circular buffer
+    s32 idx = historyIndex[cidx];
+    history[cidx][0][idx] = *deltaX;
+    history[cidx][1][idx] = *deltaY;
+    history[cidx][2][idx] = *deltaZ;
+    
+    // Calculate linear average over window
+    f32 avgX = 0.f, avgY = 0.f, avgZ = 0.f;
+    for (s32 i = 0; i < windowSize; ++i) {
+        s32 sampleIdx = (idx - i + 16) % 16;
+        avgX += history[cidx][0][sampleIdx];
+        avgY += history[cidx][1][sampleIdx];
+        avgZ += history[cidx][2][sampleIdx];
+    }
+    
+    *deltaX = avgX / windowSize;
+    *deltaY = avgY / windowSize;
+    *deltaZ = avgZ / windowSize;
+    
+    // Advance circular buffer index
+    historyIndex[cidx] = (idx + 1) % 16;
 }
 
 static void inputUpdateGyroCalibrationHandle(void)
