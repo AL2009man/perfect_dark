@@ -2008,7 +2008,6 @@ static void inputUpdateAutoCalibration(s32 cidx)
 		if (!state->wasStable) {
 			// Just became stable - start timing
 			state->stableStartTime = now;
-			sysLogPrintf(LOG_NOTE, "Gyro auto-calibration: Controller %d is stable (GMH + noise check), starting timer.", cidx);
 		}
 
 		// Check if we should calibrate
@@ -2016,7 +2015,7 @@ static void inputUpdateAutoCalibration(s32 cidx)
 		bool cooldownMet = (now - state->lastAutoCalibTime) > 10000;     // 10 seconds since last calibration
 		
 		if (timeRequirementMet && cooldownMet) {
-			sysLogPrintf(LOG_NOTE, "Gyro auto-calibration: Controller %d calibrating now (gyro: %.6f, accel dev: %.6f).", cidx, gyroMagnitude, accelDeviation);
+			sysLogPrintf(LOG_NOTE, "Gyro auto-calibration: Controller %d calibrating now.", cidx);
 			
 			// Perform calibration
 			gmhStartContinuousCalibration(gpadMotion[cidx]);
@@ -2026,15 +2025,6 @@ static void inputUpdateAutoCalibration(s32 cidx)
 			state->lastAutoCalibTime = now;
 		}
 	} else {
-		// Controller is moving or above noise threshold
-		if (state->wasStable) {
-			if (!isStableByGMH) {
-				sysLogPrintf(LOG_NOTE, "Gyro auto-calibration: Controller %d movement detected by GMH.", cidx);
-			} else {
-				sysLogPrintf(LOG_NOTE, "Gyro auto-calibration: Controller %d above noise threshold (%.6f > %.6f).", cidx, gyroMagnitude, GYRO_NOISE_THRESHOLD);
-			}
-		}
-		
 		// Clear any pending calibration flags
 		if (state->justFinishedCalibrating) {
 			state->justFinishedCalibrating = false;
@@ -2079,8 +2069,6 @@ static void inputStartManualCalibration(s32 cidx)
 {
 	GyroCalibState *state = &gyroCalibState[cidx];
 	
-	sysLogPrintf(LOG_NOTE, "Gyro manual calibration: Controller %d START.", cidx);
-	
 	if (!gpadMotion[cidx]) {
 		gpadMotion[cidx] = gmhCreateGamepadMotion();
 	}
@@ -2098,8 +2086,6 @@ static void inputFinishManualCalibration(s32 cidx)
 {
 	GyroCalibState *state = &gyroCalibState[cidx];
 	
-	sysLogPrintf(LOG_NOTE, "Gyro manual calibration: Controller %d FINISH.", cidx);
-	
 	if (!gpadMotion[cidx]) return;
 	
 	state->manualCalibActive = false;
@@ -2113,13 +2099,8 @@ static void inputFinishManualCalibration(s32 cidx)
 			&state->manualOffsetZ);
 		state->manualWeight = 100; // High confidence for manual calibration
 		
-		sysLogPrintf(LOG_NOTE, "Gyro manual calibration: Controller %d offset saved (%.3f, %.3f, %.3f).", 
-			cidx, state->manualOffsetX, state->manualOffsetY, state->manualOffsetZ);
-		
 		// Apply the calibration immediately
 		inputApplyManualCalibrationOffset(cidx);
-	} else {
-		sysLogPrintf(LOG_NOTE, "Gyro manual calibration: Controller %d complete (auto-calibration enabled, not saving).", cidx);
 	}
 	
 	state->justFinishedCalibrating = true;
@@ -2175,8 +2156,6 @@ static void inputConfigureCalibrationMode(s32 cidx)
 
 static void inputResetGyroCalibration(s32 cidx)
 {
-	sysLogPrintf(LOG_NOTE, "Gyro calibration: Controller %d RESET.", cidx);
-	
 	GyroCalibState *state = &gyroCalibState[cidx];
 	
 	// Clean up existing motion handle
