@@ -85,8 +85,8 @@ static SDL_GameController *pads[INPUT_MAX_CONTROLLERS];
 	.gyroAimInvertX = 0, \
 	.gyroAimInvertY = 0, \
 	.gyroDeadzone = 0.07f, \
-    .gyroTightening = 0.04f,\
-	.gyroSmoothing = 0.12f, \
+    .gyroTightening = 0.03f,\
+	.gyroSmoothing = 0.20f, \
 	.gyroAutoCalibration = 0, \
 }
 
@@ -1833,11 +1833,13 @@ void inputGyroSetDeadzone(s32 cidx, f32 deadzone)
 
 void applyGyroDeadzone(f32* dx, f32* dy, f32* dz, f32 deadzone)
 {
-    if (deadzone > 0.f && dx && dy && dz) {
-        f32 mag = sqrtf((*dx) * (*dx) + (*dy) * (*dy) + (*dz) * (*dz));
-        if (mag < deadzone) {
-            *dx = *dy = *dz = 0.f;
-        }
+    if (deadzone <= 0.f || !dx || !dy || !dz) return;
+
+    f32 mag = sqrtf((*dx) * (*dx) + (*dy) * (*dy) + (*dz) * (*dz));
+    if (mag <= deadzone) {
+        *dx = 0.f;
+        *dy = 0.f;
+        *dz = 0.f;
     }
 }
 
