@@ -825,9 +825,9 @@ static MenuItemHandlerResult menuhandlerGyroSmoothing(s32 operation, struct menu
 		case MENUOP_SET:
 				inputSetGyroSmoothing(g_ExtMenuPlayer, (f32)data->slider.value / 100.0f);
 				break;
-		case MENUOP_GETSLIDERLABEL:
-				sprintf(data->slider.label, "%.2f", inputGetGyroSmoothing(g_ExtMenuPlayer));
-				break;
+	case MENUOP_GETSLIDERLABEL:
+		sprintf(data->slider.label, "%.0f%%", inputGetGyroSmoothing(g_ExtMenuPlayer) * 100.0f);
+		break;
 		}
 
 		return 0;
@@ -843,7 +843,7 @@ static MenuItemHandlerResult menuhandlerGyroTightening(s32 operation, struct men
         inputGyroSetTightening(g_ExtMenuPlayer, (f32)data->slider.value / 100.0f);
         break;
     case MENUOP_GETSLIDERLABEL:
-        sprintf(data->slider.label, "%.2f", inputGyroGetTightening(g_ExtMenuPlayer));
+        sprintf(data->slider.label, "%.0f%%", inputGyroGetTightening(g_ExtMenuPlayer) * 100.0f);
         break;
     }
     return 0;
@@ -859,7 +859,7 @@ static MenuItemHandlerResult menuhandlerGyroDeadzone(s32 operation, struct menui
         inputGyroSetDeadzone(g_ExtMenuPlayer, (f32)data->slider.value / 100.0f);
         break;
     case MENUOP_GETSLIDERLABEL:
-        sprintf(data->slider.label, "%.2f", inputGyroGetDeadzone(g_ExtMenuPlayer));
+        sprintf(data->slider.label, "%.0f%%", inputGyroGetDeadzone(g_ExtMenuPlayer) * 100.0f);
         break;
     }
     return 0;

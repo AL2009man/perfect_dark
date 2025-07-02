@@ -4753,8 +4753,8 @@ enum weaponnum {
 
 #define RESET_CAMERA CK_0040 // reset camera and/or crosshair to default position
 
-#define GYRO_MODIFIER     CK_0080 // press/hold or toggle gyro activation
-#define CGYRO_CALIBRATION   CK_0100 // calibrate gyro manually
+#define GYRO_MODIFIER         CK_0080 // press/hold or toggle gyro activation
+#define GYRO_CALIBRATION      CK_0100 // calibrate gyro manually
 
 #define CROSSHAIR_HEALTH_OFF 0
 #define CROSSHAIR_HEALTH_ON_GREEN 1
