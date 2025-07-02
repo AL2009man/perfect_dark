@@ -85,8 +85,8 @@ static SDL_GameController *pads[INPUT_MAX_CONTROLLERS];
 	.gyroAimInvertX = 0, \
 	.gyroAimInvertY = 0, \
 	.gyroDeadzone = 0.07f, \
-    .gyroTightening = 0.06f,\
-	.gyroSmoothing = 0.15f, \
+    .gyroTightening = 0.04f,\
+	.gyroSmoothing = 0.25f, \
 	.gyroAutoCalibration = 0, \
 }
 
@@ -1858,8 +1858,33 @@ void applyGyroTightening(f32* dx, f32* dy, f32* dz, f32 tightening)
     if (!dx || !dy || !dz || tightening <= 0.0f) return;
 
     f32 mag = sqrtf((*dx) * (*dx) + (*dy) * (*dy) + (*dz) * (*dz));
-    if (mag < tightening && mag > 0.f) {
-        f32 scale = mag / tightening;
+    if (mag > 0.f) {
+        f32 scale = 1.0f;
+        
+        // Soft tiered scaling with multiple breakpoints for smoother transitions
+		// based on http://gyrowiki.jibbsmart.com/blog:tight-and-smooth:soft-tiered-smoothing
+        if (mag < tightening) {
+            f32 ratio = mag / tightening;
+            
+            // Multi-tier approach for smoother scaling
+            if (ratio < 0.25f) {
+                // Very small movements: heavy reduction with cubic curve
+                scale = ratio * ratio * ratio * 2.0f;
+            } else if (ratio < 0.5f) {
+                // Small movements: moderate reduction with quadratic curve
+                f32 adjustedRatio = (ratio - 0.25f) / 0.25f;
+                scale = 0.125f + adjustedRatio * adjustedRatio * 0.375f;
+            } else if (ratio < 0.75f) {
+                // Medium-small movements: gentle reduction with linear interpolation
+                f32 adjustedRatio = (ratio - 0.5f) / 0.25f;
+                scale = 0.5f + adjustedRatio * 0.3f;
+            } else {
+                // Near-threshold movements: minimal reduction with smooth transition
+                f32 adjustedRatio = (ratio - 0.75f) / 0.25f;
+                scale = 0.8f + adjustedRatio * adjustedRatio * 0.2f;
+            }
+        }
+        
         *dx *= scale;
         *dy *= scale;
         *dz *= scale;
