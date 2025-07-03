@@ -3686,11 +3686,11 @@ void playerTick(bool arg0)
 					s32 cidx = g_Vars.currentplayernum;
 
 					// Apply gyro movement based on mode
-					if (inputGetGyroAimMode(cidx) == GYRO_AIM_MODE_CAMERA || inputGetGyroAimMode(cidx) == GYRO_AIM_MODE_BOTH) {
+					if (inputGetGyroAimMode(cidx) == GYRO_AIM_CAMERA || inputGetGyroAimMode(cidx) == GYRO_AIM_BOTH) {
 						inputGyroGetScaledDelta(cidx, &gdx_cam, &gdy_cam, &gdz_cam); // Camera movement
 					}
 
-					if (inputGetGyroAimMode(cidx) == GYRO_AIM_MODE_CROSSHAIR || inputGetGyroAimMode(cidx) == GYRO_AIM_MODE_BOTH) {
+					if (inputGetGyroAimMode(cidx) == GYRO_AIM_CROSSHAIR || inputGetGyroAimMode(cidx) == GYRO_AIM_BOTH) {
 						inputGyroGetScaledDeltaCrosshair(cidx, &gdx_crosshair, &gdy_crosshair); // Crosshair movement
 					}
 

@@ -734,8 +734,8 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
     bool allowmcross = false;
     bool allowgcross = (g_Vars.players[cidx] != NULL) &&
             (allowc1x || allowc1y) &&
-            (PLAYER_EXTCFG().gyroaimmode == GYRO_AIM_MODE_CROSSHAIR ||
-                    PLAYER_EXTCFG().gyroaimmode == GYRO_AIM_MODE_BOTH);
+            (PLAYER_EXTCFG().gyroaimmode == GYRO_AIM_CROSSHAIR ||
+                    PLAYER_EXTCFG().gyroaimmode == GYRO_AIM_BOTH);
 #endif
 
 	controlmode = optionsGetControlMode(g_Vars.currentplayerstats->mpindex);
@@ -832,14 +832,14 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 
 		int gyroAimMode = inputGetGyroAimMode(cidx);
 
-		if (gyroAimMode == GYRO_AIM_MODE_CAMERA || gyroAimMode == GYRO_AIM_MODE_BOTH) {
+		if (gyroAimMode == GYRO_AIM_CAMERA || gyroAimMode == GYRO_AIM_BOTH) {
 			inputGyroGetScaledDelta(cidx, &gyroCamDx, &gyroCamDy, &gyroCamDz);
 			const f32 norm = g_Vars.lvupdate60freal;
 			movedata.gyrolookdx += gyroCamDx * norm;
 			movedata.gyrolookdy += gyroCamDy * norm;
 		}
 
-		if (gyroAimMode == GYRO_AIM_MODE_CROSSHAIR || gyroAimMode == GYRO_AIM_MODE_BOTH) {
+		if (gyroAimMode == GYRO_AIM_CROSSHAIR || gyroAimMode == GYRO_AIM_BOTH) {
 			inputGyroGetScaledDeltaCrosshair(cidx, &gyroCrossDx, &gyroCrossDy);
 			if (g_Vars.players[cidx]) {
 				const f32 norm = g_Vars.lvupdate60freal;

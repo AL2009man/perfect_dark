@@ -122,32 +122,32 @@ enum mouselockmode {
 };
 
 enum gyroactivation {
-	GYRO_ALWAYS_ON = 0,
-	GYRO_TOGGLE = 1,
-	GYRO_ENABLE_HELD = 2,
-	GYRO_DISABLE_HELD = 3
+	GYRO_ALWAYS_ON = 0, // Gyro is always enabled
+	GYRO_TOGGLE = 1, // Gyro is enabled/disabled by a button press
+	GYRO_ENABLE_HELD = 2, // Gyro is enabled while a button is held down
+	GYRO_DISABLE_HELD = 3 // Gyro is disabled while a button is held down
 };
 
 enum gyroaxismode {
-	GYRO_YAW = 0,
-	GYRO_ROLL = 1,
-	GYRO_LOCAL = 2,
-	GYRO_PLAYER = 3,
-	GYRO_WORLD = 4
+	GYRO_YAW = 0, // Gyro controls yaw axis (turn)
+	GYRO_ROLL = 1, // Gyro controls roll axis (lean)
+	GYRO_LOCAL = 2, // Gyro controls local space orientation 
+	GYRO_PLAYER = 3, // Gyro controls player space orientation
+	GYRO_WORLD = 4  // Gyro controls world space orientation
 };
 
 enum gyroaimmode {
-	GYRO_AIM_MODE_CAMERA = 0,
-	GYRO_AIM_MODE_CROSSHAIR = 1,
-	GYRO_AIM_MODE_BOTH = 2
+	GYRO_AIM_CAMERA = 0, // Gyro controls camera movement
+	GYRO_AIM_CROSSHAIR = 1, // Gyro controls crosshair movement
+	GYRO_AIM_BOTH = 2 // Gyro controls both camera and crosshair movement
 };
 
 typedef enum {
-	GYRO_CALIB_START,
-	GYRO_CALIB_FINISH,
-	GYRO_CALIB_RESET,
-	GYRO_CALIB_QUERY,
-	GYRO_CALIB_AUTO
+	GYRO_CALIB_START, // start calibration
+	GYRO_CALIB_FINISH, // finish calibration
+	GYRO_CALIB_RESET, // reset calibration
+	GYRO_CALIB_QUERY, // query calibration status
+	GYRO_CALIB_AUTO // automatic calibration
 } GyroCalibrationOp;
 
 typedef enum {
@@ -155,7 +155,6 @@ typedef enum {
 	CALIBRATIONMODE_STILLNESS = 1,
 	CALIBRATIONMODE_SENSORFUSION = 2
 } CalibrationMode;
-
 
 // returns bitmask of connected controllers or -1 if failed
 s32 inputInit(void);
@@ -279,6 +278,9 @@ void inputUpdateGyroCalibrationOnly(void);
 void inputGyroGetScaledDelta(s32 cidx, f32* dx, f32* dy, f32* dz);
 void inputGyroGetScaledDeltaCrosshair(s32 cidx, f32* dx, f32* dy);
 
+// Raw Gyro Movement Retrieval
+void inputGyroGetRawDelta(s32 cidx, s32* dx, s32* dy, s32* dz);
+
 // Gyro Enable/Disable
 s32 inputGyroIsEnabled(s32 cidx);
 void inputGyroEnable(s32 cidx, s32 enabled);
@@ -307,7 +309,7 @@ void inputGyroSetInvert(s32 cidx, s32 invertx, s32 inverty);
 void inputGyroGetAimInvert(s32 cidx, s32* invertx, s32* inverty);
 void inputGyroSetAimInvert(s32 cidx, s32 invertx, s32 inverty);
 
-//Gyro Mixer, Smoothing, and Thresholds
+// Gyro Mixer, Smoothing, Tightening and Deadzone thresholds
 f32 inputGetGyroVHMixer(s32 cidx);
 void inputSetGyroVHMixer(s32 cidx, f32 value);
 
@@ -327,10 +329,12 @@ void inputGyroCalibration(s32 cidx, GyroCalibrationOp op, float* out_confidence,
 s32 inputGyroGetAutoCalibration(s32 cidx);
 void inputGyroSetAutoCalibration(s32 cidx, s32 enabled);
 
+// Gyro Auto-Calibration Status (using GamepadMotionHelper)
+void inputGyroGetAutoCalibrationStatus(s32 cidx, float* out_confidence, s32* out_steady);
+
 // Gyro Manual Calibration
 s32 inputGyroGetManualCalibration(s32 cidx);
 void inputGyroSetManualCalibration(s32 cidx);
-
 
 // Gyro Processing Utilities
 void applyGyroAxisMapping(s32 cidx, f32 gyroData[3], f32 accelData[3], f32* deltaX, f32* deltaY, f32* deltaZ);
