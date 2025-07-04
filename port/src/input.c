@@ -78,7 +78,7 @@ static SDL_GameController *pads[INPUT_MAX_CONTROLLERS];
 	.gyroDeadzone = 0.07f, \
 	.gyroTightening = 0.03f, \
 	.gyroSmoothing = 0.20f, \
-	.gyroAutoCalibration = 0, \
+	.gyroAutoCalibration = 1, \
 }
 
 static struct controllercfg {

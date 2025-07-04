@@ -100,11 +100,11 @@ Motion Sensor Aiming (also known as Gyro Aiming) is enabled by default when usin
 > Gyro Aiming will not work if Steam Input is enabled, or using a Xbox controller.
 
 > [!TIP]
-> Gyro Drift may become a occurence during regular gameplay.it becomes far more evident when using a first-party Nintendo Switch controller.
+> Gyro Drift may become a occurence during regular gameplay. It becomes far more evident when using a first-party Nintendo Switch (first-gen) controller. To remedy this issue: "Auto-Calibrate Gyro while Stationary" toggle is enabled by default, which should help eliminate the drift, just place the controller on the flat surface during initialization of the game or during gameplay, and it will automatically calibrate the gyro sensors.
 >
->To calibrate the Controller's Gyro functions: you can head over to "Gyro Settings..." menu, either select "Initiate Gyro Calibration..."/"Auto-Calibrate Gyro while Stationary", or press the SHARE button on your Xbox pad (Xbox Series X|S model-onwards). please place the controller on the surface beforehand.
+> If the Autocalibration fails or you don't want the gyro to calibrate during regular gameplay: you have the ability to manually calibrate the gyro. You can head over to "Gyro Settings..." menu, either select "Initiate Gyro Calibration...", pressing the `SHARE` button on your Xbox pad (Xbox Series X|S model-onwards) or `F10` key at anytime during both gameplay and menus, (it also complements Gyro Autocalibration process!)
 >
-> >by default: pressing the `Microphone Mute button` (DualSense), `Capture Button` (Nintendo Switch) button or `F10` key can manually calibrate the controller's Motion Sensors functionality on the fly. useful if you wanna calibrate the controller immediately during gameplay.
+> > To be extra specific: pressing the `Microphone Mute button` (DualSense) or `Capture Button` (Nintendo Switch) button is the equivalent to "SHARE" button on Xbox gamepad. 
 >
 > "Gyro Calibration (Manual)" can be rebinded within pd.ini or extended settings
 >
