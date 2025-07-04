@@ -908,7 +908,7 @@ s32 inputInit(void)
 	return connectedMask;
 }
 
-static inline s32 inputBindPressed(const s32 idx, const u32 ck)
+s32 inputBindPressed(const s32 idx, const u32 ck)
 {
 	for (s32 i = 0; i < INPUT_MAX_BINDS; ++i) {
 		if (binds[idx][ck][i]) {
@@ -1534,10 +1534,6 @@ s32 inputButtonPressed(s32 idx, u32 contbtn)
 	return inputBindPressed(idx, inputContToContKey(contbtn));
 }
 
-s32 inputResetCameraPressed(s32 idx)
-{
-	return inputBindPressed(idx, CK_0040);
-}
 
 void inputLockMouse(s32 lock)
 {

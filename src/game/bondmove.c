@@ -2047,7 +2047,7 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 
 #ifndef PLATFORM_N64
 			// camera/crosshair recentering logic
-			bool reset_pressed = inputResetCameraPressed(cidx);
+			bool reset_pressed = inputBindPressed(cidx, CK_0040);
 
 			// start recentering on button press
 			if (reset_pressed && !prev_reset_pressed && g_Vars.currentplayer) {

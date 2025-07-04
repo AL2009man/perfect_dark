@@ -216,6 +216,9 @@ s32 inputKeyJustPressed(u32 vk);
 // idx is controller index, contbtn is one of the CONT_ constants
 s32 inputButtonPressed(s32 idx, u32 contbtn);
 
+// idx is controller index, ck is one of the CK_ constants
+s32 inputBindPressed(s32 idx, u32 ck);
+
 // bind virtkey vk to n64 pad #idx's button/axis ck as represented by its contkey value
 // if bind is -1, picks a bind slot automatically
 void inputKeyBind(s32 idx, u32 ck, s32 bind, u32 vk);
@@ -230,9 +233,6 @@ const char *inputGetKeyName(s32 vk);
 
 // get CK_ value from human-readable name
 s32 inputGetContKeyByName(const char *name);
-
-// Returns 1 if the reset camera action is pressed for the given input index
-s32 inputResetCameraPressed(s32 idx);
 
 // get human-readable name from CK_ value
 const char *inputGetContKeyName(u32 ck);
