@@ -329,9 +329,6 @@ void inputGyroCalibration(s32 cidx, GyroCalibrationOp op, float* out_confidence,
 s32 inputGyroGetAutoCalibration(s32 cidx);
 void inputGyroSetAutoCalibration(s32 cidx, s32 enabled);
 
-// Gyro Auto-Calibration Status (using GamepadMotionHelper)
-void inputGyroGetAutoCalibrationStatus(s32 cidx, float* out_confidence, s32* out_steady);
-
 // Gyro Manual Calibration
 s32 inputGyroGetManualCalibration(s32 cidx);
 void inputGyroSetManualCalibration(s32 cidx);

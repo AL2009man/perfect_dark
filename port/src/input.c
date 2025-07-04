@@ -2059,6 +2059,7 @@ static void inputUpdateAutoCalibration(s32 cidx)
 	}
 
 	GyroCalibState *state = &gyroCalibState[cidx];
+	static bool calibrationStarted[INPUT_MAX_CONTROLLERS] = {false};
 	
 	// Check if controller is currently stable according to GamepadMotionHelper
 	gmhSetCalibrationMode(gpadMotion[cidx], CALIBRATIONMODE_STILLNESS);
@@ -2091,23 +2092,55 @@ static void inputUpdateAutoCalibration(s32 cidx)
 		if (!state->wasStable) {
 			// Just became stable - start timing
 			state->stableStartTime = now;
+			bool cooldownMet = (now - state->lastAutoCalibTime) > 10000; // 10 seconds since controller last moved
+			
+			if (cooldownMet) {
+				sysLogPrintf(LOG_NOTE, "Gyro auto-calibration: Controller %d became stationary, will start calibration after 5-second safety period.", cidx);
+			}
 		}
 
-		// Check if we should calibrate
-		bool timeRequirementMet = (now - state->stableStartTime) > 2000; // 2 seconds stable
-		bool cooldownMet = (now - state->lastAutoCalibTime) > 10000;     // 10 seconds since last calibration
+		// Check if we should start/finalize calibration
+		bool safetyTimerMet = (now - state->stableStartTime) > 2500;    // 2.5 seconds safety timer when placed down
+		bool fullTimerMet = (now - state->stableStartTime) > 3000;      // 3 seconds minimum for calibration data
+		bool cooldownMet = (now - state->lastAutoCalibTime) > 10000;    // 10 seconds since controller last moved
 		
-		if (timeRequirementMet && cooldownMet) {
-			sysLogPrintf(LOG_NOTE, "Gyro auto-calibration: Controller %d calibrating now.", cidx);
+		if (cooldownMet) {
+			if (safetyTimerMet && !state->justFinishedCalibrating) {
+				// Safety timer met - start calibration data collection if not already started
+				if (!calibrationStarted[cidx]) {
+					sysLogPrintf(LOG_NOTE, "Gyro auto-calibration: Controller %d safety timer complete, starting calibration data collection.", cidx);
+					gmhResetContinuousCalibration(gpadMotion[cidx]);
+					gmhStartContinuousCalibration(gpadMotion[cidx]);
+					calibrationStarted[cidx] = true;
+				}
+			}
 			
-			// Perform calibration
-			gmhStartContinuousCalibration(gpadMotion[cidx]);
-			gmhPauseContinuousCalibration(gpadMotion[cidx]);
-			
-			state->justFinishedCalibrating = true;
-			state->lastAutoCalibTime = now;
+			if (safetyTimerMet && fullTimerMet && calibrationStarted[cidx]) {
+				// Both safety timer and calibration data collection timer met - finalize
+				sysLogPrintf(LOG_NOTE, "Gyro auto-calibration: Controller %d finalizing calibration after %d ms total stationary time.", 
+					cidx, now - state->stableStartTime);
+				
+				// Finalize calibration - GamepadMotionHelper has been collecting samples while stationary
+				gmhPauseContinuousCalibration(gpadMotion[cidx]);
+				
+				state->justFinishedCalibrating = true;
+				calibrationStarted[cidx] = false;
+				// Don't update lastAutoCalibTime here - it will be updated when controller moves
+			}
 		}
 	} else {
+		// Controller is no longer stationary
+		if (state->wasStable) {
+			// Lost stability - pause any ongoing calibration data collection and start cooldown timer
+			gmhPauseContinuousCalibration(gpadMotion[cidx]);
+			state->lastAutoCalibTime = now; // Start cooldown timer when controller moves
+			
+			// Reset calibration started flag
+			calibrationStarted[cidx] = false;
+			
+			sysLogPrintf(LOG_NOTE, "Gyro auto-calibration: Controller %d lost stability, pausing calibration and starting cooldown.", cidx);
+		}
+		
 		// Clear any pending calibration flags
 		if (state->justFinishedCalibrating) {
 			state->justFinishedCalibrating = false;
