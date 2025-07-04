@@ -1171,7 +1171,6 @@ static void inputApplyGyroProcessing(s32 cidx, f32* deltaX, f32* deltaY, f32* de
 	}
 
 	// Apply gyro processing pipeline
-	applyGyroAimMode(cidx, deltaX, deltaY, deltaZ);
 	applyGyroModifier(deltaX, deltaY, deltaZ, inputGetGyroModifier(cidx), cidx);
 	applyGyroDeadzone(deltaX, deltaY, deltaZ, inputGyroGetDeadzone(cidx));
 	applyGyroTightening(deltaX, deltaY, deltaZ, inputGyroGetTightening(cidx));
@@ -1675,6 +1674,16 @@ void applyGyroAxisMapping(s32 cidx, float gyroData[3], float accelData[3], f32* 
         return;
     }
 
+    // Check if axis mode has changed and reset motion state to prevent bleed-through
+    static s32 previousAxisMode[INPUT_MAX_CONTROLLERS] = {-1, -1, -1, -1};
+    s32 currentAxisMode = inputGyroGetAxisMode(cidx);
+    if (previousAxisMode[cidx] != currentAxisMode && previousAxisMode[cidx] != -1) {
+        gmhResetMotion(gpadMotion[cidx]);
+        sysLogPrintf(LOG_NOTE, "Gyro: Reset motion state for controller %d due to axis mode change (%d -> %d)", 
+                     cidx, previousAxisMode[cidx], currentAxisMode);
+    }
+    previousAxisMode[cidx] = currentAxisMode;
+
     float calibratedGyro[3] = {0.f};
     gmhGetCalibratedGyro(gpadMotion[cidx], &calibratedGyro[0], &calibratedGyro[1], &calibratedGyro[2]);
 
@@ -1724,12 +1733,6 @@ s32 inputGetGyroAimMode(s32 cidx)
 void inputSetGyroAimMode(s32 cidx, s32 mode)
 {
 	padsCfg[cidx].gyroAimMode = mode;
-}
-
-void applyGyroAimMode(s32 cidx, f32* deltaX, f32* deltaY, f32* deltaZ)
-{
-	s32 gyroAimMode = inputGetGyroAimMode(cidx);
-	(void)gyroAimMode;
 }
 
 void inputGyroGetRawDelta(s32 cidx, s32* dx, s32* dy, s32* dz)

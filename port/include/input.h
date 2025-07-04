@@ -335,7 +335,6 @@ void inputGyroSetManualCalibration(s32 cidx);
 
 // Gyro Processing Utilities
 void applyGyroAxisMapping(s32 cidx, f32 gyroData[3], f32 accelData[3], f32* deltaX, f32* deltaY, f32* deltaZ);
-void applyGyroAimMode(s32 cidx, f32* deltaX, f32* deltaY, f32* deltaZ);
 void applyGyroModifier(f32* deltaX, f32* deltaY, f32* deltaZ, s32 activationMode, s32 idx);
 void applyGyroDeadzone(f32* dx, f32* dy, f32* dz, f32 deadzone);
 void applyGyroTightening(f32* dx, f32* dy, f32* dz, f32 tightening);
