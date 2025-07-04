@@ -42,7 +42,6 @@
 #define GYRO_NOISE_THRESHOLD 0.03f // threshold for gyro noise filtering (safety net)
 
 // GMH Configuration - centralized settings to avoid redundancy
-// Note: GMH auto-tunes its stillness thresholds; our GYRO_NOISE_THRESHOLD is a separate safety net
 #define GMH_STILLNESS_COLLECTION_TIME 2.5f
 #define GMH_STILLNESS_CORRECTION_TIME 3.0f
 #define GMH_STILLNESS_EASE_TIME 1.0f
@@ -155,6 +154,7 @@ static s32 textInput = 0;
 static char *clipboardText = NULL;
 
 // Forward declarations for gyro calibration functions
+static void inputConfigureGamepadMotionSettings(GamepadMotionHandle handle);
 static void inputUpdateGyroCalibrationHandle(void);
 static void inputUpdateAutoCalibration(s32 cidx);
 static void inputUpdateManualCalibration(s32 cidx);
@@ -164,7 +164,6 @@ static void inputConfigureCalibrationMode(s32 cidx);
 static void inputResetGyroCalibration(s32 cidx);
 static void inputApplyManualCalibrationOffset(s32 cidx);
 static bool inputIsControllerSensorBelowNoiseThreshold(s32 cidx);
-static void inputConfigureGamepadMotionSettings(GamepadMotionHandle handle);
 
 // Gyro calibration state structure
 typedef struct {
@@ -185,19 +184,6 @@ typedef struct {
 } GyroCalibState;
 
 static GyroCalibState gyroCalibState[INPUT_MAX_CONTROLLERS] = {0};
-
-// GMH settings configuration
-static void inputConfigureGamepadMotionSettings(GamepadMotionHandle handle)
-{
-    if (!handle) return;
-
-    gmhSetMinStillnessCollectionTime(handle, GMH_STILLNESS_COLLECTION_TIME);
-    gmhSetMinStillnessCorrectionTime(handle, GMH_STILLNESS_CORRECTION_TIME);
-    gmhSetStillnessGyroDelta(handle, -1.f);    // Let GMH auto-tune
-    gmhSetStillnessAccelDelta(handle, -1.f);   // Let GMH auto-tune
-    gmhSetStillnessCalibrationEaseInTime(handle, GMH_STILLNESS_EASE_TIME);
-    gmhSetMaxStillnessError(handle, GMH_MAX_STILLNESS_ERROR);
-}
 
 static const char *ckNames[CK_TOTAL_COUNT] = {
 	"R_CBUTTONS",
@@ -1088,6 +1074,19 @@ static inline void inputUpdateMouse(void)
 			}
 		}
 	}
+}
+
+// GMH settings configuration
+static void inputConfigureGamepadMotionSettings(GamepadMotionHandle handle)
+{
+    if (!handle) return;
+
+    gmhSetMinStillnessCollectionTime(handle, GMH_STILLNESS_COLLECTION_TIME);
+    gmhSetMinStillnessCorrectionTime(handle, GMH_STILLNESS_CORRECTION_TIME);
+    gmhSetStillnessGyroDelta(handle, -1.f);
+    gmhSetStillnessAccelDelta(handle, -1.f);
+    gmhSetStillnessCalibrationEaseInTime(handle, GMH_STILLNESS_EASE_TIME);
+    gmhSetMaxStillnessError(handle, GMH_MAX_STILLNESS_ERROR);
 }
 
 static float inputCalculateGyroDeltaTime(s32 cidx)
@@ -2087,6 +2086,9 @@ static void inputUpdateAutoCalibration(s32 cidx)
 		return;
 	}
 
+	// Configure GMH settings for auto-calibration
+	inputConfigureGamepadMotionSettings(gpadMotion[cidx]);
+
 	GyroCalibState *state = &gyroCalibState[cidx];
 	
 	// Set calibration mode - GamepadMotionHelpers will handle all timing internally
@@ -2196,8 +2198,7 @@ static void inputStartManualCalibration(s32 cidx)
 	
 	if (!gpadMotion[cidx]) {
 		gpadMotion[cidx] = gmhCreateGamepadMotion();
-		
-		inputConfigureGamepadMotionSettings(gpadMotion[cidx]);
+		// Manual calibration doesn't need GMH settings configuration
 	}
 	
 	state->manualCalibActive = true;
