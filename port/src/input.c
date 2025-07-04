@@ -170,6 +170,7 @@ typedef struct {
 	bool wasStable;
 	Uint32 stableStartTime;
 	Uint32 lastAutoCalibTime;
+	Uint32 lastCalibrationTime;
 	f32 lastConfidence;
 	
 	// General state
@@ -2095,7 +2096,7 @@ static void inputUpdateAutoCalibration(s32 cidx)
 			bool cooldownMet = (now - state->lastAutoCalibTime) > 10000; // 10 seconds since controller last moved
 			
 			if (cooldownMet) {
-				sysLogPrintf(LOG_NOTE, "Gyro auto-calibration: Controller %d became stationary, will start calibration after 5-second safety period.", cidx);
+				sysLogPrintf(LOG_NOTE, "Gyro auto-calibration: Controller %d became stationary, will start calibration after 2.5-second safety period.", cidx);
 			}
 		}
 
@@ -2124,8 +2125,17 @@ static void inputUpdateAutoCalibration(s32 cidx)
 				gmhPauseContinuousCalibration(gpadMotion[cidx]);
 				
 				state->justFinishedCalibrating = true;
+				state->lastCalibrationTime = now; // Track when calibration finished
 				calibrationStarted[cidx] = false;
 				// Don't update lastAutoCalibTime here - it will be updated when controller moves
+			}
+			
+			// Allow calibration to resume if controller remains stationary for 5+ seconds after calibration
+			if (state->justFinishedCalibrating && (now - state->lastCalibrationTime) > 5000) {
+				sysLogPrintf(LOG_NOTE, "Gyro auto-calibration: Controller %d still stationary after 5 seconds, resuming calibration.", cidx);
+				state->justFinishedCalibrating = false;
+				// Reset timing to allow new calibration cycle
+				state->stableStartTime = now;
 			}
 		}
 	} else {
