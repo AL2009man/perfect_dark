@@ -1674,13 +1674,11 @@ void applyGyroAxisMapping(s32 cidx, float gyroData[3], float accelData[3], f32* 
         return;
     }
 
-    // Check if axis mode has changed and reset motion state to prevent bleed-through
+    // Check if axis mode has changed and reset motion state to prevent bleedthrough
     static s32 previousAxisMode[INPUT_MAX_CONTROLLERS] = {-1, -1, -1, -1};
     s32 currentAxisMode = inputGyroGetAxisMode(cidx);
     if (previousAxisMode[cidx] != currentAxisMode && previousAxisMode[cidx] != -1) {
         gmhResetMotion(gpadMotion[cidx]);
-        sysLogPrintf(LOG_NOTE, "Gyro: Reset motion state for controller %d due to axis mode change (%d -> %d)", 
-                     cidx, previousAxisMode[cidx], currentAxisMode);
     }
     previousAxisMode[cidx] = currentAxisMode;
 
@@ -1691,32 +1689,38 @@ void applyGyroAxisMapping(s32 cidx, float gyroData[3], float accelData[3], f32* 
     case GYRO_YAW:
         *deltaX = -calibratedGyro[1];
         *deltaY = -calibratedGyro[0];
-        *deltaZ = 0.f;
+        *deltaZ = calibratedGyro[2];
         break;
     case GYRO_ROLL:
         *deltaX = calibratedGyro[2];
         *deltaY = -calibratedGyro[0];
-        *deltaZ = 0.f;
+        *deltaZ = calibratedGyro[1];
         break;
-    case GYRO_LOCAL:
-        *deltaX = -calibratedGyro[1] + calibratedGyro[2];
+    case GYRO_LOCAL: {
+        // Use orientation to blend yaw and roll for more natural local aiming
+        float orientation_w = 0.f;
+        float orientation[3] = {0.f};
+        gmhGetOrientation(gpadMotion[cidx], &orientation_w, &orientation[0], &orientation[1], &orientation[2]);
+
+        *deltaX = -calibratedGyro[1] + (calibratedGyro[2] * 0.85f);
         *deltaY = -calibratedGyro[0];
-        *deltaZ = 0.f;
+        *deltaZ = calibratedGyro[2];
         break;
+    }
     case GYRO_PLAYER: {
-        float x = 0.f, y = 0.f;
-        gmhGetPlayerSpaceGyro(gpadMotion[cidx], &x, &y, 1.41f);
-        *deltaX = -y;
-        *deltaY = -x;
-        *deltaZ = 0.f;
+        float playerX = 0.f, playerY = 0.f;
+        gmhGetPlayerSpaceGyro(gpadMotion[cidx], &playerX, &playerY, 1.41f);
+        *deltaX = -playerY;
+        *deltaY = -playerX;
+        *deltaZ = calibratedGyro[2];
         break;
     }
     case GYRO_WORLD: {
-        float x = 0.f, y = 0.f;
-        gmhGetWorldSpaceGyro(gpadMotion[cidx], &x, &y, 0.125f);
-        *deltaX = -y;
-        *deltaY = -x;
-        *deltaZ = 0.f;
+        float worldX = 0.f, worldY = 0.f;
+        gmhGetWorldSpaceGyro(gpadMotion[cidx], &worldX, &worldY, 0.125f);
+        *deltaX = -worldY;
+        *deltaY = -worldX;
+        *deltaZ = calibratedGyro[2];
         break;
     }
     default:
