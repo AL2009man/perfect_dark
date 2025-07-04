@@ -168,9 +168,8 @@ typedef struct {
 	
 	// Auto-calibration state
 	bool wasStable;
-	Uint32 stableStartTime;
-	Uint32 lastAutoCalibTime;
-	Uint32 lastCalibrationTime;
+	Uint32 lastAutoCalibTime;        // When controller last moved (for cooldown)
+	Uint32 lastCalibrationTime;      // When calibration finished (for resume logic)
 	f32 lastConfidence;
 	
 	// General state
@@ -469,6 +468,14 @@ if (sensorActive) {
 		gpadMotion[cidx] = gmhCreateGamepadMotion();
 		if (gpadMotion[cidx]) {
 			sysLogPrintf(LOG_NOTE, "input: GamepadMotion instance created for controller %d", cidx);
+			
+			// Configure GMH settings to match our auto-calibration system
+			gmhSetMinStillnessCollectionTime(gpadMotion[cidx], 2.5f);  // safety timer
+			gmhSetMinStillnessCorrectionTime(gpadMotion[cidx], 3.0f);  // calibration time
+			gmhSetStillnessGyroDelta(gpadMotion[cidx], GYRO_NOISE_THRESHOLD); // Sync with noise threshold
+			gmhSetStillnessAccelDelta(gpadMotion[cidx], GYRO_NOISE_THRESHOLD * 2.0f); // Allow more tolerance for accel
+			gmhSetStillnessCalibrationEaseInTime(gpadMotion[cidx], 1.0f);  // Faster ease-in for stationary surface
+			gmhSetMaxStillnessError(gpadMotion[cidx], 1.5f);              // Tighter error tolerance
 		} else {
 			sysLogPrintf(LOG_WARNING, "input: Failed to create GamepadMotion instance for controller %d", cidx);
 		}
@@ -476,6 +483,14 @@ if (sensorActive) {
 		// Reset existing instance to ensure clean state for reassigned controller
 		gmhResetGamepadMotion(gpadMotion[cidx]);
 		sysLogPrintf(LOG_NOTE, "input: GamepadMotion instance reset for reassigned controller %d", cidx);
+		
+		// Reconfigure GMH settings after reset
+		gmhSetMinStillnessCollectionTime(gpadMotion[cidx], 2.5f);
+		gmhSetMinStillnessCorrectionTime(gpadMotion[cidx], 3.0f);
+		gmhSetStillnessGyroDelta(gpadMotion[cidx], GYRO_NOISE_THRESHOLD);
+		gmhSetStillnessAccelDelta(gpadMotion[cidx], GYRO_NOISE_THRESHOLD * 2.0f);
+		gmhSetStillnessCalibrationEaseInTime(gpadMotion[cidx], 1.0f);
+		gmhSetMaxStillnessError(gpadMotion[cidx], 1.5f);
 	}
 	
 	if (gpadMotion[cidx]) {
@@ -1187,13 +1202,7 @@ void inputUpdateGyro(s32 cidx)
 		// Store for use in auto-calibration monitoring
 		gyroCalibState[cidx].lastConfidence = confidence;
 		
-		// Provide occasional status logging for debugging (every 5 seconds when truly stable)
-		static Uint32 lastStatusLog[INPUT_MAX_CONTROLLERS] = {0};
-		Uint32 now = SDL_GetTicks();
-		if (isTrulyStable && (now - lastStatusLog[cidx]) > 5000) {
-			sysLogPrintf(LOG_NOTE, "Gyro Autocalibration: Controller %d stable (GMH: steady, noise: OK, confidence: %.2f)", cidx, confidence);
-			lastStatusLog[cidx] = now;
-		}
+		// Auto-calibration handled in inputUpdateAutoCalibration
 	}
 	
 	// Apply gyro processing pipeline
@@ -2037,13 +2046,18 @@ static bool inputIsControllerSensorBelowNoiseThreshold(s32 cidx)
 	SDL_GameControllerGetSensorData(pads[cidx], SDL_SENSOR_GYRO, gyroData, 3);
 	SDL_GameControllerGetSensorData(pads[cidx], SDL_SENSOR_ACCEL, accelData, 3);
 	
-	// Calculate noise levels
-	float gyroMagnitude = sqrtf(gyroData[0] * gyroData[0] + gyroData[1] * gyroData[1] + gyroData[2] * gyroData[2]);
+	// Check individual gyro axes (any axis above threshold = movement detected)
+	bool isGyroQuiet = true;
+	for (s32 i = 0; i < 3; ++i) {
+		if (fabsf(gyroData[i]) > GYRO_NOISE_THRESHOLD) {
+			isGyroQuiet = false;
+			break;
+		}
+	}
+	
+	// Check accelerometer magnitude stability
 	float accelMagnitude = sqrtf(accelData[0] * accelData[0] + accelData[1] * accelData[1] + accelData[2] * accelData[2]);
 	float accelDeviation = fabsf(accelMagnitude - SDL_STANDARD_GRAVITY);
-	
-	// Check if both gyro and accelerometer are quiet
-	bool isGyroQuiet = (gyroMagnitude < GYRO_NOISE_THRESHOLD);
 	bool isAccelStable = (accelDeviation < GYRO_NOISE_THRESHOLD * 2.0f);
 	
 	return isGyroQuiet && isAccelStable;
@@ -2056,19 +2070,18 @@ static void inputUpdateAutoCalibration(s32 cidx)
 	}
 
 	GyroCalibState *state = &gyroCalibState[cidx];
-	static bool calibrationStarted[INPUT_MAX_CONTROLLERS] = {false};
 	
-	// Check if controller is currently stable according to GamepadMotionHelper
+	// Set calibration mode - GamepadMotionHelpers will handle all timing internally
 	gmhSetCalibrationMode(gpadMotion[cidx], CALIBRATIONMODE_STILLNESS);
 	bool isStableByGMH = gmhGetAutoCalibrationIsSteady(gpadMotion[cidx]);
 	
-	// Get current gyro and accel data for noise analysis
+	// Get current gyro and accel data for noise threshold safety check
 	float gyroData[3] = {0.f};
 	float accelData[3] = {0.f};
 	SDL_GameControllerGetSensorData(pads[cidx], SDL_SENSOR_GYRO, gyroData, 3);
 	SDL_GameControllerGetSensorData(pads[cidx], SDL_SENSOR_ACCEL, accelData, 3);
 	
-	// Calculate gyro magnitude for noise threshold check
+	// Calculate gyro magnitude for noise threshold check (safetynet against slow movement)
 	float gyroMagnitude = sqrtf(gyroData[0] * gyroData[0] + gyroData[1] * gyroData[1] + gyroData[2] * gyroData[2]);
 	
 	// Calculate accel deviation from gravity for stability check
@@ -2076,75 +2089,47 @@ static void inputUpdateAutoCalibration(s32 cidx)
 	float accelDeviation = fabsf(accelMagnitude - SDL_STANDARD_GRAVITY);
 	
 	bool isGyroQuiet = (gyroMagnitude < GYRO_NOISE_THRESHOLD);
-	bool isAccelStable = (accelDeviation < GYRO_NOISE_THRESHOLD * 2.0f); // Allow more tolerance for accel
+	bool isAccelStable = (accelDeviation < GYRO_NOISE_THRESHOLD * 2.0f);
 	bool isBelowNoiseThreshold = isGyroQuiet && isAccelStable;
-	
-	// Controller is truly stable only if both conditions are met
+
+	// Determined stability by GMH and noise threshold
 	bool isTrulyStable = isStableByGMH && isBelowNoiseThreshold;
 	
 	Uint32 now = SDL_GetTicks();
 
 	if (isTrulyStable) {
-		// Controller is stable and below noise threshold
+		// GMH says stable and is below noise threshold - allow calibration
 		if (!state->wasStable) {
-			// Just became stable - start timing
-			state->stableStartTime = now;
+			// Just became stable, start cooldown timer check
 			bool cooldownMet = (now - state->lastAutoCalibTime) > 10000; // 10 seconds since controller last moved
 			
 			if (cooldownMet) {
-				sysLogPrintf(LOG_NOTE, "Gyro auto-calibration: Controller %d became stationary, will start calibration after 2.5-second safety period.", cidx);
+				// Let GMH handle the calibration process with its configured timing
+				gmhStartContinuousCalibration(gpadMotion[cidx]);
 			}
 		}
-
-		// Check if we should start/finalize calibration
-		bool safetyTimerMet = (now - state->stableStartTime) > 2500;    // 2.5 seconds safety timer when placed down
-		bool fullTimerMet = (now - state->stableStartTime) > 3000;      // 3 seconds minimum for calibration data
-		bool cooldownMet = (now - state->lastAutoCalibTime) > 10000;    // 10 seconds since controller last moved
 		
-		if (cooldownMet) {
-			if (safetyTimerMet && !state->justFinishedCalibrating) {
-				// Safety timer met - start calibration data collection if not already started
-				if (!calibrationStarted[cidx]) {
-					sysLogPrintf(LOG_NOTE, "Gyro auto-calibration: Controller %d safety timer complete, starting calibration data collection.", cidx);
-					gmhResetContinuousCalibration(gpadMotion[cidx]);
-					gmhStartContinuousCalibration(gpadMotion[cidx]);
-					calibrationStarted[cidx] = true;
-				}
-			}
-			
-			if (safetyTimerMet && fullTimerMet && calibrationStarted[cidx]) {
-				// Both safety timer and calibration data collection timer met - finalize
-				sysLogPrintf(LOG_NOTE, "Gyro auto-calibration: Controller %d finalizing calibration after %d ms total stationary time.", 
-					cidx, now - state->stableStartTime);
-				
-				// Finalize calibration - GamepadMotionHelper has been collecting samples while stationary
-				gmhPauseContinuousCalibration(gpadMotion[cidx]);
-				
-				state->justFinishedCalibrating = true;
-				state->lastCalibrationTime = now; // Track when calibration finished
-				calibrationStarted[cidx] = false;
-				// Don't update lastAutoCalibTime here - it will be updated when controller moves
-			}
-			
-			// Allow calibration to resume if controller remains stationary for 5+ seconds after calibration
-			if (state->justFinishedCalibrating && (now - state->lastCalibrationTime) > 5000) {
-				sysLogPrintf(LOG_NOTE, "Gyro auto-calibration: Controller %d still stationary after 5 seconds, resuming calibration.", cidx);
-				state->justFinishedCalibrating = false;
-				// Reset timing to allow new calibration cycle
-				state->stableStartTime = now;
-			}
+		// Check if GMH has finished calibration (high confidence indicates completion)
+		float confidence = gmhGetAutoCalibrationConfidence(gpadMotion[cidx]);
+		if (!state->justFinishedCalibrating && confidence > 0.9f) {
+			// GMH has completed calibration
+			sysLogPrintf(LOG_NOTE, "Gyro auto-calibration: Controller %d calibration completed by GMH (confidence=%.2f).", cidx, confidence);
+			state->justFinishedCalibrating = true;
+			state->lastCalibrationTime = now;
+		}
+		
+		// Allow calibration to resume if controller remains stationary for 5+ seconds after calibration
+		if (state->justFinishedCalibrating && (now - state->lastCalibrationTime) > 5000) {
+			state->justFinishedCalibrating = false;
+			// Reset confidence to allow new calibration cycle
+			gmhSetAutoCalibrationConfidence(gpadMotion[cidx], 0.0f);
 		}
 	} else {
-		// Controller is no longer stationary
+		// Either GMH says not stable OR we're above noise threshold
 		if (state->wasStable) {
-			// Lost stability - pause any ongoing calibration data collection and start cooldown timer
+			// Lost stability - pause calibration and start cooldown timer
 			gmhPauseContinuousCalibration(gpadMotion[cidx]);
 			state->lastAutoCalibTime = now; // Start cooldown timer when controller moves
-			
-			// Reset calibration started flag
-			calibrationStarted[cidx] = false;
-			
-			sysLogPrintf(LOG_NOTE, "Gyro auto-calibration: Controller %d lost stability, pausing calibration and starting cooldown.", cidx);
 		}
 		
 		// Clear any pending calibration flags
@@ -2193,6 +2178,14 @@ static void inputStartManualCalibration(s32 cidx)
 	
 	if (!gpadMotion[cidx]) {
 		gpadMotion[cidx] = gmhCreateGamepadMotion();
+		
+		// Configure GMH settings for auto-calibration system
+		gmhSetMinStillnessCollectionTime(gpadMotion[cidx], 2.5f);
+		gmhSetMinStillnessCorrectionTime(gpadMotion[cidx], 3.0f);
+		gmhSetStillnessGyroDelta(gpadMotion[cidx], GYRO_NOISE_THRESHOLD);
+		gmhSetStillnessAccelDelta(gpadMotion[cidx], GYRO_NOISE_THRESHOLD * 2.0f);
+		gmhSetStillnessCalibrationEaseInTime(gpadMotion[cidx], 1.0f);
+		gmhSetMaxStillnessError(gpadMotion[cidx], 1.5f);
 	}
 	
 	state->manualCalibActive = true;
@@ -2291,6 +2284,14 @@ static void inputResetGyroCalibration(s32 cidx)
 		sysLogPrintf(LOG_ERROR, "Gyro calibration: Failed to create GamepadMotion handle for controller %d.", cidx);
 		return;
 	}
+	
+	// Configure GMH settings for auto-calibration system
+	gmhSetMinStillnessCollectionTime(gpadMotion[cidx], 2.5f);
+	gmhSetMinStillnessCorrectionTime(gpadMotion[cidx], 3.0f);
+	gmhSetStillnessGyroDelta(gpadMotion[cidx], GYRO_NOISE_THRESHOLD);
+	gmhSetStillnessAccelDelta(gpadMotion[cidx], GYRO_NOISE_THRESHOLD * 2.0f);
+	gmhSetStillnessCalibrationEaseInTime(gpadMotion[cidx], 1.0f);
+	gmhSetMaxStillnessError(gpadMotion[cidx], 1.5f);
 	
 	// Reset all gyro state
 	gyroYaw[cidx] = gyroPitch[cidx] = gyroRoll[cidx] = 0.f;
