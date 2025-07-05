@@ -860,10 +860,7 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 					g_Vars.players[cidx]->swivelpos[1] += gyroCrossDy * norm;
 				}
 			}
-			// Only allow mouse crosshair if this player has gyro crosshair movement this frame
-			if (gyroCrossDx != 0.0f || gyroCrossDy != 0.0f) {
-				allowmcross = true;
-			}
+			allowmcross = true;
 		}
 
 		if (movedata.invertpitch) {
