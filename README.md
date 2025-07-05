@@ -102,7 +102,7 @@ Motion Sensor Aiming (also known as Gyro Aiming) is enabled by default when usin
 > [!TIP]
 > Gyro Drift may become a occurence during regular gameplay. It becomes far more evident when using a first-party Nintendo Switch (first-gen) controller. To remedy this issue: "Auto-Calibrate Gyro while Stationary" toggle is enabled by default, which should help eliminate the drift, just place the controller on the flat surface during initialization of the game or during gameplay, and it will automatically calibrate the gyro sensors.
 >
-> If the Autocalibration fails or you don't want the gyro to calibrate during regular gameplay: you have the ability to manually calibrate the gyro. You can head over to "Gyro Settings..." menu, either select "Initiate Gyro Calibration...", pressing the `SHARE` button on your Xbox pad (Xbox Series X|S model-onwards) or `F10` key at anytime during both gameplay and menus, (it also complements Gyro Autocalibration process!)
+> If the Autocalibration fails or you don't want the gyro to calibrate during regular gameplay: you have the ability to manually calibrate the gyro. You can head over to "Gyro Settings..." menu, either select "Initiate Gyro Calibration...", pressing the `SHARE` button on your Xbox pad (Xbox Series X|S model-onwards) or `F10` key (Player 1 only) at anytime during both gameplay and menus, (it also complements Gyro Autocalibration process!)
 >
 > > To be extra specific: pressing the `Microphone Mute button` (DualSense) or `Capture Button` (Nintendo Switch) button is the equivalent to "SHARE" button on Xbox gamepad. 
 >

@@ -2178,6 +2178,14 @@ static void inputUpdateManualCalibration(s32 cidx)
 		return;
 	}
 
+	// Don't allow manual calibration during menu-driven calibration
+	if (inputIsMenuGyroCalibrationActive(cidx)) {
+		if (state->manualCalibActive) {
+			state->manualCalibActive = false;
+		}
+		return;
+	}
+
 	int pressed = inputBindPressed(cidx, CK_0100);
 
 	if (pressed && !state->manualCalibActive) {

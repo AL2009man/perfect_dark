@@ -2386,7 +2386,7 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 		// when holding aim and moving stick
 		bgunSetAimType(0);
 #ifndef PLATFORM_N64
-    if (allowgcross && g_Vars.currentplayernum == 0) {
+    if (allowgcross) {
         // Gyro is active, apply gyro movement FIRST
         inputGyroGetScaledDeltaCrosshair(g_Vars.currentplayernum, &movedata.gyrolookdx, &movedata.gyrolookdy);
 
