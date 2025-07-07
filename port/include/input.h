@@ -281,6 +281,10 @@ void inputGyroGetScaledDeltaCrosshair(s32 cidx, f32* dx, f32* dy);
 // Raw Gyro Movement Retrieval
 void inputGyroGetRawDelta(s32 cidx, s32* dx, s32* dy, s32* dz);
 
+// Motion Sensor detection
+// returns 1 if the controller has motion sensors, 0 otherwise disables Gyro Aiming functionality for the controller.
+s32 inputControllerMotionSensorsSupported(s32 cidx);
+
 // Gyro Enable/Disable
 s32 inputGyroIsEnabled(s32 cidx);
 void inputGyroEnable(s32 cidx, s32 enabled);

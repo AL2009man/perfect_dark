@@ -829,7 +829,7 @@ static MenuItemHandlerResult menuhandlerGyroVHMixer(s32 operation, struct menuit
 	return 0;
 }
 
-static MenuItemHandlerResult menuhandlerGyroSmoothing(s32 operation, struct menuitem* item, union handlerdata* data)
+static MenuItemHandlerResult menuhandlerGyroSmoothing(s32 operation, struct menuitem* item, union handlerdata *data)
 {
 		switch (operation) {
 		case MENUOP_GETSLIDER:
@@ -846,7 +846,7 @@ static MenuItemHandlerResult menuhandlerGyroSmoothing(s32 operation, struct menu
 		return 0;
 }
 
-static MenuItemHandlerResult menuhandlerGyroTightening(s32 operation, struct menuitem* item, union handlerdata* data)
+static MenuItemHandlerResult menuhandlerGyroTightening(s32 operation, struct menuitem* item, union handlerdata *data)
 {
     switch (operation) {
     case MENUOP_GETSLIDER:
@@ -862,7 +862,7 @@ static MenuItemHandlerResult menuhandlerGyroTightening(s32 operation, struct men
     return 0;
 }
 
-static MenuItemHandlerResult menuhandlerGyroDeadzone(s32 operation, struct menuitem* item, union handlerdata* data)
+static MenuItemHandlerResult menuhandlerGyroDeadzone(s32 operation, struct menuitem* item, union handlerdata *data)
 {
     switch (operation) {
     case MENUOP_GETSLIDER:
@@ -878,7 +878,7 @@ static MenuItemHandlerResult menuhandlerGyroDeadzone(s32 operation, struct menui
     return 0;
 }
 
-static MenuItemHandlerResult menuhandlerGyroAutoCalibration(s32 operation, struct menuitem* item, union handlerdata* data)
+static MenuItemHandlerResult menuhandlerGyroAutoCalibration(s32 operation, struct menuitem* item, union handlerdata *data)
 {
 		switch (operation) {
 		case MENUOP_GET:
@@ -932,7 +932,7 @@ static const char *menutextGyroManualCalibration(struct menuitem *item)
     }
 }
 
-static MenuItemHandlerResult menuhandlerGyroManualCalibration(s32 operation, struct menuitem* item, union handlerdata* data)
+static MenuItemHandlerResult menuhandlerGyroManualCalibration(s32 operation, struct menuitem* item, union handlerdata *data)
 {
     switch (operation) {
     case MENUOP_OPEN:
@@ -1183,6 +1183,22 @@ struct menudialogdef g_ExtendedGyroMenuDialog = {
         NULL,
 };
 
+static MenuItemHandlerResult menuhandlerGyroSettingsMenu(s32 operation, struct menuitem *item, union handlerdata *data)
+{
+	switch (operation) {
+	case MENUOP_CHECKDISABLED:
+		// Disable the menu item if controller doesn't have motion sensors support
+		return !inputControllerMotionSensorsSupported(g_ExtMenuPlayer);
+	case MENUOP_SET:
+		// Enables the menu item if controller has motion sensors support
+		if (inputControllerMotionSensorsSupported(g_ExtMenuPlayer)) {
+			menuPushDialog(&g_ExtendedGyroMenuDialog);
+		}
+		break;
+	}
+	return 0;
+}
+
 static MenuItemHandlerResult menuhandlerController(s32 operation, struct menuitem *item, union handlerdata *data)
 {
 	static char ctrlname[35];
@@ -1263,10 +1279,10 @@ struct menuitem g_ExtendedControllerMenuItems[] = {
 	{
 		MENUITEMTYPE_SELECTABLE,
 		0,
-		MENUITEMFLAG_SELECTABLE_OPENSDIALOG | MENUITEMFLAG_LITERAL_TEXT,
+		MENUITEMFLAG_LITERAL_TEXT,
 		(uintptr_t)"Gyro Settings...\n",
 		0,
-		(void*)&g_ExtendedGyroMenuDialog,
+		menuhandlerGyroSettingsMenu,
 	},
 	{
 		MENUITEMTYPE_SLIDER,

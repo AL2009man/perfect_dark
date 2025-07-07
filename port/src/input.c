@@ -153,7 +153,7 @@ static s32 textInput = 0;
 
 static char *clipboardText = NULL;
 
-// Forward declarations for gyro calibration functions
+// GMH settings configuration	
 static void inputConfigureGamepadMotionSettings(GamepadMotionHandle handle);
 static void inputUpdateGyroCalibrationHandle(void);
 static void inputUpdateAutoCalibration(s32 cidx);
@@ -1076,7 +1076,15 @@ static inline void inputUpdateMouse(void)
 	}
 }
 
-// GMH settings configuration
+s32 inputControllerMotionSensorsSupported(s32 cidx)
+{
+	if (cidx < 0 || cidx >= INPUT_MAX_CONTROLLERS) {
+		return 0;
+	}
+	
+	return padsCfg[cidx].gyroSensorActive;
+}
+
 static void inputConfigureGamepadMotionSettings(GamepadMotionHandle handle)
 {
     if (!handle) return;
@@ -1659,11 +1667,19 @@ void inputSetMouseLockMode(s32 lockmode)
 
 s32 inputGyroIsEnabled(s32 cidx)
 {
-	return padsCfg[cidx].gyroEnabled && padsCfg[cidx].gyroSensorActive;
+	if (cidx < 0 || cidx >= INPUT_MAX_CONTROLLERS) {
+		return 0;
+	}
+	
+	return padsCfg[cidx].gyroEnabled && inputControllerMotionSensorsSupported(cidx);
 }
 
 void inputGyroEnable(s32 cidx, s32 enabled)
 {
+	if (cidx < 0 || cidx >= INPUT_MAX_CONTROLLERS) {
+		return;
+	}
+	
 	padsCfg[cidx].gyroEnabled = (enabled != 0);
 }
 
