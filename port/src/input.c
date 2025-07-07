@@ -254,8 +254,8 @@ void inputSetDefaultKeyBinds(s32 cidx, s32 n64mode)
 	};
 
 	static const u32 n64joybinds[][2] = {
-		{ CK_A,      SDL_CONTROLLER_BUTTON_A             },
-		{ CK_B,      SDL_CONTROLLER_BUTTON_B             },
+		{ CK_A,      SDL_CONTROLLER_BUTTON_B             },
+		{ CK_B,      SDL_CONTROLLER_BUTTON_A             },
 		{ CK_LTRIG,  SDL_CONTROLLER_BUTTON_LEFTSHOULDER  },
 		{ CK_RTRIG,  SDL_CONTROLLER_BUTTON_RIGHTSHOULDER },
 		{ CK_ZTRIG,  VK_JOY1_RTRIG - VK_JOY1_BEGIN       },
