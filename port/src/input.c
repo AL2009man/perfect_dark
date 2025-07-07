@@ -45,7 +45,7 @@
 #define GMH_STILLNESS_CORRECTION_TIME 3.0f // time to correct stillness data
 #define GMH_STILLNESS_EASE_TIME 1.0f // time to ease the stillness correction
 #define GMH_MAX_STILLNESS_ERROR 1.5f // maximum error allowed during stillness calibration
-#define GYRO_NOISE_THRESHOLD 0.03f // Threshold for gyro noise filtering (safety net) 
+#define GYRO_NOISE_THRESHOLD 0.03f // threshold for gyro noise filtering (safety net) 
 
 static SDL_GameController *pads[INPUT_MAX_CONTROLLERS];
 
@@ -1128,7 +1128,7 @@ static float inputCalculateGyroDeltaTime(s32 cidx)
 static bool inputValidateGyroPrerequisites(s32 cidx)
 {
 	// Check if gyro is enabled and sensors are active
-	if (!padsCfg[cidx].gyroEnabled || !padsCfg[cidx].gyroSensorActive) {
+	if (!padsCfg[cidx].gyroEnabled || !inputControllerMotionSensorsSupported(cidx)) {
 		return false;
 	}
 
@@ -1247,7 +1247,7 @@ void inputUpdate(void)
 	inputUpdateGyroCalibrationHandle();
 
 	for (s32 cidx = 0; cidx < INPUT_MAX_CONTROLLERS; ++cidx) {
-		if (padsCfg[cidx].gyroEnabled && padsCfg[cidx].gyroSensorActive) {
+		if (padsCfg[cidx].gyroEnabled && inputControllerMotionSensorsSupported(cidx)) {
 			inputUpdateGyro(cidx);
 		}
 	}
@@ -2056,7 +2056,7 @@ static void inputUpdateGyroCalibrationHandle(void)
 {
 	// Process calibration for all controllers
 	for (s32 cidx = 0; cidx < INPUT_MAX_CONTROLLERS; ++cidx) {
-		if (!padsCfg[cidx].gyroEnabled || !padsCfg[cidx].gyroSensorActive) {
+		if (!padsCfg[cidx].gyroEnabled || !inputControllerMotionSensorsSupported(cidx)) {
 			continue;
 		}
 
