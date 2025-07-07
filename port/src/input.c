@@ -1659,7 +1659,7 @@ void inputSetMouseLockMode(s32 lockmode)
 
 s32 inputGyroIsEnabled(s32 cidx)
 {
-	return padsCfg[cidx].gyroEnabled;
+	return padsCfg[cidx].gyroEnabled && padsCfg[cidx].gyroSensorActive;
 }
 
 void inputGyroEnable(s32 cidx, s32 enabled)
