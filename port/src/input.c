@@ -342,6 +342,7 @@ void inputSetDefaultKeyBinds(s32 cidx, s32 n64mode)
 		{ CK_STICK_YPOS, SDL_SCANCODE_I,      0                  },
 		{ CK_STICK_XNEG, SDL_SCANCODE_J,      0                  },
 		{ CK_STICK_XPOS, SDL_SCANCODE_L,      0                  },
+		{ CK_0100,       SDL_SCANCODE_F10,    0                  },
 	};
 
 	static const u32 n64joybinds[][2] = {
@@ -355,6 +356,7 @@ void inputSetDefaultKeyBinds(s32 cidx, s32 n64mode)
 		{ CK_DPAD_U, SDL_CONTROLLER_BUTTON_DPAD_UP       },
 		{ CK_DPAD_L, SDL_CONTROLLER_BUTTON_DPAD_LEFT     },
 		{ CK_DPAD_R, SDL_CONTROLLER_BUTTON_DPAD_RIGHT    },
+		{ CK_0100,   SDL_CONTROLLER_BUTTON_MISC1         },
 	};
 
 	memset(binds[cidx], 0, sizeof(binds[cidx]));
