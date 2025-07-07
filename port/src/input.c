@@ -33,19 +33,19 @@
 #define CURSOR_HIDE_THRESHOLD 1
 #define CURSOR_HIDE_TIME 3000000 // us
 
-// standard gravity constants
+// Standard gravity constants
 // Note: this may break GamepadMotion's Gyro Calibration systems on platforms without SDL_sensor.h
 #ifndef SDL_STANDARD_GRAVITY
 #define SDL_STANDARD_GRAVITY 9.80665f // standard gravity in m/s^2
 #endif
 
-#define GYRO_NOISE_THRESHOLD 0.03f // threshold for gyro noise filtering (safety net)
-
-// GMH Configuration - centralized settings to avoid redundancy
-#define GMH_STILLNESS_COLLECTION_TIME 2.5f
-#define GMH_STILLNESS_CORRECTION_TIME 3.0f
-#define GMH_STILLNESS_EASE_TIME 1.0f
-#define GMH_MAX_STILLNESS_ERROR 1.5f
+// Gyro autocalibration constants 
+// This determines when gyro stillness and collection time, using GamepadMotionSetting.
+#define GMH_STILLNESS_COLLECTION_TIME 2.5f // time to collect stillness data
+#define GMH_STILLNESS_CORRECTION_TIME 3.0f // time to correct stillness data
+#define GMH_STILLNESS_EASE_TIME 1.0f // time to ease the stillness correction
+#define GMH_MAX_STILLNESS_ERROR 1.5f // maximum error allowed during stillness calibration
+#define GYRO_NOISE_THRESHOLD 0.03f // Threshold for gyro noise filtering (safety net) 
 
 static SDL_GameController *pads[INPUT_MAX_CONTROLLERS];
 
