@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
-#include <SDL.h>
 #include <PR/ultratypes.h>
 #include "platform.h"
 #include "data.h"
@@ -1756,10 +1755,10 @@ static MenuItemHandlerResult menuhandlerDoBind(s32 operation, struct menuitem *i
 				s32 buttonInController = (key - VK_JOY_BEGIN) % INPUT_MAX_CONTROLLER_BUTTONS;
 				
 				// Swap A and B buttons for Japanese layout
-				if (buttonInController == SDL_CONTROLLER_BUTTON_A) {
-					adjustedKey = key + (SDL_CONTROLLER_BUTTON_B - SDL_CONTROLLER_BUTTON_A);
-				} else if (buttonInController == SDL_CONTROLLER_BUTTON_B) {
-					adjustedKey = key + (SDL_CONTROLLER_BUTTON_A - SDL_CONTROLLER_BUTTON_B);
+				if (buttonInController == CK_A) {
+					adjustedKey = key + (CK_B - CK_A);
+				} else if (buttonInController == CK_B) {
+					adjustedKey = key + (CK_A - CK_B);
 				}
 			}
 		}
