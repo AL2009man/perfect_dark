@@ -778,19 +778,25 @@ static int inputIsNintendoSwitchController(SDL_GameController *controller) {
 	
 #if SDL_VERSION_ATLEAST(2, 0, 12)
 	SDL_GameControllerType type = SDL_GameControllerGetType(controller);
-	if (type == SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_PRO
+	if (type == SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_PRO) {
+		return 1;
+	}
 #if SDL_VERSION_ATLEAST(2, 0, 14)
-		|| type == SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_JOYCON_LEFT
+	if (type == SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_JOYCON_LEFT
 		|| type == SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_JOYCON_RIGHT
-		|| type == SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_JOYCON_PAIR
-#endif
-	) {
+		|| type == SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_JOYCON_PAIR) {
 		return 1;
 	}
 #endif
+#endif
 
+	// Check for Nintendo controllers by vendor ID (includes Nintendo Switch, Wii, etc.)
+#if SDL_VERSION_ATLEAST(2, 0, 6)
 	SDL_Joystick *joy = SDL_GameControllerGetJoystick(controller);
 	return joy && SDL_JoystickGetVendor(joy) == 0x057e;
+#else
+	return 0;
+#endif
 }
 
 int inputControllerIsNintendoSwitch(int cidx) {
