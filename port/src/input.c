@@ -774,29 +774,44 @@ s32 inputInit(void)
 }
 
 static int inputIsNintendoSwitchController(SDL_GameController *controller) {
-	if (!controller) return 0;
-	
+#if defined(SDL_VERSION_ATLEAST)
 #if SDL_VERSION_ATLEAST(2, 0, 12)
 	SDL_GameControllerType type = SDL_GameControllerGetType(controller);
-	if (type == SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_PRO) {
-		return 1;
-	}
-#if SDL_VERSION_ATLEAST(2, 0, 14)
-	if (type == SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_JOYCON_LEFT
-		|| type == SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_JOYCON_RIGHT
-		|| type == SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_JOYCON_PAIR) {
-		return 1;
-	}
-#endif
-#endif
-
-	// Check for Nintendo controllers by vendor ID (includes Nintendo Switch, Wii, etc.)
-#if SDL_VERSION_ATLEAST(2, 0, 6)
-	SDL_Joystick *joy = SDL_GameControllerGetJoystick(controller);
-	return joy && SDL_JoystickGetVendor(joy) == 0x057e;
+	if (
+#if defined(SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_PRO)
+		type == SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_PRO
 #else
-	return 0;
+		0
 #endif
+#if SDL_VERSION_ATLEAST(2, 0, 14)
+#if defined(SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_JOYCON_LEFT)
+		|| type == SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_JOYCON_LEFT
+#endif
+#if defined(SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_JOYCON_RIGHT)
+		|| type == SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_JOYCON_RIGHT
+#endif
+#if defined(SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_JOYCON_PAIR)
+		|| type == SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_JOYCON_PAIR
+#endif
+#endif // SDL_VERSION_ATLEAST(2, 0, 14)
+	) {
+		return 1;
+	}
+#endif // SDL_VERSION_ATLEAST(2, 0, 12)
+#endif // defined(SDL_VERSION_ATLEAST)
+#ifdef SDL_JOYSTICK_VENDOR_NINTENDO
+	SDL_Joystick *joy = SDL_GameControllerGetJoystick(controller);
+	if (joy && SDL_JoystickGetVendor(joy) == SDL_JOYSTICK_VENDOR_NINTENDO) {
+		return 1;
+	}
+#else
+	// Check for Nintendo controllers by vendor ID (includes Nintendo Switch, Wii, etc.)
+	SDL_Joystick *joy = SDL_GameControllerGetJoystick(controller);
+	if (joy && SDL_JoystickGetVendor(joy) == 0x057e) {
+		return 1;
+	}
+#endif
+	return 0;
 }
 
 int inputControllerIsNintendoSwitch(int cidx) {
