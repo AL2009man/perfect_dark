@@ -187,12 +187,6 @@ s32 inputKeyJustPressed(u32 vk);
 // idx is controller index, contbtn is one of the CONT_ constants
 s32 inputButtonPressed(s32 idx, u32 contbtn);
 
-// Returns the Japanese button layout setting for a controller
-s32 inputGetJapaneseButtonLayout(int cidx);
-
-// Sets Japanese button layout for a controller (0 = auto, 1 = standard, 2 = japanese)
-void inputSetJapaneseButtonLayout(int cidx, s32 enabled);
-
 // Returns 1 if Japanese layout is currently active for the given controller
 int inputIsJapaneseLayoutActive(int cidx);
 

@@ -1291,14 +1291,6 @@ s32 inputButtonPressed(s32 idx, u32 contbtn)
 	return inputBindPressed(idx, inputContToContKey(contbtn));
 }
 
-s32 inputGetJapaneseButtonLayout(int cidx) {
-	return padsCfg[cidx].japaneseButtonLayout;
-}
-
-void inputSetJapaneseButtonLayout(int cidx, s32 mode) {
-	padsCfg[cidx].japaneseButtonLayout = mode;
-}
-
 void inputLockMouse(s32 lock)
 {
 	mouseLocked = !!lock;
