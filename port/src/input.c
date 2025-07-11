@@ -75,9 +75,9 @@ static SDL_GameController *pads[INPUT_MAX_CONTROLLERS];
 	.gyroInvertY = 0, \
 	.gyroAimInvertX = 0, \
 	.gyroAimInvertY = 0, \
-	.gyroDeadzone = 0.07f, \
-	.gyroTightening = 0.03f, \
-	.gyroSmoothing = 0.20f, \
+	.gyroSmoothing = 0.18f, \
+	.gyroTightening = 0.07f, \
+	.gyroDeadzone = 0.03f, \
 	.gyroAutoCalibration = 1, \
 }
 
@@ -105,9 +105,9 @@ static struct controllercfg {
 	s32 gyroInvertY;
 	s32 gyroAimInvertX;
 	s32 gyroAimInvertY;
-	f32 gyroDeadzone;
-	f32 gyroTightening;
 	f32 gyroSmoothing;
+	f32 gyroTightening;
+	f32 gyroDeadzone;
 	s32 gyroAutoCalibration;
 } padsCfg[INPUT_MAX_CONTROLLERS] = {
 	CONTROLLERCFG_DEFAULT,
@@ -1951,10 +1951,28 @@ void applyGyroDeadzone(f32* dx, f32* dy, f32* dz, f32 deadzone)
     if (deadzone <= 0.f || !dx || !dy || !dz) return;
 
     f32 mag = sqrtf((*dx) * (*dx) + (*dy) * (*dy) + (*dz) * (*dz));
-    if (mag <= deadzone) {
-        *dx = 0.f;
-        *dy = 0.f;
-        *dz = 0.f;
+    if (mag > 0.f) {
+        f32 scale = 1.0f;
+        
+        if (mag <= deadzone) {
+            // Complete deadzone - no output
+            scale = 0.0f;
+        } else {
+            // Gentle exit transition zone
+            f32 exitZone = deadzone * 0.2f; // 20% of deadzone as exit zone
+            f32 exitThreshold = deadzone + exitZone;
+            
+            if (mag < exitThreshold) {
+                // Smooth transition in exit zone
+                f32 exitRatio = (mag - deadzone) / exitZone;
+                scale = exitRatio * exitRatio; // Quadratic for smooth ramp-up
+            }
+            // else: mag >= exitThreshold, scale = 1.0f (full input)
+        }
+        
+        *dx *= scale;
+        *dy *= scale;
+        *dz *= scale;
     }
 }
 
@@ -1983,22 +2001,21 @@ void applyGyroTightening(f32* dx, f32* dy, f32* dz, f32 tightening)
         if (mag < tightening) {
             f32 ratio = mag / tightening;
             
-            // Multi-tier approach for smoother scaling
             if (ratio < 0.25f) {
-                // Very small movements: heavy reduction with cubic curve
-                scale = ratio * ratio * ratio * 2.0f;
+                // Very small movements: moderate reduction instead of heavy
+                scale = ratio * ratio * 4.0f;
             } else if (ratio < 0.5f) {
-                // Small movements: moderate reduction with quadratic curve
+                // Small movements: gentler reduction with quadratic curve
                 f32 adjustedRatio = (ratio - 0.25f) / 0.25f;
-                scale = 0.125f + adjustedRatio * adjustedRatio * 0.375f;
+                scale = 0.25f + adjustedRatio * adjustedRatio * 0.5f;
             } else if (ratio < 0.75f) {
-                // Medium-small movements: gentle reduction with linear interpolation
+                // Medium-small movements: minimal reduction with linear interpolation
                 f32 adjustedRatio = (ratio - 0.5f) / 0.25f;
-                scale = 0.5f + adjustedRatio * 0.3f;
+                scale = 0.75f + adjustedRatio * 0.2f;
             } else {
-                // Near-threshold movements: minimal reduction with smooth transition
+                // Near-threshold movements: very minimal reduction
                 f32 adjustedRatio = (ratio - 0.75f) / 0.25f;
-                scale = 0.8f + adjustedRatio * adjustedRatio * 0.2f;
+                scale = 0.95f + adjustedRatio * adjustedRatio * 0.05f;
             }
         }
         
@@ -2022,15 +2039,14 @@ void inputSetGyroSmoothing(s32 cidx, f32 smoothing)
 
 void applyGyroSmoothing(f32* deltaX, f32* deltaY, f32* deltaZ, f32 smoothing, s32 cidx)
 {
-    if (!deltaX || !deltaY || !deltaZ) return;
+    if (!deltaX || !deltaY || !deltaZ || smoothing <= 0.0f) return;
 
-    // Increase the window size range for stronger smoothing effect
-    static f32 history[INPUT_MAX_CONTROLLERS][3][16] = {0}; // Increased to 16-sample history
+	// Use a circular buffer to store recent gyro deltas for smoothing
+    static f32 history[INPUT_MAX_CONTROLLERS][3][8] = {0};
     static s32 historyIndex[INPUT_MAX_CONTROLLERS] = {0};
-    
-    // Convert smoothing percentage to window size (1-16 samples for stronger effect)
-    s32 windowSize = 1 + (s32)(smoothing * 15.0f); // 1 to 16 samples
-    
+
+    s32 windowSize = 1 + (s32)(smoothing * 3.0f);
+
     // Store current sample in circular buffer
     s32 idx = historyIndex[cidx];
     history[cidx][0][idx] = *deltaX;
@@ -2040,18 +2056,24 @@ void applyGyroSmoothing(f32* deltaX, f32* deltaY, f32* deltaZ, f32 smoothing, s3
     // Calculate linear average over window
     f32 avgX = 0.f, avgY = 0.f, avgZ = 0.f;
     for (s32 i = 0; i < windowSize; ++i) {
-        s32 sampleIdx = (idx - i + 16) % 16;
+        s32 sampleIdx = (idx - i + 8) % 8;
         avgX += history[cidx][0][sampleIdx];
         avgY += history[cidx][1][sampleIdx];
         avgZ += history[cidx][2][sampleIdx];
     }
     
-    *deltaX = avgX / windowSize;
-    *deltaY = avgY / windowSize;
-    *deltaZ = avgZ / windowSize;
+    avgX /= windowSize;
+    avgY /= windowSize;
+    avgZ /= windowSize;
+
+    // Simple blend: 70% smoothed + 30% current
+    f32 blend = smoothing * 0.7f;
+    *deltaX = avgX * blend + (*deltaX) * (1.0f - blend);
+    *deltaY = avgY * blend + (*deltaY) * (1.0f - blend);
+    *deltaZ = avgZ * blend + (*deltaZ) * (1.0f - blend);
     
     // Advance circular buffer index
-    historyIndex[cidx] = (idx + 1) % 16;
+    historyIndex[cidx] = (idx + 1) % 8;
 }
 
 static void inputUpdateGyroCalibrationHandle(void)
