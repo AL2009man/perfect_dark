@@ -872,9 +872,6 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 		if (movedata.gyrolookdx > 10.0f)  movedata.gyrolookdx = 10.0f;
 		if (movedata.gyrolookdy < -10.0f) movedata.gyrolookdy = -10.0f;
 		if (movedata.gyrolookdy > 10.0f)  movedata.gyrolookdy = 10.0f;
-
-		fVar25 += movedata.gyrolookdx * gyroscale;
-		fVar25 += movedata.gyrolookdy * gyroscale;
 	}
 #endif
 
