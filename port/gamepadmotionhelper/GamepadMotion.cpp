@@ -5,12 +5,10 @@
 #pragma once
 
 #define _USE_MATH_DEFINES
-#ifdef _WIN32
-    #ifdef _MSC_VER
-        #define GamepadMotion_WRAPPER __declspec(dllexport)
-    #else
-        #define GamepadMotion_WRAPPER __attribute__((dllexport))
-    #endif
+#if defined(_WIN32)
+    #define GamepadMotion_WRAPPER __declspec(dllexport)
+#elif defined(__GNUC__) && __GNUC__ >= 4
+    #define GamepadMotion_WRAPPER __attribute__((visibility("default")))
 #else
     #define GamepadMotion_WRAPPER
 #endif
