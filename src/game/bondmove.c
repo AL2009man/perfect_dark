@@ -2365,13 +2365,29 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 			y = -g_Vars.currentplayer->speedverta * 0.1f + g_Vars.currentplayer->gunextraaimy;
 #else
 			f32 xscale, yscale;
-			// Reduces overall crosshair sway when mouse and/or gyro input is active
-            if ((movedata.freelookdx || movedata.freelookdy) || (movedata.gyrolookdx || movedata.gyrolookdy)) {
-				xscale = PLAYER_EXTCFG().crosshairsway * 0.20f;
-				yscale = PLAYER_EXTCFG().crosshairsway * 0.30f;
+			// crosshair sway scaling for mouse, gyro, and joystick input
+			bool mouse_active = (movedata.freelookdx || movedata.freelookdy);
+			bool gyro_active = (movedata.gyrolookdx || movedata.gyrolookdy);
+			bool joystick_active = (movedata.c1stickxraw != 0 || movedata.c1stickyraw != 0);
+			
+			if ((mouse_active || gyro_active) && joystick_active) {
+				// Gyro/Mouse + joystick sway
+				xscale = PLAYER_EXTCFG().crosshairsway * 0.80f;  // 80% for precision+joystick sway
+				yscale = PLAYER_EXTCFG().crosshairsway * 0.80f;  // 80% for precision+joystick sway
+			} else if (mouse_active) {
+				// Mouse sway
+				xscale = PLAYER_EXTCFG().crosshairsway * 0.20f;  // 20% for mouse sway
+				yscale = PLAYER_EXTCFG().crosshairsway * 0.30f;  // 30% for mouse sway
+			} else if (gyro_active) {
+				// Gyro sway
+				xscale = PLAYER_EXTCFG().crosshairsway * 0.20f;  // 20% for gyro sway, mirroring mouse's
+				yscale = PLAYER_EXTCFG().crosshairsway * 0.30f;  // 30% for gyro sway, mirroring mouse's
 			} else {
+				// Joystick only or no input - full sway
 				xscale = yscale = PLAYER_EXTCFG().crosshairsway;
 			}
+			// Joystick x/y scaling
+			// 0.3f for x, 0.1f for y
 			x = g_Vars.currentplayer->speedtheta * 0.3f * xscale + g_Vars.currentplayer->gunextraaimx;
 			y = -g_Vars.currentplayer->speedverta * 0.1f * yscale + g_Vars.currentplayer->gunextraaimy;
 #endif
