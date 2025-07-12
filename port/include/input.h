@@ -340,13 +340,6 @@ void inputGyroSetManualCalibration(s32 cidx);
 // Ensures CK_0100 (Manual Calibration bind) is blocked during menu-driven gyro calibration
 s32 inputIsMenuGyroCalibrationActive(s32 cidx);
 
-// Gyro Processing Utilities
-void applyGyroAxisMapping(s32 cidx, f32 gyroData[3], f32 accelData[3], f32* deltaX, f32* deltaY, f32* deltaZ);
-void applyGyroModifier(f32* deltaX, f32* deltaY, f32* deltaZ, s32 activationMode, s32 idx);
-void applyGyroDeadzone(f32* dx, f32* dy, f32* dz, f32 deadzone);
-void applyGyroTightening(f32* dx, f32* dy, f32* dz, f32 tightening);
-void applyGyroSmoothing(f32* deltaX, f32* deltaY, f32* deltaZ, f32 smoothing, s32 cidx);
-
 // call this every frame
 void inputUpdate(void);
 

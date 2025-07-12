@@ -165,22 +165,29 @@ static void inputResetGyroCalibration(s32 cidx);
 static void inputApplyManualCalibrationOffset(s32 cidx);
 static bool inputIsControllerSensorBelowNoiseThreshold(s32 cidx);
 
+// Gyro processing function declarations
+static void applyGyroAxisMapping(s32 cidx, float gyroData[3], float accelData[3], f32* deltaX, f32* deltaY, f32* deltaZ);
+static void applyGyroModifier(f32* deltaX, f32* deltaY, f32* deltaZ, s32 activationMode, s32 idx);
+static void applyGyroDeadzone(f32* dx, f32* dy, f32* dz, f32 deadzone);
+static void applyGyroTightening(f32* dx, f32* dy, f32* dz, f32 tightening);
+static void applyGyroSmoothing(f32* deltaX, f32* deltaY, f32* deltaZ, f32 smoothing, s32 cidx);
+
 // Gyro calibration state structure
 typedef struct {
 	// Manual calibration state
-	bool manualCalibActive;
-	Uint32 manualCalibStartTime;
-	f32 manualOffsetX, manualOffsetY, manualOffsetZ;
-	s32 manualWeight;
+	bool manualCalibActive; // Is manual calibration currently active
+	Uint32 manualCalibStartTime; // When manual calibration started
+	f32 manualOffsetX, manualOffsetY, manualOffsetZ; // Manual calibration offsets
+	s32 manualWeight; // Weight for manual calibration
 	
 	// Auto-calibration state
-	bool wasStable;
+	bool wasStable; // Was the controller stable during auto-calibration
 	Uint32 lastAutoCalibTime;        // When controller last moved (for cooldown)
 	Uint32 lastCalibrationTime;      // When calibration finished (for resume logic)
-	f32 lastConfidence;
-	
+	f32 lastConfidence;               // Last confidence level
+
 	// General state
-	bool justFinishedCalibrating;
+	bool justFinishedCalibrating; // Has the controller just finished calibrating
 } GyroCalibState;
 
 static GyroCalibState gyroCalibState[INPUT_MAX_CONTROLLERS] = {0};
@@ -1695,7 +1702,7 @@ void inputGyroSetAxisMode(s32 cidx, s32 mode)
     padsCfg[cidx].gyroAxisMode = mode;
 }
 
-void applyGyroAxisMapping(s32 cidx, float gyroData[3], float accelData[3], f32* deltaX, f32* deltaY, f32* deltaZ)
+static void applyGyroAxisMapping(s32 cidx, float gyroData[3], float accelData[3], f32* deltaX, f32* deltaY, f32* deltaZ)
 {
     if (!gpadMotion[cidx]) {
         *deltaX = *deltaY = *deltaZ = 0.f;
@@ -1891,7 +1898,7 @@ void inputSetGyroModifier(s32 cidx, s32 mode)
 	padsCfg[cidx].gyroModifier = mode;
 }
 
-void applyGyroModifier(f32* deltaX, f32* deltaY, f32* deltaZ, s32 activationMode, s32 idx) {
+static void applyGyroModifier(f32* deltaX, f32* deltaY, f32* deltaZ, s32 activationMode, s32 idx) {
 	static bool toggleState[INPUT_MAX_CONTROLLERS] = { true, true, true, true };
 	static int prevGyroMod[INPUT_MAX_CONTROLLERS] = { 0 };
 
@@ -1941,7 +1948,7 @@ void inputSetGyroSmoothing(s32 cidx, f32 smoothing)
 	padsCfg[cidx].gyroSmoothing = smoothing;
 }
 
-void applyGyroSmoothing(f32* deltaX, f32* deltaY, f32* deltaZ, f32 smoothing, s32 cidx)
+static void applyGyroSmoothing(f32* deltaX, f32* deltaY, f32* deltaZ, f32 smoothing, s32 cidx)
 {
     if (!deltaX || !deltaY || !deltaZ || smoothing <= 0.0f) return;
 
@@ -1992,7 +1999,7 @@ void inputGyroSetTightening(s32 cidx, f32 tightening)
 	padsCfg[cidx].gyroTightening = tightening;
 }
 
-void applyGyroTightening(f32* dx, f32* dy, f32* dz, f32 tightening)
+static void applyGyroTightening(f32* dx, f32* dy, f32* dz, f32 tightening)
 {
     if (!dx || !dy || !dz || tightening <= 0.0f) return;
 
@@ -2043,7 +2050,7 @@ void inputGyroSetDeadzone(s32 cidx, f32 deadzone)
     padsCfg[cidx].gyroDeadzone = deadzone;
 }
 
-void applyGyroDeadzone(f32* dx, f32* dy, f32* dz, f32 deadzone)
+static void applyGyroDeadzone(f32* dx, f32* dy, f32* dz, f32 deadzone)
 {
     if (deadzone <= 0.f || !dx || !dy || !dz) return;
 
