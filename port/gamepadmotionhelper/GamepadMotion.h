@@ -6,93 +6,176 @@ extern "C" {
 
 #include <stdbool.h>
 
+#ifdef _WIN32
+    #ifdef _MSC_VER
+        #define GamepadMotion_WRAPPER __declspec(dllexport)
+    #else
+        #define GamepadMotion_WRAPPER __attribute__((dllexport))
+    #endif
+#else
+    #define GamepadMotion_WRAPPER
+#endif
+
 // Use the actual C++ class pointer for the handle
 typedef struct GamepadMotion GamepadMotion;
 typedef GamepadMotion* GamepadMotionHandle;
 
+// prefix alias for GamepadMotion functions (easier to know which functions are from GamepadMotion)
+#define gmhCreateGamepadMotion CreateGamepadMotion
+#define gmhDeleteGamepadMotion DeleteGamepadMotion
+#define gmhProcessMotion ProcessMotion
+#define gmhResetGamepadMotion ResetGamepadMotion
+#define gmhResetMotion ResetMotion
+#define gmhGetCalibratedGyro GetCalibratedGyro
+#define gmhGetGravity GetGravity
+#define gmhGetProcessedAcceleration GetProcessedAcceleration
+#define gmhGetOrientation GetOrientation
+#define gmhGetPlayerSpaceGyro GetPlayerSpaceGyro
+#define gmhGetWorldSpaceGyro GetWorldSpaceGyro
+#define gmhStartContinuousCalibration StartContinuousCalibration
+#define gmhPauseContinuousCalibration PauseContinuousCalibration
+#define gmhResetContinuousCalibration ResetContinuousCalibration
+#define gmhGetCalibrationOffset GetCalibrationOffset
+#define gmhSetCalibrationOffset SetCalibrationOffset
+#define gmhGetAutoCalibrationConfidence GetAutoCalibrationConfidence
+#define gmhSetAutoCalibrationConfidence SetAutoCalibrationConfidence
+#define gmhGetAutoCalibrationIsSteady GetAutoCalibrationIsSteady
+#define gmhGetCalibrationMode GetCalibrationMode
+#define gmhSetCalibrationMode SetCalibrationMode
+#define gmhSetMinStillnessSamples SetMinStillnessSamples
+#define gmhGetMinStillnessSamples GetMinStillnessSamples
+#define gmhSetMinStillnessCollectionTime SetMinStillnessCollectionTime
+#define gmhGetMinStillnessCollectionTime GetMinStillnessCollectionTime
+#define gmhSetMinStillnessCorrectionTime SetMinStillnessCorrectionTime
+#define gmhGetMinStillnessCorrectionTime GetMinStillnessCorrectionTime
+#define gmhSetMaxStillnessError SetMaxStillnessError
+#define gmhGetMaxStillnessError GetMaxStillnessError
+#define gmhSetStillnessSampleDeteriorationRate SetStillnessSampleDeteriorationRate
+#define gmhGetStillnessSampleDeteriorationRate GetStillnessSampleDeteriorationRate
+#define gmhSetStillnessErrorClimbRate SetStillnessErrorClimbRate
+#define gmhGetStillnessErrorClimbRate GetStillnessErrorClimbRate
+#define gmhSetStillnessErrorDropOnRecalibrate SetStillnessErrorDropOnRecalibrate
+#define gmhGetStillnessErrorDropOnRecalibrate GetStillnessErrorDropOnRecalibrate
+#define gmhSetStillnessCalibrationEaseInTime SetStillnessCalibrationEaseInTime
+#define gmhGetStillnessCalibrationEaseInTime GetStillnessCalibrationEaseInTime
+#define gmhSetStillnessCalibrationHalfTime SetStillnessCalibrationHalfTime
+#define gmhGetStillnessCalibrationHalfTime GetStillnessCalibrationHalfTime
+#define gmhSetStillnessConfidenceRate SetStillnessConfidenceRate
+#define gmhGetStillnessConfidenceRate GetStillnessConfidenceRate
+#define gmhSetStillnessGyroDelta SetStillnessGyroDelta
+#define gmhGetStillnessGyroDelta GetStillnessGyroDelta
+#define gmhSetStillnessAccelDelta SetStillnessAccelDelta
+#define gmhGetStillnessAccelDelta GetStillnessAccelDelta
+#define gmhSetSensorFusionCalibrationSmoothingStrength SetSensorFusionCalibrationSmoothingStrength
+#define gmhGetSensorFusionCalibrationSmoothingStrength GetSensorFusionCalibrationSmoothingStrength
+#define gmhSetSensorFusionAngularAccelerationThreshold SetSensorFusionAngularAccelerationThreshold
+#define gmhGetSensorFusionAngularAccelerationThreshold GetSensorFusionAngularAccelerationThreshold
+#define gmhSetSensorFusionCalibrationEaseInTime SetSensorFusionCalibrationEaseInTime
+#define gmhGetSensorFusionCalibrationEaseInTime GetSensorFusionCalibrationEaseInTime
+#define gmhSetSensorFusionCalibrationHalfTime SetSensorFusionCalibrationHalfTime
+#define gmhGetSensorFusionCalibrationHalfTime GetSensorFusionCalibrationHalfTime
+#define gmhSetSensorFusionConfidenceRate SetSensorFusionConfidenceRate
+#define gmhGetSensorFusionConfidenceRate GetSensorFusionConfidenceRate
+#define gmhSetGravityCorrectionShakinessMaxThreshold SetGravityCorrectionShakinessMaxThreshold
+#define gmhGetGravityCorrectionShakinessMaxThreshold GetGravityCorrectionShakinessMaxThreshold
+#define gmhSetGravityCorrectionShakinessMinThreshold SetGravityCorrectionShakinessMinThreshold
+#define gmhGetGravityCorrectionShakinessMinThreshold GetGravityCorrectionShakinessMinThreshold
+#define gmhSetGravityCorrectionStillSpeed SetGravityCorrectionStillSpeed
+#define gmhGetGravityCorrectionStillSpeed GetGravityCorrectionStillSpeed
+#define gmhSetGravityCorrectionShakySpeed SetGravityCorrectionShakySpeed
+#define gmhGetGravityCorrectionShakySpeed GetGravityCorrectionShakySpeed
+#define gmhSetGravityCorrectionGyroFactor SetGravityCorrectionGyroFactor
+#define gmhGetGravityCorrectionGyroFactor GetGravityCorrectionGyroFactor
+#define gmhSetGravityCorrectionGyroMinThreshold SetGravityCorrectionGyroMinThreshold
+#define gmhGetGravityCorrectionGyroMinThreshold GetGravityCorrectionGyroMinThreshold
+#define gmhSetGravityCorrectionGyroMaxThreshold SetGravityCorrectionGyroMaxThreshold
+#define gmhGetGravityCorrectionGyroMaxThreshold GetGravityCorrectionGyroMaxThreshold
+#define gmhSetGravityCorrectionMinimumSpeed SetGravityCorrectionMinimumSpeed
+#define gmhGetGravityCorrectionMinimumSpeed GetGravityCorrectionMinimumSpeed
+
 // Creation and destruction
-GamepadMotionHandle gmhCreateGamepadMotion(void);
-void gmhDeleteGamepadMotion(GamepadMotionHandle handle);
+GamepadMotion_WRAPPER GamepadMotionHandle CreateGamepadMotion(void);
+GamepadMotion_WRAPPER void DeleteGamepadMotion(GamepadMotionHandle handle);
 
 // Core motion processing
-void gmhProcessMotion(GamepadMotionHandle handle, float gyroX, float gyroY, float gyroZ,
+GamepadMotion_WRAPPER void ProcessMotion(GamepadMotionHandle handle, float gyroX, float gyroY, float gyroZ,
                    float accelX, float accelY, float accelZ, float deltaTime);
-void gmhResetGamepadMotion(GamepadMotionHandle handle);
-void gmhResetMotion(GamepadMotionHandle handle);
+GamepadMotion_WRAPPER void ResetGamepadMotion(GamepadMotionHandle handle);
+GamepadMotion_WRAPPER void ResetMotion(GamepadMotionHandle handle);
 
 // State getters
-void gmhGetCalibratedGyro(GamepadMotionHandle handle, float* x, float* y, float* z);
-void gmhGetGravity(GamepadMotionHandle handle, float* x, float* y, float* z);
-void gmhGetProcessedAcceleration(GamepadMotionHandle handle, float* x, float* y, float* z);
-void gmhGetOrientation(GamepadMotionHandle handle, float* w, float* x, float* y, float* z);
-void gmhGetPlayerSpaceGyro(GamepadMotionHandle handle, float* x, float* y, float yawRelaxFactor);
-void gmhGetWorldSpaceGyro(GamepadMotionHandle handle, float* x, float* y, float sideReductionThreshold);
+GamepadMotion_WRAPPER void GetCalibratedGyro(GamepadMotionHandle handle, float* x, float* y, float* z);
+GamepadMotion_WRAPPER void GetGravity(GamepadMotionHandle handle, float* x, float* y, float* z);
+GamepadMotion_WRAPPER void GetProcessedAcceleration(GamepadMotionHandle handle, float* x, float* y, float* z);
+GamepadMotion_WRAPPER void GetOrientation(GamepadMotionHandle handle, float* w, float* x, float* y, float* z);
+GamepadMotion_WRAPPER void GetPlayerSpaceGyro(GamepadMotionHandle handle, float* x, float* y, const float yawRelaxFactor);
+GamepadMotion_WRAPPER void GetWorldSpaceGyro(GamepadMotionHandle handle, float* x, float* y, const float sideReductionThreshold);
 
 // Calibration
-void gmhStartContinuousCalibration(GamepadMotionHandle handle);
-void gmhPauseContinuousCalibration(GamepadMotionHandle handle);
-void gmhResetContinuousCalibration(GamepadMotionHandle handle);
-void gmhGetCalibrationOffset(GamepadMotionHandle handle, float* xOffset, float* yOffset, float* zOffset);
-void gmhSetCalibrationOffset(GamepadMotionHandle handle, float xOffset, float yOffset, float zOffset, int weight);
-float gmhGetAutoCalibrationConfidence(GamepadMotionHandle handle);
-void gmhSetAutoCalibrationConfidence(GamepadMotionHandle handle, float newConfidence);
-bool gmhGetAutoCalibrationIsSteady(GamepadMotionHandle handle);
+GamepadMotion_WRAPPER void StartContinuousCalibration(GamepadMotionHandle handle);
+GamepadMotion_WRAPPER void PauseContinuousCalibration(GamepadMotionHandle handle);
+GamepadMotion_WRAPPER void ResetContinuousCalibration(GamepadMotionHandle handle);
+GamepadMotion_WRAPPER void GetCalibrationOffset(GamepadMotionHandle handle, float* xOffset, float* yOffset, float* zOffset);
+GamepadMotion_WRAPPER void SetCalibrationOffset(GamepadMotionHandle handle, float xOffset, float yOffset, float zOffset, int weight);
+GamepadMotion_WRAPPER float GetAutoCalibrationConfidence(GamepadMotionHandle handle);
+GamepadMotion_WRAPPER void SetAutoCalibrationConfidence(GamepadMotionHandle handle, float newConfidence);
+GamepadMotion_WRAPPER bool GetAutoCalibrationIsSteady(GamepadMotionHandle handle);
 
-// Calibration mode
-int gmhGetCalibrationMode(GamepadMotionHandle handle);
-void gmhSetCalibrationMode(GamepadMotionHandle handle, int mode);
+// Calibration mode  
+GamepadMotion_WRAPPER int GetCalibrationMode(GamepadMotionHandle handle);
+GamepadMotion_WRAPPER void SetCalibrationMode(GamepadMotionHandle handle, int mode);
 
 // GamepadMotionSettings: Getters and Setters
-void gmhSetMinStillnessSamples(GamepadMotionHandle handle, int value);
-int  gmhGetMinStillnessSamples(GamepadMotionHandle handle);
-void gmhSetMinStillnessCollectionTime(GamepadMotionHandle handle, float value);
-float gmhGetMinStillnessCollectionTime(GamepadMotionHandle handle);
-void gmhSetMinStillnessCorrectionTime(GamepadMotionHandle handle, float value);
-float gmhGetMinStillnessCorrectionTime(GamepadMotionHandle handle);
-void gmhSetMaxStillnessError(GamepadMotionHandle handle, float value);
-float gmhGetMaxStillnessError(GamepadMotionHandle handle);
-void gmhSetStillnessSampleDeteriorationRate(GamepadMotionHandle handle, float value);
-float gmhGetStillnessSampleDeteriorationRate(GamepadMotionHandle handle);
-void gmhSetStillnessErrorClimbRate(GamepadMotionHandle handle, float value);
-float gmhGetStillnessErrorClimbRate(GamepadMotionHandle handle);
-void gmhSetStillnessErrorDropOnRecalibrate(GamepadMotionHandle handle, float value);
-float gmhGetStillnessErrorDropOnRecalibrate(GamepadMotionHandle handle);
-void gmhSetStillnessCalibrationEaseInTime(GamepadMotionHandle handle, float value);
-float gmhGetStillnessCalibrationEaseInTime(GamepadMotionHandle handle);
-void gmhSetStillnessCalibrationHalfTime(GamepadMotionHandle handle, float value);
-float gmhGetStillnessCalibrationHalfTime(GamepadMotionHandle handle);
-void gmhSetStillnessConfidenceRate(GamepadMotionHandle handle, float value);
-float gmhGetStillnessConfidenceRate(GamepadMotionHandle handle);
-void gmhSetStillnessGyroDelta(GamepadMotionHandle handle, float value);
-float gmhGetStillnessGyroDelta(GamepadMotionHandle handle);
-void gmhSetStillnessAccelDelta(GamepadMotionHandle handle, float value);
-float gmhGetStillnessAccelDelta(GamepadMotionHandle handle);
-void gmhSetSensorFusionCalibrationSmoothingStrength(GamepadMotionHandle handle, float value);
-float gmhGetSensorFusionCalibrationSmoothingStrength(GamepadMotionHandle handle);
-void gmhSetSensorFusionAngularAccelerationThreshold(GamepadMotionHandle handle, float value);
-float gmhGetSensorFusionAngularAccelerationThreshold(GamepadMotionHandle handle);
-void gmhSetSensorFusionCalibrationEaseInTime(GamepadMotionHandle handle, float value);
-float gmhGetSensorFusionCalibrationEaseInTime(GamepadMotionHandle handle);
-void gmhSetSensorFusionCalibrationHalfTime(GamepadMotionHandle handle, float value);
-float gmhGetSensorFusionCalibrationHalfTime(GamepadMotionHandle handle);
-void gmhSetSensorFusionConfidenceRate(GamepadMotionHandle handle, float value);
-float gmhGetSensorFusionConfidenceRate(GamepadMotionHandle handle);
-void gmhSetGravityCorrectionShakinessMaxThreshold(GamepadMotionHandle handle, float value);
-float gmhGetGravityCorrectionShakinessMaxThreshold(GamepadMotionHandle handle);
-void gmhSetGravityCorrectionShakinessMinThreshold(GamepadMotionHandle handle, float value);
-float gmhGetGravityCorrectionShakinessMinThreshold(GamepadMotionHandle handle);
-void gmhSetGravityCorrectionStillSpeed(GamepadMotionHandle handle, float value);
-float gmhGetGravityCorrectionStillSpeed(GamepadMotionHandle handle);
-void gmhSetGravityCorrectionShakySpeed(GamepadMotionHandle handle, float value);
-float gmhGetGravityCorrectionShakySpeed(GamepadMotionHandle handle);
-void gmhSetGravityCorrectionGyroFactor(GamepadMotionHandle handle, float value);
-float gmhGetGravityCorrectionGyroFactor(GamepadMotionHandle handle);
-void gmhSetGravityCorrectionGyroMinThreshold(GamepadMotionHandle handle, float value);
-float gmhGetGravityCorrectionGyroMinThreshold(GamepadMotionHandle handle);
-void gmhSetGravityCorrectionGyroMaxThreshold(GamepadMotionHandle handle, float value);
-float gmhGetGravityCorrectionGyroMaxThreshold(GamepadMotionHandle handle);
-void gmhSetGravityCorrectionMinimumSpeed(GamepadMotionHandle handle, float value);
-float gmhGetGravityCorrectionMinimumSpeed(GamepadMotionHandle handle);
+GamepadMotion_WRAPPER void SetMinStillnessSamples(GamepadMotionHandle handle, int value);
+GamepadMotion_WRAPPER int  GetMinStillnessSamples(GamepadMotionHandle handle);
+GamepadMotion_WRAPPER void SetMinStillnessCollectionTime(GamepadMotionHandle handle, float value);
+GamepadMotion_WRAPPER float GetMinStillnessCollectionTime(GamepadMotionHandle handle);
+GamepadMotion_WRAPPER void SetMinStillnessCorrectionTime(GamepadMotionHandle handle, float value);
+GamepadMotion_WRAPPER float GetMinStillnessCorrectionTime(GamepadMotionHandle handle);
+GamepadMotion_WRAPPER void SetMaxStillnessError(GamepadMotionHandle handle, float value);
+GamepadMotion_WRAPPER float GetMaxStillnessError(GamepadMotionHandle handle);
+GamepadMotion_WRAPPER void SetStillnessSampleDeteriorationRate(GamepadMotionHandle handle, float value);
+GamepadMotion_WRAPPER float GetStillnessSampleDeteriorationRate(GamepadMotionHandle handle);
+GamepadMotion_WRAPPER void SetStillnessErrorClimbRate(GamepadMotionHandle handle, float value);
+GamepadMotion_WRAPPER float GetStillnessErrorClimbRate(GamepadMotionHandle handle);
+GamepadMotion_WRAPPER void SetStillnessErrorDropOnRecalibrate(GamepadMotionHandle handle, float value);
+GamepadMotion_WRAPPER float GetStillnessErrorDropOnRecalibrate(GamepadMotionHandle handle);
+GamepadMotion_WRAPPER void SetStillnessCalibrationEaseInTime(GamepadMotionHandle handle, float value);
+GamepadMotion_WRAPPER float GetStillnessCalibrationEaseInTime(GamepadMotionHandle handle);
+GamepadMotion_WRAPPER void SetStillnessCalibrationHalfTime(GamepadMotionHandle handle, float value);
+GamepadMotion_WRAPPER float GetStillnessCalibrationHalfTime(GamepadMotionHandle handle);
+GamepadMotion_WRAPPER void SetStillnessConfidenceRate(GamepadMotionHandle handle, float value);
+GamepadMotion_WRAPPER float GetStillnessConfidenceRate(GamepadMotionHandle handle);
+GamepadMotion_WRAPPER void SetStillnessGyroDelta(GamepadMotionHandle handle, float value);
+GamepadMotion_WRAPPER float GetStillnessGyroDelta(GamepadMotionHandle handle);
+GamepadMotion_WRAPPER void SetStillnessAccelDelta(GamepadMotionHandle handle, float value);
+GamepadMotion_WRAPPER float GetStillnessAccelDelta(GamepadMotionHandle handle);
+GamepadMotion_WRAPPER void SetSensorFusionCalibrationSmoothingStrength(GamepadMotionHandle handle, float value);
+GamepadMotion_WRAPPER float GetSensorFusionCalibrationSmoothingStrength(GamepadMotionHandle handle);
+GamepadMotion_WRAPPER void SetSensorFusionAngularAccelerationThreshold(GamepadMotionHandle handle, float value);
+GamepadMotion_WRAPPER float GetSensorFusionAngularAccelerationThreshold(GamepadMotionHandle handle);
+GamepadMotion_WRAPPER void SetSensorFusionCalibrationEaseInTime(GamepadMotionHandle handle, float value);
+GamepadMotion_WRAPPER float GetSensorFusionCalibrationEaseInTime(GamepadMotionHandle handle);
+GamepadMotion_WRAPPER void SetSensorFusionCalibrationHalfTime(GamepadMotionHandle handle, float value);
+GamepadMotion_WRAPPER float GetSensorFusionCalibrationHalfTime(GamepadMotionHandle handle);
+GamepadMotion_WRAPPER void SetSensorFusionConfidenceRate(GamepadMotionHandle handle, float value);
+GamepadMotion_WRAPPER float GetSensorFusionConfidenceRate(GamepadMotionHandle handle);
+GamepadMotion_WRAPPER void SetGravityCorrectionShakinessMaxThreshold(GamepadMotionHandle handle, float value);
+GamepadMotion_WRAPPER float GetGravityCorrectionShakinessMaxThreshold(GamepadMotionHandle handle);
+GamepadMotion_WRAPPER void SetGravityCorrectionShakinessMinThreshold(GamepadMotionHandle handle, float value);
+GamepadMotion_WRAPPER float GetGravityCorrectionShakinessMinThreshold(GamepadMotionHandle handle);
+GamepadMotion_WRAPPER void SetGravityCorrectionStillSpeed(GamepadMotionHandle handle, float value);
+GamepadMotion_WRAPPER float GetGravityCorrectionStillSpeed(GamepadMotionHandle handle);
+GamepadMotion_WRAPPER void SetGravityCorrectionShakySpeed(GamepadMotionHandle handle, float value);
+GamepadMotion_WRAPPER float GetGravityCorrectionShakySpeed(GamepadMotionHandle handle);
+GamepadMotion_WRAPPER void SetGravityCorrectionGyroFactor(GamepadMotionHandle handle, float value);
+GamepadMotion_WRAPPER float GetGravityCorrectionGyroFactor(GamepadMotionHandle handle);
+GamepadMotion_WRAPPER void SetGravityCorrectionGyroMinThreshold(GamepadMotionHandle handle, float value);
+GamepadMotion_WRAPPER float GetGravityCorrectionGyroMinThreshold(GamepadMotionHandle handle);
+GamepadMotion_WRAPPER void SetGravityCorrectionGyroMaxThreshold(GamepadMotionHandle handle, float value);
+GamepadMotion_WRAPPER float GetGravityCorrectionGyroMaxThreshold(GamepadMotionHandle handle);
+GamepadMotion_WRAPPER void SetGravityCorrectionMinimumSpeed(GamepadMotionHandle handle, float value);
+GamepadMotion_WRAPPER float GetGravityCorrectionMinimumSpeed(GamepadMotionHandle handle);
 
 #ifdef __cplusplus
 }
