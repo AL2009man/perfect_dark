@@ -11,6 +11,7 @@
 #include "utils.h"
 #include "system.h"
 #include "fs.h"
+#include "data.h"
 
 #if !SDL_VERSION_ATLEAST(2, 0, 14)
 // this was added in 2.0.14
@@ -90,8 +91,6 @@ static s32 mouseShowCursor = 1;
 
 static f32 mouseSensX = 2.5f;
 static f32 mouseSensY = 2.5f;
-static f32 mouseAimSensX = 2.5f;
-static f32 mouseAimSensY = 2.5f;
 
 static s32 lastKey = 0;
 static char lastChar = 0;
@@ -1279,8 +1278,8 @@ void inputMouseGetScaledDeltaCrosshair(f32* dx, f32* dy)
 {
 	f32 mdx = 0.f, mdy = 0.f;
 	if (mouseLocked) {
-		mdx = mouseDX * (0.022f / 35.0f) * mouseAimSensX;
-		mdy = mouseDY * (0.022f / 35.0f) * mouseAimSensY;
+		mdx = mouseDX * (0.022f / 35.0f) * g_PlayerExtCfg[0].mouseaimsensx;
+		mdy = mouseDY * (0.022f / 35.0f) * g_PlayerExtCfg[0].mouseaimsensy;
 	}
 	if (dx) *dx = mdx;
 	if (dy) *dy = mdy;
@@ -1288,14 +1287,14 @@ void inputMouseGetScaledDeltaCrosshair(f32* dx, f32* dy)
 
 void inputMouseGetAimSpeed(f32* x, f32* y)
 {
-	if (x) *x = mouseAimSensX;
-	if (y) *y = mouseAimSensY;
+	if (x) *x = g_PlayerExtCfg[0].mouseaimsensx;
+	if (y) *y = g_PlayerExtCfg[0].mouseaimsensy;
 }
 
 void inputMouseSetAimSpeed(f32 x, f32 y)
 {
-	mouseAimSensX = x;
-	mouseAimSensY = y;
+	g_PlayerExtCfg[0].mouseaimsensx = x;
+	g_PlayerExtCfg[0].mouseaimsensy = y;
 }
 
 s32 inputMouseIsEnabled(void)
@@ -1534,8 +1533,6 @@ PD_CONSTRUCTOR static void inputConfigInit(void)
 	configRegisterInt("Input.MouseLockMode", &mouseLockMode, MLOCK_OFF, MLOCK_AUTO);
 	configRegisterFloat("Input.MouseSpeedX", &mouseSensX, -30.f, 30.f);
 	configRegisterFloat("Input.MouseSpeedY", &mouseSensY, -30.f, 30.f);
-	configRegisterFloat("Input.mouseAimSensX", &mouseAimSensX, -10.f, 10.f);
-	configRegisterFloat("Input.mouseAimSensY", &mouseAimSensY, -10.f, 10.f);
 	configRegisterInt("Input.FakeGamepads", &fakeControllers, 0, 4);
 	configRegisterInt("Input.FirstGamepadNum", &firstController, 0, 3);
 	configRegisterInt("Input.UseHIDAPI", &useHIDAPI, 0, 1);
