@@ -163,7 +163,7 @@ static void inputFinishManualCalibration(s32 cidx);
 static void inputConfigureCalibrationMode(s32 cidx);
 static void inputResetGyroCalibration(s32 cidx);
 static void inputApplyManualCalibrationOffset(s32 cidx);
-static bool inputIsControllerSensorBelowNoiseThreshold(s32 cidx);
+static bool inputIsControllerSensorNoiseThreshold(s32 cidx);
 
 // Gyro processing function declarations
 static void applyGyroAxisMapping(s32 cidx, float gyroData[3], float accelData[3], f32* deltaX, f32* deltaY, f32* deltaZ);
@@ -1222,7 +1222,7 @@ void inputUpdateGyro(s32 cidx)
 	if (gpadMotion[cidx] && padsCfg[cidx].gyroAutoCalibration) {
 		float confidence = gmhGetAutoCalibrationConfidence(gpadMotion[cidx]);
 		bool isSteady = gmhGetAutoCalibrationIsSteady(gpadMotion[cidx]);
-		bool isBelowNoiseThreshold = inputIsControllerSensorBelowNoiseThreshold(cidx);
+		bool isBelowNoiseThreshold = inputIsControllerSensorNoiseThreshold(cidx);
 		bool isTrulyStable = isSteady && isBelowNoiseThreshold;
 		
 		// Store for use in auto-calibration monitoring
@@ -2098,7 +2098,7 @@ static void inputUpdateGyroCalibrationHandle(void)
 	}
 }
 
-static bool inputIsControllerSensorBelowNoiseThreshold(s32 cidx)
+static bool inputIsControllerSensorNoiseThreshold(s32 cidx)
 {
 	if (!pads[cidx]) return false;
 	
@@ -2139,24 +2139,10 @@ static void inputUpdateAutoCalibration(s32 cidx)
 	gmhSetCalibrationMode(gpadMotion[cidx], CALIBRATIONMODE_STILLNESS);
 	bool isStableByGMH = gmhGetAutoCalibrationIsSteady(gpadMotion[cidx]);
 	
-	// Get current gyro and accel data for noise threshold safety check
-	float gyroData[3] = {0.f};
-	float accelData[3] = {0.f};
-	SDL_GameControllerGetSensorData(pads[cidx], SDL_SENSOR_GYRO, gyroData, 3);
-	SDL_GameControllerGetSensorData(pads[cidx], SDL_SENSOR_ACCEL, accelData, 3);
-	
-	// Calculate gyro magnitude for noise threshold check (safetynet against slow movement)
-	float gyroMagnitude = sqrtf(gyroData[0] * gyroData[0] + gyroData[1] * gyroData[1] + gyroData[2] * gyroData[2]);
-	
-	// Calculate accel deviation from gravity for stability check
-	float accelMagnitude = sqrtf(accelData[0] * accelData[0] + accelData[1] * accelData[1] + accelData[2] * accelData[2]);
-	float accelDeviation = fabsf(accelMagnitude - SDL_STANDARD_GRAVITY);
-	
-	bool isGyroQuiet = (gyroMagnitude < GYRO_NOISE_THRESHOLD);
-	bool isAccelStable = (accelDeviation < GYRO_NOISE_THRESHOLD);
-	bool isBelowNoiseThreshold = isGyroQuiet && isAccelStable;
+	// Use safety-check function for noise threshold validation
+	bool isBelowNoiseThreshold = inputIsControllerSensorNoiseThreshold(cidx);
 
-	// Determined stability by GMH and noise threshold
+	// Determined stability by GMH and noise threshold safety check
 	bool isTrulyStable = isStableByGMH && isBelowNoiseThreshold;
 	
 	Uint32 now = SDL_GetTicks();
@@ -2180,6 +2166,9 @@ static void inputUpdateAutoCalibration(s32 cidx)
 			sysLogPrintf(LOG_NOTE, "Gyro auto-calibration: Controller %d calibration completed by GMH (confidence=%.2f).", cidx, confidence);
 			state->justFinishedCalibrating = true;
 			state->lastCalibrationTime = now;
+			
+			// Pause gyro to prevent snapback/accidental drift after calibration
+			inputPauseGyro(cidx);
 		}
 		
 		// Allow calibration to resume if controller remains stationary for 5+ seconds after calibration
