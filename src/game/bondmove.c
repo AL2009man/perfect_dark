@@ -772,8 +772,7 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 	movedata.gyrolookdy = 0.0f;
 
 #ifndef PLATFORM_N64
-	// Static recentering state variables - accessible throughout the function
-	// Make all recentering state per-player to support independent recentering in multiplayer
+	// per-player camera/crosshair recentering variables
 	static bool prev_reset_pressed[MAX_PLAYERS] = { false };
 	static struct {
 		bool active;

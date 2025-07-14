@@ -2130,6 +2130,24 @@ static void inputUpdateAutoCalibration(s32 cidx)
 		return;
 	}
 
+	// Pause auto-calibration during menu-driven gyro calibration
+	if (inputIsMenuGyroCalibrationActive(cidx)) {
+		GyroCalibState *state = &gyroCalibState[cidx];
+		
+		// Pause any ongoing calibration process
+		gmhPauseContinuousCalibration(gpadMotion[cidx]);
+		
+		// Reset cooldown timer to prevent immediate activation after manual calibration
+		state->lastAutoCalibTime = SDL_GetTicks();
+		
+		// Clear any calibration flags
+		if (state->justFinishedCalibrating) {
+			state->justFinishedCalibrating = false;
+		}
+		
+		return;
+	}
+
 	// Configure GMH settings for auto-calibration
 	inputConfigureGamepadMotionSettings(gpadMotion[cidx]);
 
@@ -2211,7 +2229,7 @@ static void inputUpdateManualCalibration(s32 cidx)
 		return;
 	}
 
-	// Don't allow manual calibration during menu-driven calibration
+	// Don't allow manual calibration during menu-driven gyro calibration
 	if (inputIsMenuGyroCalibrationActive(cidx)) {
 		if (state->manualCalibActive) {
 			state->manualCalibActive = false;

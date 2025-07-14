@@ -105,10 +105,7 @@ s32 inputIsMenuGyroCalibrationActive(s32 cidx)
 	if (cidx < 0 || cidx >= INPUT_MAX_CONTROLLERS) {
 		return 0;
 	}
-	
-	// State 1 means calibration countdown/process is active
-	// State 2 means calibration is completed but menu is still open
-	// We only want to block manual calibration during the active state (1)
+
 	return (g_GyroCalibrationState[cidx] == 1) ? 1 : 0;
 }
 
