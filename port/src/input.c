@@ -122,7 +122,7 @@ static char bindStrs[MAXCONTROLLERS][CK_TOTAL_COUNT][MAX_BIND_STR];
 static s32 fakeControllers = 0;
 static s32 firstController = 0;
 static s32 connectedMask = 0;
-static s32 inputWindowHasFocus = 1; // Enable/disable input processing when window loses focus
+static s32 inputWindowHasFocus = 1;
 
 static s32 numJoysticks = 0;
 
@@ -518,6 +518,7 @@ static inline void inputPauseGyro(s32 cidx)
     gyroYaw[cidx] = gyroPitch[cidx] = gyroRoll[cidx] = 0.f;
 }
 
+// Enable/disable input processing when window loses focus
 static inline bool inputHasWindowFocus(void)
 {
 	if (inputWindowHasFocus) {
