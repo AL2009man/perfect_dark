@@ -122,6 +122,7 @@ static char bindStrs[MAXCONTROLLERS][CK_TOTAL_COUNT][MAX_BIND_STR];
 static s32 fakeControllers = 0;
 static s32 firstController = 0;
 static s32 connectedMask = 0;
+static s32 inputWindowHasFocus = 1; // Enable/disable input processing when window loses focus
 
 static s32 numJoysticks = 0;
 
@@ -152,6 +153,8 @@ static char lastChar = 0;
 static s32 textInput = 0;
 
 static char *clipboardText = NULL;
+
+static inline bool inputHasWindowFocus(void);
 
 // GMH settings configuration	
 static void inputConfigureGamepadMotionSettings(GamepadMotionHandle handle);
@@ -515,6 +518,15 @@ static inline void inputPauseGyro(s32 cidx)
     gyroYaw[cidx] = gyroPitch[cidx] = gyroRoll[cidx] = 0.f;
 }
 
+static inline bool inputHasWindowFocus(void)
+{
+	if (inputWindowHasFocus) {
+		SDL_Window *window = SDL_GetKeyboardFocus();
+		return (window != NULL);
+	}
+	return true;
+}
+
 static inline void inputCloseController(const s32 cidx)
 {
 	sysLogPrintf(LOG_NOTE, "input: removed controller '%d: (%s)' (id %d) from player %d",
@@ -719,6 +731,14 @@ static int inputEventFilter(void *data, SDL_Event *event)
 		case SDL_TEXTINPUT:
 			if (!lastChar && event->text.text[0] && (u8)event->text.text[0] < 0x80) {
 				lastChar = event->text.text[0];
+			}
+			break;
+
+		case SDL_WINDOWEVENT:
+			if (event->window.event == SDL_WINDOWEVENT_FOCUS_GAINED) {
+				// Window gained focus - no immediate action needed
+			} else if (event->window.event == SDL_WINDOWEVENT_FOCUS_LOST) {
+				// Window lost focus - input functions will handle their own state resets
 			}
 			break;
 
@@ -963,6 +983,16 @@ s32 inputReadController(s32 idx, OSContPad *npad)
 
 	npad->button = 0;
 
+	// Check window focus using centralized function
+	if (!inputHasWindowFocus()) {
+		// Reset controller state when window is out of focus
+		npad->stick_x = 0;
+		npad->stick_y = 0;
+		npad->rstick_x = 0;
+		npad->rstick_y = 0;
+		return 0;
+	}
+
 	if (textInput) {
 		npad->stick_x = 0;
 		npad->stick_y = 0;
@@ -1041,6 +1071,16 @@ s32 inputReadController(s32 idx, OSContPad *npad)
 
 static inline void inputUpdateMouse(void)
 {
+	// Check window focus using centralized function
+	if (!inputHasWindowFocus()) {
+		// Reset mouse state when window is out of focus
+		mouseButtons = 0;
+		mouseDX = 0;
+		mouseDY = 0;
+		mouseWheel = 0;
+		return;
+	}
+
 	s32 mx, my;
 	mouseButtons = SDL_GetMouseState(&mx, &my);
 
@@ -1202,6 +1242,13 @@ static void inputApplyGyroProcessing(s32 cidx, f32* deltaX, f32* deltaY, f32* de
 
 void inputUpdateGyro(s32 cidx)
 {
+	// Check window focus using centralized function
+	if (!inputHasWindowFocus()) {
+		// Reset gyro state when window is out of focus
+		inputPauseGyro(cidx);
+		return;
+	}
+
 	// Calculate accurate deltaTime
 	float deltaTime = inputCalculateGyroDeltaTime(cidx);
 	
@@ -1249,8 +1296,10 @@ void inputUpdate(void)
 		inputUpdateMouse();
 	}
 
+	// Handle gyro calibration systems
 	inputUpdateGyroCalibrationHandle();
 
+	// Process gyro input (window focus checking is handled in individual gyro functions)
 	for (s32 cidx = 0; cidx < INPUT_MAX_CONTROLLERS; ++cidx) {
 		if (padsCfg[cidx].gyroEnabled && inputControllerMotionSensorsSupported(cidx)) {
 			inputUpdateGyro(cidx);
@@ -1512,6 +1561,11 @@ const u32 *inputKeyGetBinds(s32 idx, u32 ck)
 
 s32 inputKeyPressed(u32 vk)
 {
+	// Check window focus using centralized function
+	if (!inputHasWindowFocus()) {
+		return 0; // No input when window is out of focus
+	}
+
 	if (vk >= VK_KEYBOARD_BEGIN && vk < VK_MOUSE_BEGIN) {
 		const u8 *state = SDL_GetKeyboardState(NULL);
 		return state[vk - VK_KEYBOARD_BEGIN];
@@ -2624,6 +2678,7 @@ PD_CONSTRUCTOR static void inputConfigInit(void)
 	configRegisterFloat("Input.MouseSpeedY", &mouseSensY, -30.f, 30.f);
 	configRegisterInt("Input.FakeGamepads", &fakeControllers, 0, 4);
 	configRegisterInt("Input.FirstGamepadNum", &firstController, 0, 3);
+	configRegisterInt("Input.InputWindowFocus", &inputWindowHasFocus, 0, 1);
 	configRegisterInt("Input.UseHIDAPI", &useHIDAPI, 0, 1);
 	configRegisterInt("Input.UseRawInput", &useRawInput, 0, 1);
 
