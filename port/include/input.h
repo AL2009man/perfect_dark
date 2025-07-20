@@ -313,16 +313,19 @@ void inputGyroSetInvert(s32 cidx, s32 invertx, s32 inverty);
 void inputGyroGetAimInvert(s32 cidx, s32* invertx, s32* inverty);
 void inputGyroSetAimInvert(s32 cidx, s32 invertx, s32 inverty);
 
-// Gyro Mixer, Smoothing, Tightening and Deadzone thresholds
+// Gyro X/Y Ratio Mixer Management
 f32 inputGetGyroVHMixer(s32 cidx);
 void inputSetGyroVHMixer(s32 cidx, f32 value);
 
+// Gyro Smoothing Management
 f32 inputGetGyroSmoothing(s32 cidx);
 void inputSetGyroSmoothing(s32 cidx, f32 value);
 
+// Gyro Deadzone Management
 f32 inputGyroGetDeadzone(s32 cidx);
 void inputGyroSetDeadzone(s32 cidx, f32 value);
 
+// Gyro Tightening Management
 f32 inputGyroGetTightening(s32 cidx);
 void inputGyroSetTightening(s32 cidx, f32 value);
 
