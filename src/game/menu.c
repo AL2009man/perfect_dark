@@ -4831,8 +4831,8 @@ void menuProcessInput(void)
 
 #ifndef PLATFORM_N64
             // Use remapped UI buttons for accept/cancel (handles Japanese layout)
-            u32 acceptBtn = inputRemapUIButton(contpadnums[i], BUTTON_UI_ACCEPT);
-            u32 cancelBtn = inputRemapUIButton(contpadnums[i], BUTTON_UI_CANCEL);
+            u32 acceptBtn = inputConfirmCancelButtonSwap(contpadnums[i], BUTTON_UI_ACCEPT);
+            u32 cancelBtn = inputConfirmCancelButtonSwap(contpadnums[i], BUTTON_UI_CANCEL);
 
             if (buttonsnow & acceptBtn) {
                 inputs.select = 1;

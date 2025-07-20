@@ -187,11 +187,8 @@ s32 inputKeyJustPressed(u32 vk);
 // idx is controller index, contbtn is one of the CONT_ constants
 s32 inputButtonPressed(s32 idx, u32 contbtn);
 
-// Returns 1 if Japanese layout is currently active for the given controller
-int inputIsJapaneseLayoutActive(int cidx);
-
 // Remaps UI button for a controller (handles Japanese layout)
-u32 inputRemapUIButton(int cidx, u32 button);
+u32 inputConfirmCancelButtonSwap(int cidx, u32 button);
 
 // Returns 1 if the given controller index is a Nintendo Switch controller, 0 otherwise
 int inputControllerIsNintendoSwitch(int cidx);

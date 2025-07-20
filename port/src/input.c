@@ -355,22 +355,18 @@ static inline void inputInitController(const s32 cidx, const s32 jidx)
 	inputSetDefaultKeyBinds(cidx, 0);
 }
 
-int inputIsJapaneseLayoutActive(int cidx) {
-	if (padsCfg[cidx].japaneseButtonLayout == JAPANESE_LAYOUT_ON) {
-		return 1;
-	}
-	if (padsCfg[cidx].japaneseButtonLayout == JAPANESE_LAYOUT_AUTO) {
-		return pads[cidx] && inputIsNintendoSwitchController(pads[cidx]);
-	}
-	return 0;
-}
-
-u32 inputRemapUIButton(int cidx, u32 button) {
-	if (inputIsJapaneseLayoutActive(cidx)) {
-		if (button == BUTTON_UI_ACCEPT) return BUTTON_UI_CANCEL;
-		if (button == BUTTON_UI_CANCEL) return BUTTON_UI_ACCEPT;
-	}
-	return button;
+u32 inputConfirmCancelButtonSwap(int cidx, u32 button) {
+    int japaneseActive = 0;
+    if (padsCfg[cidx].japaneseButtonLayout == JAPANESE_LAYOUT_ON) {
+        japaneseActive = 1;
+    } else if (padsCfg[cidx].japaneseButtonLayout == JAPANESE_LAYOUT_AUTO) {
+        japaneseActive = pads[cidx] && inputIsNintendoSwitchController(pads[cidx]);
+    }
+    if (japaneseActive) {
+        if (button == BUTTON_UI_ACCEPT) return BUTTON_UI_CANCEL;
+        if (button == BUTTON_UI_CANCEL) return BUTTON_UI_ACCEPT;
+    }
+    return button;
 }
 
 static inline void inputCloseController(const s32 cidx)
@@ -821,19 +817,19 @@ int inputControllerIsNintendoSwitch(int cidx) {
 
 static inline s32 inputBindPressed(const s32 idx, const u32 ck)
 {
-	u32 real_ck = ck;
-	if (inputIsJapaneseLayoutActive(idx)) {
-		if (ck == CK_A) real_ck = CK_B;
-		else if (ck == CK_B) real_ck = CK_A;
-	}
-	for (s32 i = 0; i < INPUT_MAX_BINDS; ++i) {
-		if (binds[idx][real_ck][i]) {
-			if (inputKeyPressed(binds[idx][real_ck][i])) {
-				return 1;
-			}
-		}
-	}
-	return 0;
+    u32 real_ck = ck;
+    if (inputConfirmCancelButtonSwap(idx, ck)) {
+        if (ck == CK_A) real_ck = CK_B;
+        else if (ck == CK_B) real_ck = CK_A;
+    }
+    for (s32 i = 0; i < INPUT_MAX_BINDS; ++i) {
+        if (binds[idx][real_ck][i]) {
+            if (inputKeyPressed(binds[idx][real_ck][i])) {
+                return 1;
+            }
+        }
+    }
+    return 0;
 }
 
 static inline s32 inputAxisScale(s32 x, const s32 deadzone, const f32 scale)
