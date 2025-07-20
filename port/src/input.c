@@ -817,14 +817,14 @@ int inputControllerIsNintendoSwitch(int cidx) {
 
 static inline s32 inputBindPressed(const s32 idx, const u32 ck)
 {
-	u32 real_ck = ck;
+	u32 swapped_ck = ck;
 	if (inputConfirmCancelButtonSwap(idx, ck)) {
-		if (ck == CK_A) real_ck = CK_B;
-		else if (ck == CK_B) real_ck = CK_A;
+		if (ck == CK_A) swapped_ck = CK_B;
+		else if (ck == CK_B) swapped_ck = CK_A;
 	}
 	for (s32 i = 0; i < INPUT_MAX_BINDS; ++i) {
-		if (binds[idx][real_ck][i]) {
-			if (inputKeyPressed(binds[idx][real_ck][i])) {
+		if (binds[idx][swapped_ck][i]) {
+			if (inputKeyPressed(binds[idx][swapped_ck][i])) {
 				return 1;
 			}
 		}
@@ -1577,14 +1577,14 @@ u32 inputGetKeyModState(void)
 
 PD_CONSTRUCTOR static void inputConfigInit(void)
 {
-    configRegisterInt("Input.MouseEnabled", &mouseEnabled, 0, 1);
-    configRegisterInt("Input.MouseLockMode", &mouseLockMode, MLOCK_OFF, MLOCK_AUTO);
-    configRegisterFloat("Input.MouseSpeedX", &mouseSensX, -30.f, 30.f);
-    configRegisterFloat("Input.MouseSpeedY", &mouseSensY, -30.f, 30.f);
-    configRegisterInt("Input.FakeGamepads", &fakeControllers, 0, 4);
-    configRegisterInt("Input.FirstGamepadNum", &firstController, 0, 3);
-    configRegisterInt("Input.UseHIDAPI", &useHIDAPI, 0, 1);
-    configRegisterInt("Input.UseRawInput", &useRawInput, 0, 1);
+	configRegisterInt("Input.MouseEnabled", &mouseEnabled, 0, 1);
+	configRegisterInt("Input.MouseLockMode", &mouseLockMode, MLOCK_OFF, MLOCK_AUTO);
+	configRegisterFloat("Input.MouseSpeedX", &mouseSensX, -30.f, 30.f);
+	configRegisterFloat("Input.MouseSpeedY", &mouseSensY, -30.f, 30.f);
+	configRegisterInt("Input.FakeGamepads", &fakeControllers, 0, 4);
+	configRegisterInt("Input.FirstGamepadNum", &firstController, 0, 3);
+	configRegisterInt("Input.UseHIDAPI", &useHIDAPI, 0, 1);
+	configRegisterInt("Input.UseRawInput", &useRawInput, 0, 1);
 
 	char secname[] = "Input.Player1.Binds";
 	char keyname[256] = { 0 };
