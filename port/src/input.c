@@ -817,19 +817,19 @@ int inputControllerIsNintendoSwitch(int cidx) {
 
 static inline s32 inputBindPressed(const s32 idx, const u32 ck)
 {
-    u32 real_ck = ck;
-    if (inputConfirmCancelButtonSwap(idx, ck)) {
-        if (ck == CK_A) real_ck = CK_B;
-        else if (ck == CK_B) real_ck = CK_A;
-    }
-    for (s32 i = 0; i < INPUT_MAX_BINDS; ++i) {
-        if (binds[idx][real_ck][i]) {
-            if (inputKeyPressed(binds[idx][real_ck][i])) {
-                return 1;
-            }
-        }
-    }
-    return 0;
+	u32 real_ck = ck;
+	if (inputConfirmCancelButtonSwap(idx, ck)) {
+		if (ck == CK_A) real_ck = CK_B;
+		else if (ck == CK_B) real_ck = CK_A;
+	}
+	for (s32 i = 0; i < INPUT_MAX_BINDS; ++i) {
+		if (binds[idx][real_ck][i]) {
+			if (inputKeyPressed(binds[idx][real_ck][i])) {
+				return 1;
+			}
+		}
+	}
+	return 0;
 }
 
 static inline s32 inputAxisScale(s32 x, const s32 deadzone, const f32 scale)

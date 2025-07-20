@@ -1745,23 +1745,23 @@ static MenuItemHandlerResult menuhandlerDoBind(s32 operation, struct menuitem *i
 	if (key && key != VK_DELETE && key != VK_ESCAPE) {
 		s32 adjustedKey = key;
 		
-        // Handle Nintendo Switch controller button swapping for Japanese layout
-        if (inputControllerIsNintendoSwitch(g_ExtMenuPlayer) &&
-            inputConfirmCancelButtonSwap(g_ExtMenuPlayer, key) &&
-            key >= VK_JOY_BEGIN && key < VK_TOTAL_COUNT) {
+		// Handle Nintendo Switch controller button swapping for Japanese layout
+		if (inputControllerIsNintendoSwitch(g_ExtMenuPlayer) &&
+			inputConfirmCancelButtonSwap(g_ExtMenuPlayer, key) &&
+			key >= VK_JOY_BEGIN && key < VK_TOTAL_COUNT) {
 
-            s32 keyControllerIdx = (key - VK_JOY_BEGIN) / INPUT_MAX_CONTROLLER_BUTTONS;
-            if (keyControllerIdx == g_ExtMenuPlayer) {
-                s32 buttonInController = (key - VK_JOY_BEGIN) % INPUT_MAX_CONTROLLER_BUTTONS;
+			s32 keyControllerIdx = (key - VK_JOY_BEGIN) / INPUT_MAX_CONTROLLER_BUTTONS;
+			if (keyControllerIdx == g_ExtMenuPlayer) {
+			s32 buttonInController = (key - VK_JOY_BEGIN) % INPUT_MAX_CONTROLLER_BUTTONS;
 
-                // Swap A and B buttons for Japanese layout
-                if (buttonInController == CK_A) {
-                    adjustedKey = key + (CK_B - CK_A);
-                } else if (buttonInController == CK_B) {
-                    adjustedKey = key + (CK_A - CK_B);
-                }
-            }
-        }
+			// Swap A and B buttons for Japanese layout
+			if (buttonInController == CK_A) {
+				adjustedKey = key + (CK_B - CK_A);
+			} else if (buttonInController == CK_B) {
+				adjustedKey = key + (CK_A - CK_B);
+			}
+			}
+		}
 		
 		inputKeyBind(g_ExtMenuPlayer, g_BindContKey, g_BindIndex, adjustedKey);
 		menuPopDialog();
