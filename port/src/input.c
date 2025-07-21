@@ -1781,7 +1781,8 @@ static void applyGyroAxisMapping(s32 cidx, float gyroData[3], float accelData[3]
     }
     case GYRO_PLAYER: {
         float playerX = 0.f, playerY = 0.f;
-        gmhGetPlayerSpaceGyro(gpadMotion[cidx], &playerX, &playerY, 1.41f);
+        gmhGetPlayerSpaceGyro(gpadMotion[cidx], &playerX, &playerY, 2.0f);
+        
         *deltaX = -playerY;
         *deltaY = -playerX;
         *deltaZ = calibratedGyro[2];
@@ -1790,9 +1791,18 @@ static void applyGyroAxisMapping(s32 cidx, float gyroData[3], float accelData[3]
     case GYRO_WORLD: {
         float worldX = 0.f, worldY = 0.f;
         gmhGetWorldSpaceGyro(gpadMotion[cidx], &worldX, &worldY, 0.125f);
+
+        // Uses GamepadMotion's gravity for world space roll calculation
+        float gravity[3] = {0.f};
+        gmhGetGravity(gpadMotion[cidx], &gravity[0], &gravity[1], &gravity[2]);
+        
+        float worldZ = calibratedGyro[2];
+        float tiltReduction = 1.0f - fabsf(gravity[0]);
+        worldZ *= tiltReduction;
+
         *deltaX = -worldY;
         *deltaY = -worldX;
-        *deltaZ = calibratedGyro[2];
+        *deltaZ = worldZ;
         break;
     }
     default:
