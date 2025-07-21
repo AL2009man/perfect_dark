@@ -2193,27 +2193,43 @@ static void inputUpdateAutoCalibration(s32 cidx)
 	Uint32 now = SDL_GetTicks();
 
 	if (isTrulyStable) {
-		if (!state->wasStable && (now - state->lastAutoCalibTime) > 10000) {
-			gmhStartContinuousCalibration(gpadMotion[cidx]);
-		}
-		
-		float confidence = gmhGetAutoCalibrationConfidence(gpadMotion[cidx]);
-		if (!state->justFinishedCalibrating && confidence > 0.9f) {
-			sysLogPrintf(LOG_NOTE, "Gyro auto-calibration: Controller %d calibration completed (confidence=%.2f).", cidx, confidence);
-			inputSetCalibrationFinished(cidx, true);
-			inputPauseGyro(cidx);
-		}
-		
-		if (state->justFinishedCalibrating && (now - state->lastCalibrationTime) > 5000) {
+		// Controller is on flat surface
+		if (!state->wasStable) {
+			// Just placed down - start with short delay for first calibration
+			state->lastAutoCalibTime = now - 8000; // Effectively 2 second delay
 			state->justFinishedCalibrating = false;
-			gmhSetAutoCalibrationConfidence(gpadMotion[cidx], 0.0f);
+			sysLogPrintf(LOG_NOTE, "Gyro auto-calibration: Controller %d placed on flat surface.", cidx);
+		}
+		
+		// Check if we should start/restart calibration
+		if ((now - state->lastAutoCalibTime) > 10000) {
+			if (!state->justFinishedCalibrating) {
+				// Start new calibration
+				gmhStartContinuousCalibration(gpadMotion[cidx]);
+			} else {
+				// Previous calibration finished, start next cycle
+				state->justFinishedCalibrating = false;
+				gmhStartContinuousCalibration(gpadMotion[cidx]);
+			}
+		}
+		
+		// Check if current calibration completes
+		if (!state->justFinishedCalibrating) {
+			float confidence = gmhGetAutoCalibrationConfidence(gpadMotion[cidx]);
+			if (confidence > 0.9f) {
+				sysLogPrintf(LOG_NOTE, "Gyro auto-calibration: Controller %d calibration completed (confidence=%.2f).", cidx, confidence);
+				inputSetCalibrationFinished(cidx, true);
+				gmhPauseContinuousCalibration(gpadMotion[cidx]);
+				// Set up for next calibration cycle (10 second delay)
+				state->lastAutoCalibTime = now;
+			}
 		}
 	} else {
+		// Controller picked up - reset everything
 		if (state->wasStable) {
 			gmhPauseContinuousCalibration(gpadMotion[cidx]);
-			state->lastAutoCalibTime = now;
+			state->justFinishedCalibrating = false;
 		}
-		state->justFinishedCalibrating = false;
 	}
 
 	state->wasStable = isTrulyStable;
