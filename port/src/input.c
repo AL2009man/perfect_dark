@@ -161,13 +161,15 @@ static inline bool inputHasWindowFocus(void);
 // GMH settings configuration	
 static void inputConfigureGamepadMotionSettings(GamepadMotionHandle handle);
 static void inputUpdateGyroCalibrationHandle(void);
-static void inputUpdateAutoCalibration(s32 cidx);
-static void inputUpdateManualCalibration(s32 cidx);
-static void inputStartManualCalibration(s32 cidx);
-static void inputFinishManualCalibration(s32 cidx);
-static void inputConfigureCalibrationMode(s32 cidx);
+static void inputUpdateGyroAutoCalibration(s32 cidx);
+static void inputUpdateGyroManualCalibration(s32 cidx);
+static void inputGyroManualCalibrationActivation(s32 cidx, bool start);
+static void inputGyroAutoCalibrationActivation(s32 cidx, bool start);
+static void inputGyroCalibrationFinished(s32 cidx, bool finished);
+static bool inputIsGyroCalibrationBlocked(s32 cidx);
+static void inputConfigureGyroCalibrationMode(s32 cidx);
 static void inputResetGyroCalibration(s32 cidx);
-static void inputApplyManualCalibrationOffset(s32 cidx);
+static void inputApplyGyroManualCalibrationOffset(s32 cidx);
 static bool inputIsControllerSensorNoiseThreshold(s32 cidx);
 
 // Gyro processing function declarations
@@ -505,7 +507,7 @@ if (sensorActive) {
 		// Reset motion state on controller reconnection
 		gmhResetMotion(gpadMotion[cidx]);
 		
-		inputConfigureCalibrationMode(cidx);
+		inputConfigureGyroCalibrationMode(cidx);
 		
 		sysLogPrintf(LOG_NOTE, "input: Motion state reset for controller %d reconnection", cidx);
 	}
@@ -2124,11 +2126,11 @@ static void inputUpdateGyroCalibrationHandle(void)
 		}
 
 		// Handle manual calibration input
-		inputUpdateManualCalibration(cidx);
+		inputUpdateGyroManualCalibration(cidx);
 
 		// Handle auto-calibration if enabled
 		if (padsCfg[cidx].gyroAutoCalibration) {
-			inputUpdateAutoCalibration(cidx);
+			inputUpdateGyroAutoCalibration(cidx);
 		}
 	}
 }
@@ -2156,32 +2158,55 @@ static bool inputIsControllerSensorNoiseThreshold(s32 cidx)
 	return fabsf(accelMagnitude - SDL_STANDARD_GRAVITY) < GYRO_NOISE_THRESHOLD * 5.0f;
 }
 
-static void inputSetCalibrationFinished(s32 cidx, bool finished)
+void inputGyroCalibration(s32 cidx, GyroCalibrationOp op, float* out_confidence, int* out_steady)
 {
-	GyroCalibState *state = &gyroCalibState[cidx];
-	state->justFinishedCalibrating = finished;
-	if (finished) {
-		state->lastCalibrationTime = SDL_GetTicks();
+	if (cidx < 0 || cidx >= INPUT_MAX_CONTROLLERS) return;
+	
+	switch (op) {
+	case GYRO_CALIB_START:
+		inputGyroManualCalibrationActivation(cidx, true);
+		break;
+	case GYRO_CALIB_FINISH:
+		inputGyroManualCalibrationActivation(cidx, false);
+		break;
+	case GYRO_CALIB_RESET:
+		inputResetGyroCalibration(cidx);
+		break;
+	case GYRO_CALIB_QUERY:
+		if (gpadMotion[cidx]) {
+			if (out_confidence) *out_confidence = gmhGetAutoCalibrationConfidence(gpadMotion[cidx]);
+			if (out_steady) *out_steady = gmhGetAutoCalibrationIsSteady(gpadMotion[cidx]);
+		}
+		break;
+	case GYRO_CALIB_AUTO:
+		if (padsCfg[cidx].gyroAutoCalibration) {
+			inputUpdateGyroAutoCalibration(cidx);
+		}
+		break;
 	}
 }
 
-// Block gyro calibration if Gyro Calibration UI is active
-static bool inputIsCalibrationBlocked(s32 cidx)
+static void inputGyroAutoCalibrationActivation(s32 cidx, bool start)
 {
-	return inputIsMenuGyroCalibrationActive(cidx) ||
-	       (padsCfg[cidx].gyroAutoCalibration && gyroCalibState[cidx].wasStable);
+	if (!gpadMotion[cidx]) return;
+	
+	if (start) {
+		gmhStartContinuousCalibration(gpadMotion[cidx]);
+	} else {
+		gmhPauseContinuousCalibration(gpadMotion[cidx]);
+	}
+	gyroCalibState[cidx].justFinishedCalibrating = false;
 }
 
-static void inputUpdateAutoCalibration(s32 cidx)
+static void inputUpdateGyroAutoCalibration(s32 cidx)
 {
 	if (!gpadMotion[cidx] || !padsCfg[cidx].gyroAutoCalibration) return;
 
 	GyroCalibState *state = &gyroCalibState[cidx];
 
 	if (inputIsMenuGyroCalibrationActive(cidx)) {
-		gmhPauseContinuousCalibration(gpadMotion[cidx]);
+		inputGyroAutoCalibrationActivation(cidx, false);
 		state->lastAutoCalibTime = SDL_GetTicks();
-		state->justFinishedCalibrating = false;
 		return;
 	}
 
@@ -2197,20 +2222,12 @@ static void inputUpdateAutoCalibration(s32 cidx)
 		if (!state->wasStable) {
 			// Just placed down - start with short delay for first calibration
 			state->lastAutoCalibTime = now - 8000; // Effectively 2 second delay
-			state->justFinishedCalibrating = false;
 			sysLogPrintf(LOG_NOTE, "Gyro auto-calibration: Controller %d placed on flat surface.", cidx);
 		}
 		
 		// Check if we should start/restart calibration
 		if ((now - state->lastAutoCalibTime) > 10000) {
-			if (!state->justFinishedCalibrating) {
-				// Start new calibration
-				gmhStartContinuousCalibration(gpadMotion[cidx]);
-			} else {
-				// Previous calibration finished, start next cycle
-				state->justFinishedCalibrating = false;
-				gmhStartContinuousCalibration(gpadMotion[cidx]);
-			}
+			inputGyroAutoCalibrationActivation(cidx, true);
 		}
 		
 		// Check if current calibration completes
@@ -2218,7 +2235,7 @@ static void inputUpdateAutoCalibration(s32 cidx)
 			float confidence = gmhGetAutoCalibrationConfidence(gpadMotion[cidx]);
 			if (confidence > 0.9f) {
 				sysLogPrintf(LOG_NOTE, "Gyro auto-calibration: Controller %d calibration completed (confidence=%.2f).", cidx, confidence);
-				inputSetCalibrationFinished(cidx, true);
+				inputGyroCalibrationFinished(cidx, true);
 				gmhPauseContinuousCalibration(gpadMotion[cidx]);
 				// Set up for next calibration cycle (10 second delay)
 				state->lastAutoCalibTime = now;
@@ -2227,75 +2244,11 @@ static void inputUpdateAutoCalibration(s32 cidx)
 	} else {
 		// Controller picked up - reset everything
 		if (state->wasStable) {
-			gmhPauseContinuousCalibration(gpadMotion[cidx]);
-			state->justFinishedCalibrating = false;
+			inputGyroAutoCalibrationActivation(cidx, false);
 		}
 	}
 
 	state->wasStable = isTrulyStable;
-}
-
-static void inputUpdateManualCalibration(s32 cidx)
-{
-	if (!pads[cidx] || !gpadMotion[cidx]) {
-		gyroCalibState[cidx].manualCalibActive = false;
-		return;
-	}
-
-	GyroCalibState *state = &gyroCalibState[cidx];
-
-	if (inputIsCalibrationBlocked(cidx)) {
-		state->manualCalibActive = false;
-		return;
-	}
-
-	int pressed = inputBindPressed(cidx, CK_0100);
-
-	if (pressed && !state->manualCalibActive) {
-		inputStartManualCalibration(cidx);
-	} else if (!pressed && state->manualCalibActive && 
-	           (SDL_GetTicks() - state->manualCalibStartTime) >= 500) {
-		inputFinishManualCalibration(cidx);
-	}
-}
-
-static void inputStartManualCalibration(s32 cidx)
-{
-	GyroCalibState *state = &gyroCalibState[cidx];
-	
-	if (!gpadMotion[cidx]) return;
-	
-	state->manualCalibActive = true;
-	state->manualCalibStartTime = SDL_GetTicks();
-	
-	gmhSetCalibrationMode(gpadMotion[cidx], CALIBRATIONMODE_MANUAL);
-	gmhResetContinuousCalibration(gpadMotion[cidx]);
-	gmhStartContinuousCalibration(gpadMotion[cidx]);
-	inputSetCalibrationFinished(cidx, true);
-}
-
-static void inputFinishManualCalibration(s32 cidx)
-{
-	GyroCalibState *state = &gyroCalibState[cidx];
-	
-	if (!gpadMotion[cidx]) return;
-	
-	state->manualCalibActive = false;
-	gmhPauseContinuousCalibration(gpadMotion[cidx]);
-	
-	// Save manual calibration offset only if auto-calibration is disabled
-	if (!padsCfg[cidx].gyroAutoCalibration) {
-		gmhGetCalibrationOffset(gpadMotion[cidx], 
-			&state->manualOffsetX,
-			&state->manualOffsetY,
-			&state->manualOffsetZ);
-		state->manualWeight = 100; // High confidence for manual calibration
-
-		// Apply manual calibration offset immediately
-		inputApplyManualCalibrationOffset(cidx);
-	}
-	
-	inputSetCalibrationFinished(cidx, true);
 }
 
 s32 inputGyroGetAutoCalibration(s32 cidx)
@@ -2317,27 +2270,132 @@ void inputGyroSetAutoCalibration(s32 cidx, s32 enabled)
 		if (!gpadMotion[cidx]) {
 			inputResetGyroCalibration(cidx);
 		} else {
-			inputConfigureCalibrationMode(cidx);
+			inputConfigureGyroCalibrationMode(cidx);
 		}
 	}
 }
 
-static void inputConfigureCalibrationMode(s32 cidx)
+static void inputUpdateGyroManualCalibration(s32 cidx)
 {
+	if (!pads[cidx] || !gpadMotion[cidx]) {
+		gyroCalibState[cidx].manualCalibActive = false;
+		return;
+	}
+
+	GyroCalibState *state = &gyroCalibState[cidx];
+
+	if (inputIsGyroCalibrationBlocked(cidx)) {
+		state->manualCalibActive = false;
+		return;
+	}
+
+	int pressed = inputBindPressed(cidx, CK_0100);
+
+	if (pressed && !state->manualCalibActive) {
+		inputGyroManualCalibrationActivation(cidx, true);
+	} else if (!pressed && state->manualCalibActive && 
+	           (SDL_GetTicks() - state->manualCalibStartTime) >= 500) {
+		inputGyroManualCalibrationActivation(cidx, false);
+	}
+}
+
+static void inputGyroManualCalibrationActivation(s32 cidx, bool start)
+{
+	GyroCalibState *state = &gyroCalibState[cidx];
+	
 	if (!gpadMotion[cidx]) return;
 	
-	GyroCalibState *state = &gyroCalibState[cidx];
+	if (start) {
+		// Start manual calibration
+		state->manualCalibActive = true;
+		state->manualCalibStartTime = SDL_GetTicks();
+		
+		gmhSetCalibrationMode(gpadMotion[cidx], CALIBRATIONMODE_MANUAL);
+		gmhResetContinuousCalibration(gpadMotion[cidx]);
+		inputGyroAutoCalibrationActivation(cidx, true);
+		inputGyroCalibrationFinished(cidx, true);
+	} else {
+		// Finish manual calibration
+		state->manualCalibActive = false;
+		gmhPauseContinuousCalibration(gpadMotion[cidx]);
+		
+		// Save manual calibration offset only if auto-calibration is disabled
+		if (!padsCfg[cidx].gyroAutoCalibration) {
+			gmhGetCalibrationOffset(gpadMotion[cidx], 
+				&state->manualOffsetX,
+				&state->manualOffsetY,
+				&state->manualOffsetZ);
+			state->manualWeight = 100; // High confidence for manual calibration
+
+			// Apply manual calibration offset immediately
+			inputApplyGyroManualCalibrationOffset(cidx);
+		}
+		
+		inputGyroCalibrationFinished(cidx, true);
+	}
+}
+
+s32 inputGyroGetManualCalibration(s32 cidx)
+{
+	if (cidx < 0 || cidx >= INPUT_MAX_CONTROLLERS) return 0;
+	return gyroCalibState[cidx].manualCalibActive ? 1 : 0;
+}
+
+void inputGyroSetManualCalibration(s32 cidx)
+{
+	if (cidx < 0 || cidx >= INPUT_MAX_CONTROLLERS) return;
+	if (!pads[cidx] || !gpadMotion[cidx]) return;
+
+	if (inputIsGyroCalibrationBlocked(cidx)) return;
+
+	inputGyroManualCalibrationActivation(cidx, true);
+}
+
+static void inputConfigureGyroCalibrationMode(s32 cidx)
+{
+	if (!gpadMotion[cidx]) return;
 	
 	if (padsCfg[cidx].gyroAutoCalibration) {
 		// Switch to auto-calibration mode
 		gmhSetCalibrationMode(gpadMotion[cidx], CALIBRATIONMODE_STILLNESS);
 		gmhResetContinuousCalibration(gpadMotion[cidx]);
-		gmhPauseContinuousCalibration(gpadMotion[cidx]);
+		inputGyroAutoCalibrationActivation(cidx, false);
 	} else {
 		// Switch to manual mode and apply any saved manual calibration
 		gmhSetCalibrationMode(gpadMotion[cidx], CALIBRATIONMODE_MANUAL);
-		gmhPauseContinuousCalibration(gpadMotion[cidx]);
-		inputApplyManualCalibrationOffset(cidx);
+		inputGyroAutoCalibrationActivation(cidx, false);
+		inputApplyGyroManualCalibrationOffset(cidx);
+	}
+}
+
+// Block gyro calibration if Gyro Calibration UI is active
+static bool inputIsGyroCalibrationBlocked(s32 cidx)
+{
+	return inputIsMenuGyroCalibrationActive(cidx) ||
+	       (padsCfg[cidx].gyroAutoCalibration && gyroCalibState[cidx].wasStable);
+}
+
+static void inputGyroCalibrationFinished(s32 cidx, bool finished)
+{
+	GyroCalibState *state = &gyroCalibState[cidx];
+	state->justFinishedCalibrating = finished;
+	if (finished) {
+		state->lastCalibrationTime = SDL_GetTicks();
+	}
+}
+
+static void inputApplyGyroManualCalibrationOffset(s32 cidx)
+{
+	if (cidx < 0 || cidx >= INPUT_MAX_CONTROLLERS || !gpadMotion[cidx]) return;
+	
+	GyroCalibState *state = &gyroCalibState[cidx];
+	
+	if (!padsCfg[cidx].gyroAutoCalibration && state->manualWeight > 0) {
+		gmhSetCalibrationOffset(gpadMotion[cidx], 
+			state->manualOffsetX, state->manualOffsetY, state->manualOffsetZ, 
+			state->manualWeight);
+	} else {
+		gmhSetCalibrationOffset(gpadMotion[cidx], 0.0f, 0.0f, 0.0f, 1);
 	}
 }
 
@@ -2357,66 +2415,7 @@ static void inputResetGyroCalibration(s32 cidx)
 	// Clear calibration state
 	memset(&gyroCalibState[cidx], 0, sizeof(GyroCalibState));
 	
-	inputConfigureCalibrationMode(cidx);
-}
-
-static void inputApplyManualCalibrationOffset(s32 cidx)
-{
-	if (cidx < 0 || cidx >= INPUT_MAX_CONTROLLERS || !gpadMotion[cidx]) return;
-	
-	GyroCalibState *state = &gyroCalibState[cidx];
-	
-	if (!padsCfg[cidx].gyroAutoCalibration && state->manualWeight > 0) {
-		gmhSetCalibrationOffset(gpadMotion[cidx], 
-			state->manualOffsetX, state->manualOffsetY, state->manualOffsetZ, 
-			state->manualWeight);
-	} else {
-		gmhSetCalibrationOffset(gpadMotion[cidx], 0.0f, 0.0f, 0.0f, 1);
-	}
-}
-
-void inputGyroCalibration(s32 cidx, GyroCalibrationOp op, float* out_confidence, int* out_steady)
-{
-	if (cidx < 0 || cidx >= INPUT_MAX_CONTROLLERS) return;
-	
-	switch (op) {
-	case GYRO_CALIB_START:
-		inputStartManualCalibration(cidx);
-		break;
-	case GYRO_CALIB_FINISH:
-		inputFinishManualCalibration(cidx);
-		break;
-	case GYRO_CALIB_RESET:
-		inputResetGyroCalibration(cidx);
-		break;
-	case GYRO_CALIB_QUERY:
-		if (gpadMotion[cidx]) {
-			if (out_confidence) *out_confidence = gmhGetAutoCalibrationConfidence(gpadMotion[cidx]);
-			if (out_steady) *out_steady = gmhGetAutoCalibrationIsSteady(gpadMotion[cidx]);
-		}
-		break;
-	case GYRO_CALIB_AUTO:
-		if (padsCfg[cidx].gyroAutoCalibration) {
-			inputUpdateAutoCalibration(cidx);
-		}
-		break;
-	}
-}
-
-s32 inputGyroGetManualCalibration(s32 cidx)
-{
-	if (cidx < 0 || cidx >= INPUT_MAX_CONTROLLERS) return 0;
-	return gyroCalibState[cidx].manualCalibActive ? 1 : 0;
-}
-
-void inputGyroSetManualCalibration(s32 cidx)
-{
-	if (cidx < 0 || cidx >= INPUT_MAX_CONTROLLERS) return;
-	if (!pads[cidx] || !gpadMotion[cidx]) return;
-
-	if (inputIsCalibrationBlocked(cidx)) return;
-
-	inputStartManualCalibration(cidx);
+	inputConfigureGyroCalibrationMode(cidx);
 }
 
 const char *inputGetContKeyName(u32 ck)
