@@ -1162,6 +1162,7 @@ static s32 menuhandlerExtendedGyroMenu(s32 operation, struct menudialogdef *dial
     if (operation == MENUOP_TICK) {
         if (g_GyroCalibrationState[g_ExtMenuPlayer] == 1) {
             if (SDL_GetTicks() - g_GyroCalibrationStartTime[g_ExtMenuPlayer] >= 5000) {
+                g_GyroCalibrationState[g_ExtMenuPlayer] = 0;
                 inputGyroSetManualCalibration(g_ExtMenuPlayer);
                 g_GyroCalibrationState[g_ExtMenuPlayer] = 2;
             }
@@ -1169,7 +1170,6 @@ static s32 menuhandlerExtendedGyroMenu(s32 operation, struct menudialogdef *dial
     }
     return 0;
 }
-
 
 struct menudialogdef g_ExtendedGyroMenuDialog = {
         MENUDIALOGTYPE_DEFAULT,
