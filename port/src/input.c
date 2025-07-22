@@ -40,12 +40,12 @@
 #endif
 
 // Gyro autocalibration constants 
-// This determines when gyro stillness and collection time, using GamepadMotionSetting.
-#define GMH_STILLNESS_COLLECTION_TIME 2.5f // time to collect stillness data
-#define GMH_STILLNESS_CORRECTION_TIME 3.0f // time to correct stillness data
-#define GMH_STILLNESS_EASE_TIME 1.0f // time to ease the stillness correction
-#define GMH_MAX_STILLNESS_ERROR 1.5f // maximum error allowed during stillness calibration
-#define GYRO_NOISE_THRESHOLD 0.2f // threshold for gyro noise filtering (safety net)
+// These control the internal calibration behavior and timing thresholds
+#define GMH_STILLNESS_COLLECTION_TIME 2.5f // Time to collect stillness data before calibration starts
+#define GMH_STILLNESS_CORRECTION_TIME 3.0f // Time to correct/build calibration confidence
+#define GMH_STILLNESS_EASE_TIME 1.0f       // Time to ease calibration transitions
+#define GMH_MAX_STILLNESS_ERROR 1.5f       // Maximum sensor error allowed during stillness detection
+#define GYRO_NOISE_THRESHOLD 0.2f          // Threshold for additional gyro noise filtering (safety net)
 
 static SDL_GameController *pads[INPUT_MAX_CONTROLLERS];
 
@@ -1297,7 +1297,7 @@ void inputUpdate(void)
 	}
 }
 
-void inputUpdateGyroCalibrationOnly(void)
+void inputUpdateGyroCalibrationSystem(void)
 {
 	inputUpdateGyroCalibrationHandle();
 }
@@ -2146,27 +2146,31 @@ static void inputUpdateGyroCalibrationHandle(void)
 
 static bool inputIsControllerSensorNoiseThreshold(s32 cidx)
 {
-	if (!gpadMotion[cidx]) return false;
-	
-	float gyroData[3] = {0.f}, accelData[3] = {0.f};
-	if (!inputGetControllerSensorData(cidx, gyroData, accelData)) return false;
-	
-	// Check gyro stillness
-	float gyroThreshold = 0.1f;
-	for (s32 i = 0; i < 3; ++i) {
-		if (fabsf(gyroData[i]) > gyroThreshold) return false;
-	}
-	
-	// Check accelerometer stability
-	float accelThreshold = 1.0f;
-	for (s32 i = 0; i < 3; ++i) {
-		float expectedGravity = (i == 1) ? SDL_STANDARD_GRAVITY : 0.0f;
-		if (fabsf(accelData[i] - expectedGravity) > accelThreshold) return false;
-	}
+    if (!gpadMotion[cidx]) return false;
+    
+    float gyroData[3] = {0.f}, accelData[3] = {0.f};
+    if (!inputGetControllerSensorData(cidx, gyroData, accelData)) return false;
+    
+    // Check gyro threshold
+    float strictGyroThreshold = GYRO_NOISE_THRESHOLD * 0.15f;
+    for (s32 i = 0; i < 3; ++i) {
+        if (fabsf(gyroData[i]) > strictGyroThreshold) return false;
+    }
+    
+    // Check gyro magnitude
+    float gyroMagnitude = sqrtf(gyroData[0] * gyroData[0] + gyroData[1] * gyroData[1] + gyroData[2] * gyroData[2]);
+    if (gyroMagnitude > strictGyroThreshold) return false;
+    
+    // Check accelerometer stability
+    float accelThreshold = 0.15f;
+    for (s32 i = 0; i < 3; ++i) {
+        float expectedGravity = (i == 1) ? SDL_STANDARD_GRAVITY : 0.0f;
+        if (fabsf(accelData[i] - expectedGravity) > accelThreshold) return false;
+    }
 
-	// Check total acceleration magnitude
-	float accelMagnitude = sqrtf(accelData[0] * accelData[0] + accelData[1] * accelData[1] + accelData[2] * accelData[2]);
-	return fabsf(accelMagnitude - SDL_STANDARD_GRAVITY) < 0.5f;
+	// Check acceleration magnitude
+    float accelMagnitude = sqrtf(accelData[0] * accelData[0] + accelData[1] * accelData[1] + accelData[2] * accelData[2]);
+    return fabsf(accelMagnitude - SDL_STANDARD_GRAVITY) < 0.05f;
 }
 
 void inputGyroCalibration(s32 cidx, GyroCalibrationOp op, float* out_confidence, int* out_steady)
@@ -2226,8 +2230,7 @@ static void inputUpdateGyroAutoCalibration(s32 cidx)
 	
 	gmhSetCalibrationMode(gpadMotion[cidx], CALIBRATIONMODE_STILLNESS | CALIBRATIONMODE_SENSORFUSION);
 	
-	bool isTrulyStable = gmhGetAutoCalibrationIsSteady(gpadMotion[cidx]) && 
-	                     inputIsControllerSensorNoiseThreshold(cidx);
+	bool isTrulyStable = gmhGetAutoCalibrationIsSteady(gpadMotion[cidx]) && inputIsControllerSensorNoiseThreshold(cidx);
 	Uint32 now = SDL_GetTicks();
 	float confidence = gmhGetAutoCalibrationConfidence(gpadMotion[cidx]);
 
@@ -2241,12 +2244,26 @@ static void inputUpdateGyroAutoCalibration(s32 cidx)
 		
 		// Start calibration if enough time has passed and confidence is low
 		if ((now - state->lastAutoCalibTime) > 10000 && confidence < 0.8f) {
-			inputGyroAutoCalibrationActivation(cidx, true);
+			// Additional sustained stability verification
+			static int stableCount[INPUT_MAX_CONTROLLERS] = {0};
+			
+			if (gmhGetAutoCalibrationIsSteady(gpadMotion[cidx]) && 
+			    inputIsControllerSensorNoiseThreshold(cidx)) {
+				stableCount[cidx]++;
+				
+				// Only start calibration after sustained stability
+				if (stableCount[cidx] >= 3) {
+					inputGyroAutoCalibrationActivation(cidx, true);
+					stableCount[cidx] = 0; // Reset counter
+				}
+			} else {
+				stableCount[cidx] = 0; // Reset if not stable
+			}
 		}
 		
 		// Check if current calibration should complete
 		if (!state->justFinishedCalibrating) {
-			// Use graduated confidence thresholds for better behavior
+			// Check if calibration is stable enough to finish
 			float requiredConfidence = (confidence > 0.5f) ? 0.95f : 0.85f;
 			
 			if (confidence > requiredConfidence) {
@@ -2261,6 +2278,10 @@ static void inputUpdateGyroAutoCalibration(s32 cidx)
 			}
 		}
 	} else {
+		// Reset sustained stability counter when movement detected
+		static int stableCount[INPUT_MAX_CONTROLLERS] = {0};
+		stableCount[cidx] = 0;
+		
 		// Controller picked up - pause calibration but preserve progress
 		if (state->wasStable) {
 			// Only fully stop if confidence is very low, otherwise just pause
