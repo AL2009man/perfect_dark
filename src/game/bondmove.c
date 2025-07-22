@@ -2210,8 +2210,8 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
             const f32 norm = g_Vars.lvupdate60freal;
 			f32 x = g_Vars.currentplayer->swivelpos[0] + dx;
 			f32 y = g_Vars.currentplayer->swivelpos[1] + dy;
-			if (x < -1.f) x = -1.f; else if (x > 1.f) x = 1.f;
-			if (y < -1.f) y = -1.f; else if (y > 1.f) y = 1.f;
+			x = (x < -1.f) ? -1.f : ((x > 1.f) ? 1.f : x);
+			y = (y < -1.f) ? -1.f : ((y > 1.f) ? 1.f : y);
 			g_Vars.currentplayer->swivelpos[0] = x;
 			g_Vars.currentplayer->swivelpos[1] = y;
 			bgunSwivelWithDamp(x, y, 0.01f);
