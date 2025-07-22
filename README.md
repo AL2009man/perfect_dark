@@ -90,23 +90,23 @@ N64 pad buttons X and Y (or `X_BUTTON`, `Y_BUTTON` in the code) refer to the res
 
 Support for one controller, two-stick configurations are enabled for 1.2.
 
-Note that the mouse only controls player 1.
+Motion Sensor Aiming (also known as Gyro Aiming) is enabled by default while Aiming (`Crosshair only` via `Gyro Settings`).
 
-Motion Sensor Aiming (also known as Gyro Aiming) is enabled by default when using Aim Mode (Crosshair).
+Note that the mouse only controls player 1.
 
 > [!NOTE]
 > Gyro Aiming is only supported for controllers that has Motion Sensor functionality. (**DualShock 4**, **DualSense**, **Nintendo Switch family of controllers**)
 >
-> Gyro Aiming will not work if Steam Input is enabled, or using a Xbox controller.
+> Gyro Aiming will not work if using a Input Remapper lacks controller-specific emulation (example: Steam Input), or using a controller that doesn't support Motion Sensors such as Xbox Wireless Controller.
 
 > [!TIP]
-> Gyro Drift may become a occurence during regular gameplay. It becomes far more evident when using a first-party Nintendo Switch (first-gen) controller. To remedy this issue: "Auto-Calibrate Gyro while Stationary" toggle is enabled by default, which should help eliminate the drift, just place the controller on the flat surface during initialization of the game or during gameplay, and it will automatically calibrate the gyro sensors.
+> Gyro Drift may become a occurence during regular gameplay, but far more frequent when using a first-party Nintendo Switch controllers. To remedy this issue: `Auto-Calibrate Gyro while Stationary` toggle (under `Player [Number] Controller Options`'s `Gyro Settings`) is enabled by default, just place the controller on the flat surface either during bootup, during gameplay or while in menus or pause screen, and it will automatically calibrate gyro after a few seconds.
 >
-> If the Autocalibration fails or you don't want the gyro to calibrate during regular gameplay: you have the ability to manually calibrate the gyro. You can head over to "Gyro Settings..." menu, either select "Initiate Gyro Calibration...", pressing the `SHARE` button on your Xbox pad (Xbox Series X|S model-onwards) or `F10` key (Player 1 only) at anytime during both gameplay and menus, (it also complements Gyro Autocalibration process!)
+> If the Autocalibration fails or you don't want the gyro to auto-calibrate during regular gameplay: you have the ability to manually calibrate the gyro. You can head over to "`Gyro Settings...`" menu, either select `Initiate Gyro Calibration...`, pressing the `SHARE` button on your Xbox pad (Xbox Series X|S model-onwards) or `F10` key (Player 1 only) at anytime during both gameplay and menus, (it also complements Gyro Autocalibration process!)
 >
-> > To be extra specific: pressing the `Microphone Mute button` (DualSense) or `Capture Button` (Nintendo Switch) button is the equivalent to "SHARE" button on Xbox gamepad. 
+> > To clarify: "SHARE" button on Xbox gamepad is a closer equivalent to `Microphone Mute button` (DualSense) or `Capture Button` (Nintendo Switch) button. (under the hood: it's actually the `MISC1` button)
 >
-> "Gyro Calibration (Manual)" can be rebinded within pd.ini or extended settings
+> "`Gyro Calibration (Manual)`" can be rebinded within `pd.ini` or Extended Options' `Key Binding` menu.
 >
 
 Controls can be rebound in `pd.ini`. Default control scheme is as follows:

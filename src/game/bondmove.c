@@ -839,9 +839,7 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 	if (allowgyro) {
 		float gyroCamDx = 0.f, gyroCamDy = 0.f, gyroCamDz = 0.f;
 		float gyroCrossDx = 0.f, gyroCrossDy = 0.f;
-
 		int gyroAimMode = inputGetGyroAimMode(cidx);
-
 		if (gyroAimMode == GYRO_AIM_CAMERA || gyroAimMode == GYRO_AIM_BOTH) {
 			inputGyroGetScaledDelta(cidx, &gyroCamDx, &gyroCamDy, &gyroCamDz);
 			const f32 norm = g_Vars.lvupdate60freal;
@@ -2219,7 +2217,6 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 			} else if (movedata.speedvertadown > 0) {
 #endif
 				bmoveUpdateSpeedVerta(movedata.speedvertadown);
-
 				if (movedata.canlookahead && (movedata.analogwalk > 60 || movedata.analogwalk < -60)) {
 					g_Vars.currentplayer->movecentrerelease = true;
 				}
@@ -2229,7 +2226,6 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 			} else if (movedata.speedvertaup > 0) {
 #endif
 				bmoveUpdateSpeedVerta(-movedata.speedvertaup);
-
 				if (movedata.canlookahead && (movedata.analogwalk > 60 || movedata.analogwalk < -60)) {
 					g_Vars.currentplayer->movecentrerelease = true;
 				}
@@ -2401,7 +2397,6 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
     if (allowgcross) {
         // Gyro is active, apply gyro movement FIRST
         inputGyroGetScaledDeltaCrosshair(g_Vars.currentplayernum, &movedata.gyrolookdx, &movedata.gyrolookdy);
-
         if (movedata.gyrolookdx != 0.0f || movedata.gyrolookdy != 0.0f) {
             const float xcoeff = 320.f / 1080.f;
             const float ycoeff = 240.f / 1080.f;
@@ -2409,14 +2404,11 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
             const float yscale = PLAYER_EXTCFG().gyroaimsensy * ycoeff;
             float x = g_Vars.currentplayer->swivelpos[0] + (movedata.gyrolookdx * xscale);
             float y = g_Vars.currentplayer->swivelpos[1] + (movedata.gyrolookdy * yscale);
-
             g_Vars.currentplayer->swivelpos[0] = x;
             g_Vars.currentplayer->swivelpos[1] = y;
-
             return;
         }
     }
-
 			// Mouse input (only if gyro input was inactive and no recentering active)
 			if (allowmcross && !(s_crosshair[cidx].active || s_camera[cidx].active)) {
 				const f32 xcoeff = 320.f / 1080.f;
@@ -2425,14 +2417,11 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 				const f32 yscale = PLAYER_EXTCFG().mouseaimspeedy * ycoeff;
 				f32 x = g_Vars.currentplayer->swivelpos[0] + (movedata.freelookdx * xscale);
 				f32 y = g_Vars.currentplayer->swivelpos[1] + (movedata.freelookdy * yscale);
-			
 				x = (x < -1.f) ? -1.f : ((x > 1.f) ? 1.f : x);
 				y = (y < -1.f) ? -1.f : ((y > 1.f) ? 1.f : y);
-			
 				g_Vars.currentplayer->swivelpos[0] = x;
 				g_Vars.currentplayer->swivelpos[1] = y;
 				bgunSwivelWithDamp(x, y, 0.01f);
-			
 				return;
 			}
 #endif
