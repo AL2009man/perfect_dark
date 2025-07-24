@@ -444,11 +444,29 @@ void bmoveUpdateSpeedThetaControl(f32 value)
 	}
 }
 
+/**
+ * Apply crosshair movement with scaling and clamping
+ */
+static void bmoveApplyCrosshairMovement(f32 aimspeedx, f32 aimspeedy, f32 dx, f32 dy)
+{
+	const f32 xcoeff = 320.f / 1080.f;
+	const f32 ycoeff = 240.f / 1080.f;
+	const f32 xscale = (aimspeedx * xcoeff) / g_Vars.currentplayer->aspect;
+	const f32 yscale = aimspeedy * ycoeff;
+	f32 x = g_Vars.currentplayer->swivelpos[0] + (dx * xscale);
+	f32 y = g_Vars.currentplayer->swivelpos[1] + (dy * yscale);
+	x = (x < -1.f) ? -1.f : ((x > 1.f) ? 1.f : x);
+	y = (y < -1.f) ? -1.f : ((y > 1.f) ? 1.f : y);
+	g_Vars.currentplayer->swivelpos[0] = x;
+	g_Vars.currentplayer->swivelpos[1] = y;
+	bgunSwivelWithDamp(x, y, 0.01f);
+}
+
 #ifndef PLATFORM_N64
 /**
  * Handle camera/crosshair recentering
  */
-void bmoveHandleRecentering(s32 cidx, bool aim_mode, bool offbike)
+void bmoveUpdateCameraRecentering(s32 cidx, bool aim_mode, bool offbike)
 {
 	static bool prev_reset_pressed[MAX_PLAYERS] = {false, false, false, false};
 	static struct {
@@ -496,7 +514,7 @@ void bmoveHandleRecentering(s32 cidx, bool aim_mode, bool offbike)
 	if (s_crosshair[cidx].active && g_Vars.currentplayer && g_Vars.currentplayer->insightaimmode) {
 		float t = s_crosshair[cidx].time / s_crosshair[cidx].duration;
 		if (t > 1.0f) t = 1.0f;
-		float smooth = t * t * (3.0f - 2.0f * t); // smoothstep
+		float smooth = t * t * (3.0f - 2.0f * t);
 		g_Vars.currentplayer->swivelpos[0] *= (1.0f - smooth);
 		g_Vars.currentplayer->swivelpos[1] *= (1.0f - smooth);
 
@@ -513,7 +531,7 @@ void bmoveHandleRecentering(s32 cidx, bool aim_mode, bool offbike)
 	if (s_camera[cidx].active && g_Vars.currentplayer) {
 		float t = s_camera[cidx].time / s_camera[cidx].duration;
 		if (t > 1.0f) t = 1.0f;
-		float smooth = t * t * (3.0f - 2.0f * t); // smoothstep
+		float smooth = t * t * (3.0f - 2.0f * t);
 		g_Vars.currentplayer->vv_verta = s_camera[cidx].start + (s_camera[cidx].target - s_camera[cidx].start) * smooth;
 
 		s_camera[cidx].time += g_Vars.lvupdate60freal / 60.0f;
@@ -2111,7 +2129,7 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 
 #ifndef PLATFORM_N64
 		// Handle camera/crosshair recentering
-		bmoveHandleRecentering(cidx, g_Vars.currentplayer->insightaimmode, offbike);
+		bmoveUpdateCameraRecentering(cidx, g_Vars.currentplayer->insightaimmode, offbike);
 #endif
 
 		if (g_Vars.currentplayer->lookaheadcentreenabled) {
@@ -2403,30 +2421,15 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
         // Gyro is active, apply gyro movement
         inputGyroGetScaledDeltaCrosshair(g_Vars.currentplayernum, &movedata.gyrolookdx, &movedata.gyrolookdy);
         if (movedata.gyrolookdx != 0.0f || movedata.gyrolookdy != 0.0f) {
-            const float xcoeff = 320.f / 1080.f;
-            const float ycoeff = 240.f / 1080.f;
-            const float xscale = (PLAYER_EXTCFG().gyroaimsensx * xcoeff) / g_Vars.currentplayer->aspect;
-            const float yscale = PLAYER_EXTCFG().gyroaimsensy * ycoeff;
-            float x = g_Vars.currentplayer->swivelpos[0] + (movedata.gyrolookdx * xscale);
-            float y = g_Vars.currentplayer->swivelpos[1] + (movedata.gyrolookdy * yscale);
-            g_Vars.currentplayer->swivelpos[0] = x;
-            g_Vars.currentplayer->swivelpos[1] = y;
+            bmoveApplyCrosshairMovement(PLAYER_EXTCFG().gyroaimsensx, PLAYER_EXTCFG().gyroaimsensy, 
+                                        movedata.gyrolookdx, movedata.gyrolookdy);
             return;
         }
     }
 			// Mouse input is active, apply mouse movement
 			if (allowmcross) {
-				const f32 xcoeff = 320.f / 1080.f;
-				const f32 ycoeff = 240.f / 1080.f;
-				const f32 xscale = (PLAYER_EXTCFG().mouseaimspeedx * xcoeff) / g_Vars.currentplayer->aspect;
-				const f32 yscale = PLAYER_EXTCFG().mouseaimspeedy * ycoeff;
-				f32 x = g_Vars.currentplayer->swivelpos[0] + (movedata.freelookdx * xscale);
-				f32 y = g_Vars.currentplayer->swivelpos[1] + (movedata.freelookdy * yscale);
-				x = (x < -1.f) ? -1.f : ((x > 1.f) ? 1.f : x);
-				y = (y < -1.f) ? -1.f : ((y > 1.f) ? 1.f : y);
-				g_Vars.currentplayer->swivelpos[0] = x;
-				g_Vars.currentplayer->swivelpos[1] = y;
-				bgunSwivelWithDamp(x, y, 0.01f);
+				bmoveApplyCrosshairMovement(PLAYER_EXTCFG().mouseaimspeedx, PLAYER_EXTCFG().mouseaimspeedy,
+				                            movedata.freelookdx, movedata.freelookdy);
 				return;
 			}
 #endif
