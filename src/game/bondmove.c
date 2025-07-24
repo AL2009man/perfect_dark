@@ -441,7 +441,6 @@ void bmoveUpdateSpeedThetaControl(f32 value)
  */
 static void bmoveApplyCrosshairMovement(f32 aimspeedx, f32 aimspeedy, f32 dx, f32 dy)
 {
-    const f32 norm = g_Vars.lvupdate60freal;
     const f32 xcoeff = 320.f / 1080.f;
     const f32 ycoeff = 240.f / 1080.f;
     const f32 xscale = (aimspeedx * xcoeff) / g_Vars.currentplayer->aspect;
@@ -2226,6 +2225,7 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
             // joystick is inactive, move crosshair using the mouse
             f32 dx, dy;
             inputMouseGetScaledDeltaCrosshair(&dx, &dy);
+            const f32 norm = g_Vars.lvupdate60freal;
             bmoveApplyCrosshairMovement(PLAYER_EXTCFG().mouseaimsensx, PLAYER_EXTCFG().mouseaimsensy, dx, dy);
             return;
         }
