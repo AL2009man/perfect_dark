@@ -493,13 +493,11 @@ void bmoveUpdateCameraRecentering(s32 cidx, bool aim_mode, bool offbike)
 	// Start recentering on button press
 	if (reset_pressed && !prev_reset_pressed[cidx] && g_Vars.currentplayer) {
 		if (aim_mode) {
-			// In aim mode: only recenter crosshair if displaced
 			if (fabsf(g_Vars.currentplayer->swivelpos[0]) > 0.01f || fabsf(g_Vars.currentplayer->swivelpos[1]) > 0.01f) {
 				s_crosshair[cidx].active = true;
 				s_crosshair[cidx].time = 0.0f;
 			}
 		} else {
-			// Not in aim mode: recenter camera to horizontal
 			s_camera[cidx].active = true;
 			s_camera[cidx].time = 0.0f;
 			s_camera[cidx].start = g_Vars.currentplayer->vv_verta;
@@ -545,11 +543,10 @@ void bmoveUpdateCameraRecentering(s32 cidx, bool aim_mode, bool offbike)
 }
 
 /**
- * Check if recentering is active (used to pause input)
+ * Check if recentering is active (used to prevent movements)
  */
 bool bmoveIsRecenteringActive(s32 cidx)
 {
-	// Simple implementation - will be integrated with the main function
 	return false;
 }
 #endif
