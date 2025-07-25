@@ -5573,7 +5573,7 @@ Gfx *menuRender(Gfx *gdl)
 			s32 textheight;
 			s32 textwidth;
 			bool renderit;
-			char text[32];
+			char text[128];
 			s32 tmp1;
 			s32 tmp2;
 			s32 x;
@@ -5611,8 +5611,32 @@ Gfx *menuRender(Gfx *gdl)
 						renderit = true;
 					}
 
-					// "Player %d: " and "Press START!"
-					sprintf(text, "%s%s", langGet(L_MPMENU_482), langGet(L_MPMENU_483));
+					// "Player %d: " and dynamic "Press [BUTTON]!"
+					const char *buttonName = "START";
+					if (i >= 0 && i < MAXCONTROLLERS) {
+						const u32 *startBinds = inputKeyGetBinds(i, CK_START);
+						if (startBinds && startBinds[0] != 0) {
+							const char *dynamicButtonName = inputGetButtonDisplayName(startBinds[0]);
+							if (dynamicButtonName && strcmp(dynamicButtonName, "UNKNOWN BUTTON") != 0) {
+								buttonName = dynamicButtonName;
+							}
+						}
+					}
+					
+					// Get L_MPMENU_483 and replace "START" with actual button name
+					static char pressText[128];
+					strcpy(pressText, langGet(L_MPMENU_483));
+					char *startPos = strstr(pressText, "START");
+					if (startPos) {
+						// Replace "START" with buttonName using temp buffer to avoid overlap
+						char tempText[128];
+						size_t prefixLen = startPos - pressText;
+						snprintf(tempText, sizeof(tempText), "%.*s%s%s", 
+							(int)prefixLen, pressText, buttonName, startPos + 5);
+						strcpy(pressText, tempText);
+					}
+					
+					sprintf(text, "%s%s", langGet(L_MPMENU_482), pressText);
 				}
 
 				if (renderit) {
@@ -5681,8 +5705,30 @@ Gfx *menuRender(Gfx *gdl)
 							colour = g_MenuData.playerjoinalpha[i] | 0xd00020ff;
 #endif
 						} else {
-							// "Press START!"
+							// "Press START!" - replace START with actual button name
 							strcpy(text, langGet(L_MPMENU_483));
+							char *startPtr = strstr(text, "START");
+							if (startPtr) {
+								// Get the button name for START button
+								const char *buttonName = "START";
+								if (i >= 0 && i < MAXCONTROLLERS) {
+									const u32 *startBinds = inputKeyGetBinds(i, CK_START);
+									if (startBinds && startBinds[0] != 0) {
+										const char *dynamicButtonName = inputGetButtonDisplayName(startBinds[0]);
+										if (dynamicButtonName && strcmp(dynamicButtonName, "UNKNOWN BUTTON") != 0) {
+											buttonName = dynamicButtonName;
+										}
+									}
+								}
+								if (buttonName && strlen(buttonName) > 0) {
+									// Replace "START" with actual button name
+									char newText[128];
+									size_t prefixLen = startPtr - text;
+									snprintf(newText, sizeof(newText), "%.*s%s%s", 
+											(int)prefixLen, text, buttonName, startPtr + 5);
+									strcpy(text, newText);
+								}
+							}
 							colour = colourBlend(0x00ffff00, 0xffffff00, weight) | g_MenuData.playerjoinalpha[i];
 						}
 
