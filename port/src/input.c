@@ -1452,9 +1452,21 @@ const char *inputGetButtonDisplayName(s32 vk)
 	
 	if (vk >= VK_JOY_BEGIN && vk < VK_TOTAL_COUNT) {
 		const u32 cidx = (vk - VK_JOY_BEGIN) / INPUT_MAX_CONTROLLER_BUTTONS;
-		const u32 jbtn = (vk - VK_JOY_BEGIN) % INPUT_MAX_CONTROLLER_BUTTONS;
+		u32 jbtn = (vk - VK_JOY_BEGIN) % INPUT_MAX_CONTROLLER_BUTTONS;
 		
 		if (jbtn < INPUT_MAX_CONTROLLER_BUTTONS) {
+			// Check if JapaneseLayout is enabled or using Nintendo Switch controller
+			if (cidx < INPUT_MAX_CONTROLLERS) {
+				u32 swappedA = inputConfirmCancelButtonSwap(cidx, BUTTON_UI_ACCEPT);
+				if (swappedA == BUTTON_UI_CANCEL) {
+					if (jbtn == SDL_CONTROLLER_BUTTON_A) {
+						jbtn = SDL_CONTROLLER_BUTTON_B;
+					} else if (jbtn == SDL_CONTROLLER_BUTTON_B) {
+						jbtn = SDL_CONTROLLER_BUTTON_A;
+					}
+				}
+			}
+			
 			const s32 override = (cidx < INPUT_MAX_CONTROLLERS) ? padsCfg[cidx].buttonPromptOverride : GLYPH_AUTO;
 			
 			if (override == GLYPH_AUTO) {
