@@ -18,17 +18,17 @@ const char *vkJoyDisplayNames[] = {
 	"D-PAD_DOWN",
 	"D-PAD_LEFT",
 	"D-PAD_RIGHT",
-	"BTN_MISC1",        // Additional button (e.g. Xbox Series X share button, PS5 microphone button, Switch capture button)
+	"BTN_MISC_1",        // Additional button (e.g. Xbox Series X share button, PS5 microphone button, Switch capture button)
 	"RIGHT_PADDLE_1",   // Upper or primary paddle, under your right hand (e.g. Xbox Elite paddle P1)
 	"LEFT_PADDLE_1",    // Upper or primary paddle, under your left hand (e.g. Xbox Elite paddle P3)
 	"RIGHT_PADDLE_2",   // Lower or secondary paddle, under your right hand (e.g. Xbox Elite paddle P2)
 	"LEFT_PADDLE_2",    // Lower or secondary paddle, under your left hand (e.g. Xbox Elite paddle P4)
 	"BTN_TOUCHPAD",     // PS4/PS5 touchpad button
-	"BTN_MISC2",
-	"BTN_MISC3",
-	"BTN_MISC4",
-	"BTN_MISC5",
-	"BTN_MISC6",
+	"BTN_MISC_2",
+	"BTN_MISC_3",
+	"BTN_MISC_4",
+	"BTN_MISC_5",
+	"BTN_MISC_6",
 	"BTN_26",
 	"BTN_27",
 	"BTN_28",
@@ -49,6 +49,8 @@ static const struct {
 	{ 2, "BTN_X" },
 	{ 3, "BTN_Y" },
 	{ 5, "BTN_XBOX"},
+	{ 9, "SHOULDER_LB" },
+	{ 10, "SHOULDER_RB" },
 };
 
 // Xbox 360 specific button overrides
@@ -68,10 +70,10 @@ static const struct {
 	{ 4, "BTN_VIEW" },
 	{ 6, "BTN_MENU" },
 	{ 15, "BTN_SHARE" },
-	{ 16, "BTN_PADDLE1" },    // Xbox Elite right upper paddle
-	{ 17, "BTN_PADDLE2" },    // Xbox Elite left upper paddle
-	{ 18, "BTN_PADDLE3" },    // Xbox Elite right lower paddle
-	{ 19, "BTN_PADDLE4" },    // Xbox Elite left lower paddle
+	{ 16, "PADDLE_1" },    // Xbox Elite right upper paddle
+	{ 17, "PADDLE_2" },    // Xbox Elite left upper paddle
+	{ 18, "PADDLE_3" },    // Xbox Elite right lower paddle
+	{ 19, "PADDLE_4" },    // Xbox Elite left lower paddle
 };
 
 // Common PlayStation controller button overrides
@@ -86,8 +88,8 @@ static const struct {
 	{ 5, "BTN_PS" },
 	{ 7, "STICK_L3" },
 	{ 8, "STICK_R3" },
-	{ 9, "BTN_L1" },
-	{ 10, "BTN_R1" },
+	{ 9, "SHOULDER_L1" },
+	{ 10, "SHOULDER_R1" },
 	{ 30, "TRIG_L2" },
 	{ 31, "TRIG_R2" },
 };
@@ -118,8 +120,8 @@ static const struct {
 	{ 4, "BTN_CREATE" },
 	{ 6, "BTN_OPTIONS" },
 	{ 15, "BTN_MIC" },       // PS5 microphone mute button
-	{ 18, "BTN_LB" },        // DualSense Edge left back button
-	{ 19, "BTN_RB" },        // DualSense Edge right back button
+	{ 18, "PADDLE_LB" },        // DualSense Edge left back button
+	{ 19, "PADDLE_RB" },        // DualSense Edge right back button
 };
 
 // Nintendo Switch controller button overrides
@@ -127,15 +129,15 @@ static const struct {
 	int button_index;
 	const char *name;
 } switch_overrides[] = {
-	{ 0, "BTN_B" },          // Nintendo layout
-	{ 1, "BTN_A" },          // Nintendo layout
-	{ 2, "BTN_Y" },          // Nintendo layout
-	{ 3, "BTN_X" },          // Nintendo layout
+	{ 0, "BTN_B" },          // Nintendo layout, A button (Bottom face button)
+	{ 1, "BTN_A" },          // Nintendo layout, B button (Right face button)
+	{ 2, "BTN_Y" },          // Nintendo layout, X button (Left face button)
+	{ 3, "BTN_X" },          // Nintendo layout, Y button (Top face button)
 	{ 4, "BTN_MINUS" },
 	{ 5, "BTN_HOME" },
 	{ 6, "BTN_PLUS" },
-	{ 9, "BTN_L" },
-	{ 10, "BTN_R" },
+	{ 9, "SHOULDER_L" },
+	{ 10, "SHOULDER_R" },
 	{ 15, "BTN_CAPTURE" },
 	{ 16, "BTN_SL" },
 	{ 17, "BTN_SR" },
