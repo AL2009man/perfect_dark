@@ -70,10 +70,10 @@ static const struct {
 	{ 4, "BTN_VIEW" },
 	{ 6, "BTN_MENU" },
 	{ 15, "BTN_SHARE" },
-	{ 16, "PADDLE_1" },    // Xbox Elite right upper paddle
-	{ 17, "PADDLE_2" },    // Xbox Elite left upper paddle
-	{ 18, "PADDLE_3" },    // Xbox Elite right lower paddle
-	{ 19, "PADDLE_4" },    // Xbox Elite left lower paddle
+	{ 16, "PADDLE_P1" },    // Xbox Elite right upper paddle
+	{ 17, "PADDLE_P2" },    // Xbox Elite left upper paddle
+	{ 18, "PADDLE_P3" },    // Xbox Elite right lower paddle
+	{ 19, "PADDLE_P4" },    // Xbox Elite left lower paddle
 };
 
 // Common PlayStation controller button overrides
