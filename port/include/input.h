@@ -123,8 +123,8 @@ enum mouselockmode {
 
 enum japaneseButtonLayout {
 	JAPANESE_LAYOUT_AUTO = 0, // auto-detect based on controller type
-	JAPANESE_LAYOUT_OFF = 1,   // use standard button layout
-	JAPANESE_LAYOUT_ON = 2     // use Japanese button layout
+	JAPANESE_LAYOUT_ON = 1,   // use japanese button layout
+	JAPANESE_LAYOUT_OFF = 2,  // use standard button layout
 };
 
 // returns bitmask of connected controllers or -1 if failed
