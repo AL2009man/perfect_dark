@@ -1782,8 +1782,31 @@ static MenuItemHandlerResult menuhandlerDoBind(s32 operation, struct menuitem *i
 	}
 
 	const s32 key = inputGetLastKey();
-	if (key && key != VK_ESCAPE) {
-		inputKeyBind(g_ExtMenuPlayer, g_BindContKey, g_BindIndex, (key == VK_DELETE ? 0 : key));
+	if (key && key != VK_DELETE && key != VK_ESCAPE) {
+		s32 adjustedKey = key;
+		
+		// Handle Nintendo Switch controller button swapping for Japanese layout
+		if (inputControllerIsNintendoSwitch(g_ExtMenuPlayer) &&
+			inputConfirmCancelButtonSwap(g_ExtMenuPlayer, key) &&
+			key >= VK_JOY_BEGIN && key < VK_TOTAL_COUNT) {
+
+			s32 keyControllerIdx = (key - VK_JOY_BEGIN) / INPUT_MAX_CONTROLLER_BUTTONS;
+			if (keyControllerIdx == g_ExtMenuPlayer) {
+			s32 buttonInController = (key - VK_JOY_BEGIN) % INPUT_MAX_CONTROLLER_BUTTONS;
+
+			// Swap A and B buttons for Japanese layout
+			if (buttonInController == CK_A) {
+				adjustedKey = key + (CK_B - CK_A);
+			} else if (buttonInController == CK_B) {
+				adjustedKey = key + (CK_A - CK_B);
+			}
+			}
+		}
+		
+		inputKeyBind(g_ExtMenuPlayer, g_BindContKey, g_BindIndex, adjustedKey);
+		menuPopDialog();
+	} else if (key == VK_DELETE) {
+		inputKeyBind(g_ExtMenuPlayer, g_BindContKey, g_BindIndex, 0);
 		menuPopDialog();
 	}
 
@@ -1792,9 +1815,12 @@ static MenuItemHandlerResult menuhandlerDoBind(s32 operation, struct menuitem *i
 
 static const char *menutextBind(struct menuitem *item)
 {
-	return g_PlayerExtCfg[g_ExtMenuPlayer].extcontrols ?
-		menuBinds[item - g_ExtendedBindsMenuItems].name :
-		menuBinds[item - g_ExtendedBindsMenuItems].n64name;
+    int idx = item - g_ExtendedBindsMenuItems;
+    u32 ck = menuBinds[idx].ck;
+
+    return g_PlayerExtCfg[g_ExtMenuPlayer].extcontrols ?
+        menuBinds[idx].name :
+        menuBinds[idx].n64name;
 }
 
 static MenuItemHandlerResult menuhandlerBind(s32 operation, struct menuitem *item, union handlerdata *data)

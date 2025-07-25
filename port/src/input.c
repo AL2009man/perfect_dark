@@ -11,6 +11,7 @@
 #include "utils.h"
 #include "system.h"
 #include "fs.h"
+#include "constants.h"
 #include "glyph.h"
 
 #if !SDL_VERSION_ATLEAST(2, 0, 14)
@@ -47,6 +48,7 @@ static SDL_GameController *pads[INPUT_MAX_CONTROLLERS];
 	.swapSticks = 1, \
 	.deviceIndex = -1, \
 	.cancelCButtons = 0, \
+	.japaneseButtonLayout = 0, \
 	.buttonPromptOverride = 0, \
 }
 
@@ -60,6 +62,7 @@ static struct controllercfg {
 	s32 swapSticks;
 	s32 deviceIndex;
 	s32 cancelCButtons;
+	s32 japaneseButtonLayout;
 	s32 buttonPromptOverride;
 } padsCfg[INPUT_MAX_CONTROLLERS] = {
 	CONTROLLERCFG_DEFAULT,
@@ -70,6 +73,7 @@ static struct controllercfg {
 
 static u32 binds[MAXCONTROLLERS][CK_TOTAL_COUNT][INPUT_MAX_BINDS];
 static char bindStrs[MAXCONTROLLERS][CK_TOTAL_COUNT][MAX_BIND_STR];
+static int inputIsNintendoSwitchController(SDL_GameController *controller);
 
 static s32 fakeControllers = 0;
 static s32 firstController = 0;
@@ -349,6 +353,23 @@ static inline void inputInitController(const s32 cidx, const s32 jidx)
 		SDL_JoystickGetGUIDString(guid, guidStr, sizeof(guidStr));
 		sysLogPrintf(LOG_NOTE, "input: GUID for controller %d: %s", jidx, guidStr);
 	}
+
+	// Set default key binds for this controller
+	inputSetDefaultKeyBinds(cidx, 0);
+}
+
+u32 inputConfirmCancelButtonSwap(int cidx, u32 button) {
+    int japaneseActive = 0;
+    if (padsCfg[cidx].japaneseButtonLayout == JAPANESE_LAYOUT_ON) {
+        japaneseActive = 1;
+    } else if (padsCfg[cidx].japaneseButtonLayout == JAPANESE_LAYOUT_AUTO) {
+        japaneseActive = pads[cidx] && inputIsNintendoSwitchController(pads[cidx]);
+    }
+    if (japaneseActive) {
+        if (button == BUTTON_UI_ACCEPT) return BUTTON_UI_CANCEL;
+        if (button == BUTTON_UI_CANCEL) return BUTTON_UI_ACCEPT;
+    }
+    return button;
 }
 
 static inline void inputCloseController(const s32 cidx)
@@ -755,11 +776,62 @@ s32 inputInit(void)
 	return connectedMask;
 }
 
+static int inputIsNintendoSwitchController(SDL_GameController *controller) {
+#if defined(SDL_VERSION_ATLEAST)
+#if SDL_VERSION_ATLEAST(2, 0, 12)
+	SDL_GameControllerType type = SDL_GameControllerGetType(controller);
+	if (
+#if defined(SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_PRO)
+		type == SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_PRO
+#else
+		0
+#endif
+#if SDL_VERSION_ATLEAST(2, 24, 0)
+#if defined(SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_JOYCON_LEFT)
+		|| type == SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_JOYCON_LEFT
+#endif
+#if defined(SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_JOYCON_RIGHT)
+		|| type == SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_JOYCON_RIGHT
+#endif
+#if defined(SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_JOYCON_PAIR)
+		|| type == SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_JOYCON_PAIR
+#endif
+#endif // SDL_VERSION_ATLEAST(2, 24, 0)
+	) {
+		return 1;
+	}
+#endif // SDL_VERSION_ATLEAST(2, 0, 12)
+#endif // defined(SDL_VERSION_ATLEAST)
+#ifdef SDL_JOYSTICK_VENDOR_NINTENDO
+	SDL_Joystick *joy = SDL_GameControllerGetJoystick(controller);
+	if (joy && SDL_JoystickGetVendor(joy) == SDL_JOYSTICK_VENDOR_NINTENDO) {
+		return 1;
+	}
+#else
+	// Check for Nintendo controllers by vendor ID (includes Nintendo Switch, Wii, etc.)
+	SDL_Joystick *joy = SDL_GameControllerGetJoystick(controller);
+	if (joy && SDL_JoystickGetVendor(joy) == 0x057e) {
+		return 1;
+	}
+#endif
+	return 0;
+}
+
+int inputControllerIsNintendoSwitch(int cidx) {
+	return (cidx >= 0 && cidx < INPUT_MAX_CONTROLLERS && pads[cidx]) 
+		? inputIsNintendoSwitchController(pads[cidx]) : 0;
+}
+
 static inline s32 inputBindPressed(const s32 idx, const u32 ck)
 {
+	u32 swapped_ck = ck;
+	if (inputConfirmCancelButtonSwap(idx, ck)) {
+		if (ck == CK_A) swapped_ck = CK_B;
+		else if (ck == CK_B) swapped_ck = CK_A;
+	}
 	for (s32 i = 0; i < INPUT_MAX_BINDS; ++i) {
-		if (binds[idx][ck][i]) {
-			if (inputKeyPressed(binds[idx][ck][i])) {
+		if (binds[idx][swapped_ck][i]) {
+			if (inputKeyPressed(binds[idx][swapped_ck][i])) {
 				return 1;
 			}
 		}
@@ -1623,6 +1695,7 @@ PD_CONSTRUCTOR static void inputConfigInit(void)
 		configRegisterInt(strFmt("%s.CancelCButtons", secname), &padsCfg[c].cancelCButtons, 0, 1);
 		configRegisterInt(strFmt("%s.SwapSticks", secname), &padsCfg[c].swapSticks, 0, 1);
 		configRegisterInt(strFmt("%s.ControllerIndex", secname), &padsCfg[c].deviceIndex, -1, 0x7FFFFFFF);
+		configRegisterInt(strFmt("%s.JapaneseButtonLayout", secname), &padsCfg[c].japaneseButtonLayout, 0, 2);
 		configRegisterInt(strFmt("%s.ButtonPromptOverride", secname), &padsCfg[c].buttonPromptOverride, GLYPH_AUTO, GLYPH_NINTENDO_SWITCH);
 		secname[13] = '.';
 		for (u32 ck = 0; ck < CK_TOTAL_COUNT; ++ck) {
