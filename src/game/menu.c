@@ -5623,12 +5623,10 @@ Gfx *menuRender(Gfx *gdl)
 						}
 					}
 					
-					// Get L_MPMENU_483 and replace "START" with actual button name
 					static char pressText[128];
 					strcpy(pressText, langGet(L_MPMENU_483));
 					char *startPos = strstr(pressText, "START");
 					if (startPos) {
-						// Replace "START" with buttonName using temp buffer to avoid overlap
 						char tempText[128];
 						size_t prefixLen = startPos - pressText;
 						snprintf(tempText, sizeof(tempText), "%.*s%s%s", 
@@ -5705,7 +5703,7 @@ Gfx *menuRender(Gfx *gdl)
 							colour = g_MenuData.playerjoinalpha[i] | 0xd00020ff;
 #endif
 						} else {
-							// "Press START!" - replace START with actual button name
+							// "Press START!"
 							strcpy(text, langGet(L_MPMENU_483));
 							char *startPtr = strstr(text, "START");
 							if (startPtr) {
@@ -5721,7 +5719,6 @@ Gfx *menuRender(Gfx *gdl)
 									}
 								}
 								if (buttonName && strlen(buttonName) > 0) {
-									// Replace "START" with actual button name
 									char newText[128];
 									size_t prefixLen = startPtr - text;
 									snprintf(newText, sizeof(newText), "%.*s%s%s", 
