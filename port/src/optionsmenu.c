@@ -661,7 +661,7 @@ struct menuitem g_ExtendedControllerMenuItems[] = {
 		MENUITEMTYPE_DROPDOWN,
 		0,
 		MENUITEMFLAG_LITERAL_TEXT,
-		(uintptr_t)"Button Icons",
+		(uintptr_t)"Button Prompt Styles",
 		0,
 		menuhandlerButtonPromptOverride,
 	},
