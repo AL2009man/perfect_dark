@@ -14,6 +14,7 @@
 #include "video.h"
 #include "input.h"
 #include "config.h"
+#include "glyph.h"
 
 static s32 g_ExtMenuPlayer = 0;
 static struct menudialogdef *g_ExtNextDialog = NULL;
@@ -616,6 +617,37 @@ static MenuItemHandlerResult menuhandlerController(s32 operation, struct menuite
 	return 0;
 }
 
+static MenuItemHandlerResult menuhandlerButtonPromptOverride(s32 operation, struct menuitem *item, union handlerdata *data)
+{
+	static const char *opts[] = {
+		"Auto",
+		"Generic",
+		"Internal",
+		"Xbox 360 Controller",
+		"Xbox Wireless Controller",
+		"DualShock 3",
+		"DualShock 4",
+		"DualSense",
+		"Nintendo Switch Controller"
+	};
+
+	switch (operation) {
+	case MENUOP_GETOPTIONCOUNT:
+		data->dropdown.value = ARRAYCOUNT(opts);
+		break;
+	case MENUOP_GETOPTIONTEXT:
+		return (intptr_t)opts[data->dropdown.value];
+	case MENUOP_SET:
+		inputSetButtonPromptOverride(g_ExtMenuPlayer, data->dropdown.value);
+		break;
+	case MENUOP_GETSELECTEDINDEX:
+		data->dropdown.value = inputGetButtonPromptOverride(g_ExtMenuPlayer);
+		break;
+	}
+
+	return 0;
+}
+
 struct menuitem g_ExtendedControllerMenuItems[] = {
 	{
 		MENUITEMTYPE_DROPDOWN,
@@ -624,6 +656,14 @@ struct menuitem g_ExtendedControllerMenuItems[] = {
 		(uintptr_t)"Controller",
 		0,
 		menuhandlerController,
+	},
+	{
+		MENUITEMTYPE_DROPDOWN,
+		0,
+		MENUITEMFLAG_LITERAL_TEXT,
+		(uintptr_t)"Button Prompt Styles",
+		0,
+		menuhandlerButtonPromptOverride,
 	},
 	{
 		MENUITEMTYPE_CHECKBOX,
@@ -1797,7 +1837,7 @@ static MenuItemHandlerResult menuhandlerBind(s32 operation, struct menuitem *ite
 	case MENUOP_GETOPTIONTEXT:
 		binds = inputKeyGetBinds(g_ExtMenuPlayer, menuBinds[idx].ck);
 		if (binds && binds[data->dropdown.value]) {
-			strncpy(keyname, inputGetKeyName(binds[data->dropdown.value]), sizeof(keyname) - 1);
+			strncpy(keyname, inputGetButtonDisplayName(binds[data->dropdown.value]), sizeof(keyname) - 1);
 			for (char *p = keyname; *p; ++p) {
 				if (*p == '_') *p = ' ';
 			}
