@@ -779,7 +779,7 @@ static int inputIsNintendoSwitchController(SDL_GameController *controller) {
 #else
 		0
 #endif
-#if SDL_VERSION_ATLEAST(2, 0, 14)
+#if SDL_VERSION_ATLEAST(2, 24, 0)
 #if defined(SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_JOYCON_LEFT)
 		|| type == SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_JOYCON_LEFT
 #endif
@@ -789,7 +789,7 @@ static int inputIsNintendoSwitchController(SDL_GameController *controller) {
 #if defined(SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_JOYCON_PAIR)
 		|| type == SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_JOYCON_PAIR
 #endif
-#endif // SDL_VERSION_ATLEAST(2, 0, 14)
+#endif // SDL_VERSION_ATLEAST(2, 24, 0)
 	) {
 		return 1;
 	}
