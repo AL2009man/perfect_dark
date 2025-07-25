@@ -11,6 +11,7 @@
 #include "utils.h"
 #include "system.h"
 #include "fs.h"
+#include "glyph.h"
 
 #if !SDL_VERSION_ATLEAST(2, 0, 14)
 // this was added in 2.0.14
@@ -46,6 +47,7 @@ static SDL_GameController *pads[INPUT_MAX_CONTROLLERS];
 	.swapSticks = 1, \
 	.deviceIndex = -1, \
 	.cancelCButtons = 0, \
+	.buttonPromptOverride = 0, \
 }
 
 static struct controllercfg {
@@ -58,6 +60,7 @@ static struct controllercfg {
 	s32 swapSticks;
 	s32 deviceIndex;
 	s32 cancelCButtons;
+	s32 buttonPromptOverride;
 } padsCfg[INPUT_MAX_CONTROLLERS] = {
 	CONTROLLERCFG_DEFAULT,
 	CONTROLLERCFG_DEFAULT,
@@ -693,6 +696,7 @@ s32 inputInit(void)
 		// the two hints below enable Rumble and Motion Sensor for PS4/5 pads connected via bluetooth
 		SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_PS4_RUMBLE, "1");
 		SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_PS5_RUMBLE, "1");
+		SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_STEAM, "1");
 #endif
 #if SDL_VERSION_ATLEAST(2, 23, 2)
 		SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_COMBINE_JOY_CONS, "1");
@@ -702,6 +706,9 @@ s32 inputInit(void)
 #endif
 #if SDL_VERSION_ATLEAST(2, 26, 0)
 		SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_WII, "1");
+#endif
+#if SDL_VERSION_ATLEAST(2, 30, 0)
+		SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_STEAMDECK, "1");
 #endif
 	}
 	if (useRawInput) {
@@ -1319,6 +1326,22 @@ void inputSetMouseLockMode(s32 lockmode)
 	}
 }
 
+s32 inputGetButtonPromptOverride(s32 cidx)
+{
+	if (cidx < 0 || cidx >= INPUT_MAX_CONTROLLERS) {
+		return 0; // Default to GLYPH_AUTO
+	}
+	return padsCfg[cidx].buttonPromptOverride;
+}
+
+void inputSetButtonPromptOverride(s32 cidx, s32 override)
+{
+	if (cidx < 0 || cidx >= INPUT_MAX_CONTROLLERS) {
+		return;
+	}
+	padsCfg[cidx].buttonPromptOverride = override;
+}
+
 const char *inputGetContKeyName(u32 ck)
 {
 	if (ck >= CK_TOTAL_COUNT) {
@@ -1347,6 +1370,74 @@ const char *inputGetKeyName(s32 vk)
 		snprintf(vkNames[vk], sizeof(vkNames[vk]), "UNKNOWN%d", vk);
 	}
 	return vkNames[vk];
+}
+
+const char *inputGetButtonDisplayName(s32 vk)
+{
+	if (vk < 0 || vk >= VK_TOTAL_COUNT) {
+		return inputGetKeyName(vk);
+	}
+	
+	if (vk >= VK_JOY_BEGIN && vk < VK_TOTAL_COUNT) {
+		const u32 cidx = (vk - VK_JOY_BEGIN) / INPUT_MAX_CONTROLLER_BUTTONS;
+		const u32 jbtn = (vk - VK_JOY_BEGIN) % INPUT_MAX_CONTROLLER_BUTTONS;
+		
+		if (jbtn < INPUT_MAX_CONTROLLER_BUTTONS) {
+			const s32 override = (cidx < INPUT_MAX_CONTROLLERS) ? padsCfg[cidx].buttonPromptOverride : GLYPH_AUTO;
+			
+			if (override == GLYPH_AUTO) {
+				if (cidx < INPUT_MAX_CONTROLLERS && pads[cidx]) {
+					const SDL_GameControllerType type = SDL_GameControllerGetType(pads[cidx]);
+					
+					switch (type) {
+						case SDL_CONTROLLER_TYPE_XBOX360:
+							return glyphGetButtonName(CONTROLLER_ICON_XBOX360, jbtn);
+						case SDL_CONTROLLER_TYPE_XBOXONE:
+							return glyphGetButtonName(CONTROLLER_ICON_XBOXONE, jbtn);
+						case SDL_CONTROLLER_TYPE_PS3:
+							return glyphGetButtonName(CONTROLLER_ICON_PS3, jbtn);
+						case SDL_CONTROLLER_TYPE_PS4:
+							return glyphGetButtonName(CONTROLLER_ICON_PS4, jbtn);
+#if SDL_VERSION_ATLEAST(2, 0, 14)
+						case SDL_CONTROLLER_TYPE_PS5:
+							return glyphGetButtonName(CONTROLLER_ICON_PS5, jbtn);
+#endif
+						case SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_PRO:
+#if SDL_VERSION_ATLEAST(2, 24, 0)
+#if defined(SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_JOYCON_LEFT)
+						case SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_JOYCON_LEFT:
+#endif
+#if defined(SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_JOYCON_RIGHT)
+						case SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_JOYCON_RIGHT:
+#endif
+#if defined(SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_JOYCON_PAIR)
+						case SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_JOYCON_PAIR:
+#endif
+#endif
+							return glyphGetButtonName(CONTROLLER_ICON_NINTENDO_SWITCH, jbtn);
+						case SDL_CONTROLLER_TYPE_UNKNOWN:
+						default:
+							return glyphGetButtonName(CONTROLLER_ICON_GENERIC, jbtn);
+					}
+				}
+				return glyphGetButtonName(CONTROLLER_ICON_GENERIC, jbtn);
+			} else if (override == GLYPH_INTERNAL) {
+				if (jbtn < sizeof(vkJoyNames) / sizeof(vkJoyNames[0])) {
+					static char playerButtonName[64];
+					const char *baseName = vkJoyNames[jbtn];
+					snprintf(playerButtonName, sizeof(playerButtonName), "JOY%d_%s", 
+						(int)(cidx + 1), baseName + 5);
+					return playerButtonName;
+				}
+				return inputGetKeyName(vk);
+			} else {
+				const ControllerIconType iconType = (ControllerIconType)(override - 1);
+				return glyphGetButtonName(iconType, jbtn);
+			}
+		}
+	}
+	
+	return inputGetKeyName(vk);
 }
 
 s32 inputGetKeyByName(const char *name)
@@ -1532,6 +1623,7 @@ PD_CONSTRUCTOR static void inputConfigInit(void)
 		configRegisterInt(strFmt("%s.CancelCButtons", secname), &padsCfg[c].cancelCButtons, 0, 1);
 		configRegisterInt(strFmt("%s.SwapSticks", secname), &padsCfg[c].swapSticks, 0, 1);
 		configRegisterInt(strFmt("%s.ControllerIndex", secname), &padsCfg[c].deviceIndex, -1, 0x7FFFFFFF);
+		configRegisterInt(strFmt("%s.ButtonPromptOverride", secname), &padsCfg[c].buttonPromptOverride, GLYPH_AUTO, GLYPH_NINTENDO_SWITCH);
 		secname[13] = '.';
 		for (u32 ck = 0; ck < CK_TOTAL_COUNT; ++ck) {
 			snprintf(keyname, sizeof(keyname), "%s.%s", secname, inputGetContKeyName(ck));
