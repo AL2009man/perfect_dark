@@ -2311,9 +2311,9 @@ void inputGyroSetAutoCalibration(s32 cidx, s32 enabled)
 	padsCfg[cidx].gyroAutoCalibration = (enabled != 0);
 
 	if (wasEnabled != padsCfg[cidx].gyroAutoCalibration) {
-		sysLogPrintf(LOG_NOTE, "Input: Gyro auto-calibration  Controller %d %s.",
-			cidx, padsCfg[cidx].gyroAutoCalibration ? "ENABLED" : "DISABLED");
-		
+		sysLogPrintf(LOG_NOTE, "Input: Gyro auto-calibration is %s for Controller %d.",
+			padsCfg[cidx].gyroAutoCalibration ? "Enabled" : "Disabled", cidx);
+
 		if (!gpadMotion[cidx]) {
 			inputResetGyroCalibration(cidx);
 		} else {
