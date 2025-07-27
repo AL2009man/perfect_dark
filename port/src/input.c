@@ -1230,7 +1230,6 @@ static void inputApplyGyroProcessing(s32 cidx, f32* deltaX, f32* deltaY, f32* de
 		*deltaY = 0.f;
 		*deltaZ = 0.f;
 		gyroCalibState[cidx].justFinishedCalibrating = false;
-		sysLogPrintf(LOG_NOTE, "Gyro: Controller %d ignoring first delta post-calibration to prevent jump.", cidx);
 		return;
 	}
 
@@ -2243,7 +2242,6 @@ static void inputUpdateGyroAutoCalibration(s32 cidx)
 		if (!state->wasStable) {
 			// Just placed down - start calibration
 			state->lastAutoCalibTime = now - 7000; // Effectively 3 second delay
-			sysLogPrintf(LOG_NOTE, "Gyro auto-calibration: Controller %d placed on flat surface.", cidx);
 		}
 		
 		// Start calibration if enough time has passed and confidence is low
@@ -2271,7 +2269,6 @@ static void inputUpdateGyroAutoCalibration(s32 cidx)
 			float requiredConfidence = (confidence > 0.5f) ? 0.95f : 0.85f;
 			
 			if (confidence > requiredConfidence) {
-				sysLogPrintf(LOG_NOTE, "Gyro auto-calibration: Controller %d calibration completed (confidence=%.2f).", cidx, confidence);
 				inputGyroCalibrationFinished(cidx, true);
 				
 				// Pause but don't fully stop 
@@ -2314,7 +2311,7 @@ void inputGyroSetAutoCalibration(s32 cidx, s32 enabled)
 	padsCfg[cidx].gyroAutoCalibration = (enabled != 0);
 
 	if (wasEnabled != padsCfg[cidx].gyroAutoCalibration) {
-		sysLogPrintf(LOG_NOTE, "Gyro auto-calibration: Controller %d %s.",
+		sysLogPrintf(LOG_NOTE, "Input: Gyro auto-calibration  Controller %d %s.",
 			cidx, padsCfg[cidx].gyroAutoCalibration ? "ENABLED" : "DISABLED");
 		
 		if (!gpadMotion[cidx]) {
