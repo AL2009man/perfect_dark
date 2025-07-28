@@ -1329,7 +1329,7 @@ void inputSetMouseLockMode(s32 lockmode)
 s32 inputGetButtonPromptOverride(s32 cidx)
 {
 	if (cidx < 0 || cidx >= INPUT_MAX_CONTROLLERS) {
-		return 0; // Default to GLYPH_AUTO
+		return 0;
 	}
 	return padsCfg[cidx].buttonPromptOverride;
 }
@@ -1374,70 +1374,73 @@ const char *inputGetKeyName(s32 vk)
 
 const char *inputGetButtonDisplayName(s32 vk)
 {
-	if (vk < 0 || vk >= VK_TOTAL_COUNT) {
+	if (vk < VK_JOY_BEGIN || vk >= VK_TOTAL_COUNT) {
 		return inputGetKeyName(vk);
 	}
 	
-	if (vk >= VK_JOY_BEGIN && vk < VK_TOTAL_COUNT) {
-		const u32 cidx = (vk - VK_JOY_BEGIN) / INPUT_MAX_CONTROLLER_BUTTONS;
-		const u32 jbtn = (vk - VK_JOY_BEGIN) % INPUT_MAX_CONTROLLER_BUTTONS;
-		
-		if (jbtn < INPUT_MAX_CONTROLLER_BUTTONS) {
-			const s32 override = (cidx < INPUT_MAX_CONTROLLERS) ? padsCfg[cidx].buttonPromptOverride : GLYPH_AUTO;
-			
-			if (override == GLYPH_AUTO) {
-				if (cidx < INPUT_MAX_CONTROLLERS && pads[cidx]) {
-					const SDL_GameControllerType type = SDL_GameControllerGetType(pads[cidx]);
-					
-					switch (type) {
-						case SDL_CONTROLLER_TYPE_XBOX360:
-							return glyphGetButtonName(CONTROLLER_ICON_XBOX360, jbtn);
-						case SDL_CONTROLLER_TYPE_XBOXONE:
-							return glyphGetButtonName(CONTROLLER_ICON_XBOXONE, jbtn);
-						case SDL_CONTROLLER_TYPE_PS3:
-							return glyphGetButtonName(CONTROLLER_ICON_PS3, jbtn);
-						case SDL_CONTROLLER_TYPE_PS4:
-							return glyphGetButtonName(CONTROLLER_ICON_PS4, jbtn);
+	const u32 cidx = (vk - VK_JOY_BEGIN) / INPUT_MAX_CONTROLLER_BUTTONS;
+	const u32 jbtn = (vk - VK_JOY_BEGIN) % INPUT_MAX_CONTROLLER_BUTTONS;
+	
+	if (jbtn >= INPUT_MAX_CONTROLLER_BUTTONS) {
+		return inputGetKeyName(vk);
+	}
+	
+	const s32 override = (cidx < INPUT_MAX_CONTROLLERS) ? padsCfg[cidx].buttonPromptOverride : GLYPH_AUTO;
+	
+	// Internal glyphs (optional)
+	if (override == GLYPH_INTERNAL) {
+		if (jbtn < sizeof(vkJoyNames) / sizeof(vkJoyNames[0])) {
+			static char playerButtonName[64];
+			const char *baseName = vkJoyNames[jbtn];
+			snprintf(playerButtonName, sizeof(playerButtonName), "JOY%d_%s", 
+				(int)(cidx + 1), baseName + 5);
+			return playerButtonName;
+		}
+		return inputGetKeyName(vk);
+	}
+	
+	// Glyph override
+	if (override != GLYPH_AUTO) {
+		const ControllerIconType iconType = (ControllerIconType)(override - 1);
+		return glyphGetButtonName(iconType, jbtn);
+	}
+	
+	// Auto-detect glyphs based on controller type
+	if (cidx < INPUT_MAX_CONTROLLERS && pads[cidx]) {
+		const SDL_GameControllerType type = SDL_GameControllerGetType(pads[cidx]);
+		switch (type) {
+			case SDL_CONTROLLER_TYPE_XBOX360:
+				return glyphGetButtonName(CONTROLLER_ICON_XBOX360, jbtn);
+			case SDL_CONTROLLER_TYPE_XBOXONE:
+				return glyphGetButtonName(CONTROLLER_ICON_XBOXONE, jbtn);
+			case SDL_CONTROLLER_TYPE_PS3:
+				return glyphGetButtonName(CONTROLLER_ICON_PS3, jbtn);
+			case SDL_CONTROLLER_TYPE_PS4:
+				return glyphGetButtonName(CONTROLLER_ICON_PS4, jbtn);
 #if SDL_VERSION_ATLEAST(2, 0, 14)
-						case SDL_CONTROLLER_TYPE_PS5:
-							return glyphGetButtonName(CONTROLLER_ICON_PS5, jbtn);
+			case SDL_CONTROLLER_TYPE_PS5:
+				return glyphGetButtonName(CONTROLLER_ICON_PS5, jbtn);
 #endif
-						case SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_PRO:
+			case SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_PRO:
 #if SDL_VERSION_ATLEAST(2, 24, 0)
 #if defined(SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_JOYCON_LEFT)
-						case SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_JOYCON_LEFT:
+			case SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_JOYCON_LEFT:
 #endif
 #if defined(SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_JOYCON_RIGHT)
-						case SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_JOYCON_RIGHT:
+			case SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_JOYCON_RIGHT:
 #endif
 #if defined(SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_JOYCON_PAIR)
-						case SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_JOYCON_PAIR:
+			case SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_JOYCON_PAIR:
 #endif
 #endif
-							return glyphGetButtonName(CONTROLLER_ICON_NINTENDO_SWITCH, jbtn);
-						case SDL_CONTROLLER_TYPE_UNKNOWN:
-						default:
-							return glyphGetButtonName(CONTROLLER_ICON_GENERIC, jbtn);
-					}
-				}
+				return glyphGetButtonName(CONTROLLER_ICON_NINTENDO_SWITCH, jbtn);
+			default:
 				return glyphGetButtonName(CONTROLLER_ICON_GENERIC, jbtn);
-			} else if (override == GLYPH_INTERNAL) {
-				if (jbtn < sizeof(vkJoyNames) / sizeof(vkJoyNames[0])) {
-					static char playerButtonName[64];
-					const char *baseName = vkJoyNames[jbtn];
-					snprintf(playerButtonName, sizeof(playerButtonName), "JOY%d_%s", 
-						(int)(cidx + 1), baseName + 5);
-					return playerButtonName;
-				}
-				return inputGetKeyName(vk);
-			} else {
-				const ControllerIconType iconType = (ControllerIconType)(override - 1);
-				return glyphGetButtonName(iconType, jbtn);
-			}
 		}
 	}
 	
-	return inputGetKeyName(vk);
+	// Fallback to generic controller
+	return glyphGetButtonName(CONTROLLER_ICON_GENERIC, jbtn);
 }
 
 s32 inputGetKeyByName(const char *name)
