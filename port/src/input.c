@@ -47,7 +47,7 @@ static SDL_GameController *pads[INPUT_MAX_CONTROLLERS];
 	.swapSticks = 1, \
 	.deviceIndex = -1, \
 	.cancelCButtons = 0, \
-	.japaneseButtonLayout = 0, \
+	.japaneseButtonLayout = -1, \
 }
 
 static struct controllercfg {
@@ -1604,7 +1604,7 @@ PD_CONSTRUCTOR static void inputConfigInit(void)
 		configRegisterInt(strFmt("%s.CancelCButtons", secname), &padsCfg[c].cancelCButtons, 0, 1);
 		configRegisterInt(strFmt("%s.SwapSticks", secname), &padsCfg[c].swapSticks, 0, 1);
 		configRegisterInt(strFmt("%s.ControllerIndex", secname), &padsCfg[c].deviceIndex, -1, 0x7FFFFFFF);
-		configRegisterInt(strFmt("%s.JapaneseButtonLayout", secname), &padsCfg[c].japaneseButtonLayout, 0, 2);
+		configRegisterInt(strFmt("%s.JapaneseButtonLayout", secname), &padsCfg[c].japaneseButtonLayout, JAPANESE_LAYOUT_AUTO, JAPANESE_LAYOUT_ON);
 		secname[13] = '.';
 		for (u32 ck = 0; ck < CK_TOTAL_COUNT; ++ck) {
 			snprintf(keyname, sizeof(keyname), "%s.%s", secname, inputGetContKeyName(ck));
