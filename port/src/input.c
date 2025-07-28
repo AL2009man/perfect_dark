@@ -1401,7 +1401,7 @@ void inputSetMouseLockMode(s32 lockmode)
 s32 inputGetButtonPromptOverride(s32 cidx)
 {
 	if (cidx < 0 || cidx >= INPUT_MAX_CONTROLLERS) {
-		return 0; // Default to GLYPH_AUTO
+		return 0; 
 	}
 	return padsCfg[cidx].buttonPromptOverride;
 }

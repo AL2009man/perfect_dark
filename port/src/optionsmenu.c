@@ -622,7 +622,7 @@ static MenuItemHandlerResult menuhandlerButtonPromptOverride(s32 operation, stru
 	static const struct {
 		const char *name;
 		s32 value;
-	} promptOptions[] = {
+	} promptoptions [] = {
 		{ "Auto", GLYPH_AUTO },
 		{ "Generic", GLYPH_GENERIC },
 		{ "Internal", GLYPH_INTERNAL },
@@ -636,20 +636,18 @@ static MenuItemHandlerResult menuhandlerButtonPromptOverride(s32 operation, stru
 
 	switch (operation) {
 	case MENUOP_GETOPTIONCOUNT:
-		data->dropdown.value = ARRAYCOUNT(promptOptions);
+		data->dropdown.value = ARRAYCOUNT(promptoptions);
 		break;
 	case MENUOP_GETOPTIONTEXT:
-		return (intptr_t)promptOptions[data->dropdown.value].name;
+		return (intptr_t)promptoptions[data->dropdown.value].name;
 	case MENUOP_SET:
-		if (data->dropdown.value >= 0 && data->dropdown.value < ARRAYCOUNT(promptOptions)) {
-			inputSetButtonPromptOverride(g_ExtMenuPlayer, promptOptions[data->dropdown.value].value);
-		}
+		inputSetButtonPromptOverride(g_ExtMenuPlayer, promptoptions[data->dropdown.value].value);
 		break;
 	case MENUOP_GETSELECTEDINDEX:
 		{
 			s32 currentValue = inputGetButtonPromptOverride(g_ExtMenuPlayer);
-			for (s32 i = 0; i < ARRAYCOUNT(promptOptions); i++) {
-				if (promptOptions[i].value == currentValue) {
+			for (s32 i = 0; i < ARRAYCOUNT(promptoptions); i++) {
+				if (promptoptions[i].value == currentValue) {
 					data->dropdown.value = i;
 					return 0;
 				}
