@@ -47,7 +47,7 @@ static SDL_GameController *pads[INPUT_MAX_CONTROLLERS];
 	.swapSticks = 1, \
 	.deviceIndex = -1, \
 	.cancelCButtons = 0, \
-	.buttonPromptOverride = 0, \
+	.buttonPromptOverride = -1, \
 }
 
 static struct controllercfg {
