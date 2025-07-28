@@ -619,29 +619,43 @@ static MenuItemHandlerResult menuhandlerController(s32 operation, struct menuite
 
 static MenuItemHandlerResult menuhandlerButtonPromptOverride(s32 operation, struct menuitem *item, union handlerdata *data)
 {
-	static const char *opts[] = {
-		"Auto",
-		"Generic",
-		"Internal",
-		"Xbox 360 Controller",
-		"Xbox Wireless Controller",
-		"DualShock 3",
-		"DualShock 4",
-		"DualSense",
-		"Nintendo Switch Controller"
+	static const struct {
+		const char *name;
+		s32 value;
+	} promptOptions[] = {
+		{ "Auto", GLYPH_AUTO },
+		{ "Generic", GLYPH_GENERIC },
+		{ "Internal", GLYPH_INTERNAL },
+		{ "Xbox 360 Controller", GLYPH_XBOX360 },
+		{ "Xbox Wireless Controller", GLYPH_XBOXONE },
+		{ "DualShock 3", GLYPH_PS3 },
+		{ "DualShock 4", GLYPH_PS4 },
+		{ "DualSense", GLYPH_PS5 },
+		{ "Nintendo Switch Controller", GLYPH_NINTENDO_SWITCH }
 	};
 
 	switch (operation) {
 	case MENUOP_GETOPTIONCOUNT:
-		data->dropdown.value = ARRAYCOUNT(opts);
+		data->dropdown.value = ARRAYCOUNT(promptOptions);
 		break;
 	case MENUOP_GETOPTIONTEXT:
-		return (intptr_t)opts[data->dropdown.value];
+		return (intptr_t)promptOptions[data->dropdown.value].name;
 	case MENUOP_SET:
-		inputSetButtonPromptOverride(g_ExtMenuPlayer, data->dropdown.value);
+		if (data->dropdown.value >= 0 && data->dropdown.value < ARRAYCOUNT(promptOptions)) {
+			inputSetButtonPromptOverride(g_ExtMenuPlayer, promptOptions[data->dropdown.value].value);
+		}
 		break;
 	case MENUOP_GETSELECTEDINDEX:
-		data->dropdown.value = inputGetButtonPromptOverride(g_ExtMenuPlayer);
+		{
+			s32 currentValue = inputGetButtonPromptOverride(g_ExtMenuPlayer);
+			for (s32 i = 0; i < ARRAYCOUNT(promptOptions); i++) {
+				if (promptOptions[i].value == currentValue) {
+					data->dropdown.value = i;
+					return 0;
+				}
+			}
+			data->dropdown.value = 0;
+		}
 		break;
 	}
 
