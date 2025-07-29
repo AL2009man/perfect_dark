@@ -128,15 +128,15 @@ enum japaneseButtonLayout {
 };
 
 enum buttonpromptmode {
-	GLYPH_AUTO = 0,
-	GLYPH_GENERIC = 1,
-	GLYPH_INTERNAL = 2,
-	GLYPH_XBOX360 = 3,
-	GLYPH_XBOXONE = 4,
-	GLYPH_PS3 = 5,
-	GLYPH_PS4 = 6,
-	GLYPH_PS5 = 7,
-	GLYPH_NINTENDO_SWITCH = 8
+	GLYPH_AUTO = -1,
+	GLYPH_GENERIC = 0,
+	GLYPH_INTERNAL = 1,
+	GLYPH_XBOX360 = 2,
+	GLYPH_XBOXONE = 3,
+	GLYPH_PS3 = 4,
+	GLYPH_PS4 = 5,
+	GLYPH_PS5 = 6,
+	GLYPH_NINTENDO_SWITCH = 7
 };
 
 // returns bitmask of connected controllers or -1 if failed
