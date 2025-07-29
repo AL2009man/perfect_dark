@@ -83,6 +83,7 @@ static s32 numJoysticks = 0;
 
 static s32 useHIDAPI = 1;
 static s32 useRawInput = 1;
+static s32 useNintendoLayout = 0;
 
 static s32 mouseEnabled = 1;
 static s32 mouseX, mouseY;
@@ -735,6 +736,16 @@ s32 inputInit(void)
 	if (useRawInput) {
 		SDL_SetHint(SDL_HINT_JOYSTICK_RAWINPUT, "1");
 		SDL_SetHint(SDL_HINT_JOYSTICK_RAWINPUT_CORRELATE_XINPUT, "1");
+	}
+
+	if (useNintendoLayout) {
+		// use the Nintendo-style face button layout across both menus and gameplay
+		// this is default hint in SDL 2.0.6 and later
+		SDL_SetHint(SDL_HINT_GAMECONTROLLER_USE_BUTTON_LABELS, "1"); // uses button labels (A/B/X/Y)
+	} else {
+		// use the Xbox-style face button layout
+		// this is set by default, but it's explicitly set here to avoid confusion
+		SDL_SetHint(SDL_HINT_GAMECONTROLLER_USE_BUTTON_LABELS, "0"); // Uses positional face buttons (SOUTH/EAST/WEST/NORTH)
 	}
 
 	if (!SDL_WasInit(SDL_INIT_GAMECONTROLLER | SDL_INIT_HAPTIC)) {
@@ -1453,20 +1464,6 @@ const char *inputGetButtonDisplayName(s32 vk)
 	const u32 cidx = (vk - VK_JOY_BEGIN) / INPUT_MAX_CONTROLLER_BUTTONS;
 	u32 jbtn = (vk - VK_JOY_BEGIN) % INPUT_MAX_CONTROLLER_BUTTONS;
 
-	if (jbtn < INPUT_MAX_CONTROLLER_BUTTONS) {
-		// Check if JapaneseLayout is enabled or using Nintendo Switch controller
-		if (cidx < INPUT_MAX_CONTROLLERS) {
-			u32 swappedA = inputConfirmCancelButtonSwap(cidx, BUTTON_UI_ACCEPT);
-			if (swappedA == BUTTON_UI_CANCEL) {
-				if (jbtn == SDL_CONTROLLER_BUTTON_A) {
-					jbtn = SDL_CONTROLLER_BUTTON_B;
-				} else if (jbtn == SDL_CONTROLLER_BUTTON_B) {
-					jbtn = SDL_CONTROLLER_BUTTON_A;
-				}
-			}
-		}
-	}
-
 	if (jbtn >= INPUT_MAX_CONTROLLER_BUTTONS) {
 		return inputGetKeyName(vk);
 	}
@@ -1702,6 +1699,7 @@ PD_CONSTRUCTOR static void inputConfigInit(void)
 	configRegisterInt("Input.FirstGamepadNum", &firstController, 0, 3);
 	configRegisterInt("Input.UseHIDAPI", &useHIDAPI, 0, 1);
 	configRegisterInt("Input.UseRawInput", &useRawInput, 0, 1);
+	configRegisterInt("Input.UseNintendoLayout", &useNintendoLayout, 0, 1);
 
 	char secname[] = "Input.Player1.Binds";
 	char keyname[256] = { 0 };

@@ -126,10 +126,6 @@ static const struct button_override ps5_overrides[] = {
 
 // Nintendo Switch-specific overrides
 static const struct button_override switch_specific[] = {
-	{ 0, "B_BTN" },          // Nintendo bottom button → "B" equivalent
-	{ 1, "A_BTN" },          // Nintendo right button → "A" equivalent
-	{ 2, "Y_BTN" },          // Nintendo left button → "Y" equivalent
-	{ 3, "X_BTN" },          // Nintendo top button → "X" equivalent
 	{ 4, "MINUS_BTN" },
 	{ 5, "HOME_BTN" },
 	{ 6, "PLUS_BTN" },
@@ -232,7 +228,19 @@ const char *glyphGetButtonName(int controllerType, int buttonIndex)
 			// 1. Nintendo Switch specific overrides
 			result = searchOverrides(switch_specific, sizeof(switch_specific) / sizeof(switch_specific[0]), buttonIndex);
 			if (result) return result;
-			// 2. Glyph standard (will fallback to generic prompts going forward)
+			// 2. Nintendo layout face buttons (use glyph_standard but swap positions)
+			if (buttonIndex >= 0 && buttonIndex <= 3) {
+				int mappedIndex = buttonIndex;
+				// Map Nintendo physical positions to standard button names  
+				switch (buttonIndex) {
+					case 0: mappedIndex = 1; break; // SDL button 0 → B_BTN (Nintendo's bottom button is B)
+					case 1: mappedIndex = 0; break; // SDL button 1 → A_BTN (Nintendo's right button is A)
+					case 2: mappedIndex = 3; break; // SDL button 2 → Y_BTN (Nintendo's left button is Y)
+					case 3: mappedIndex = 2; break; // SDL button 3 → X_BTN (Nintendo's top button is X)
+				}
+				result = searchOverrides(glyph_standard, sizeof(glyph_standard) / sizeof(glyph_standard[0]), mappedIndex);
+				if (result) return result;
+			}
 			break;
 			
 		case CONTROLLER_ICON_GENERIC:
