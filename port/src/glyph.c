@@ -228,15 +228,14 @@ const char *glyphGetButtonName(int controllerType, int buttonIndex)
 			// 1. Nintendo Switch specific overrides
 			result = searchOverrides(switch_specific, sizeof(switch_specific) / sizeof(switch_specific[0]), buttonIndex);
 			if (result) return result;
-			// 2. Nintendo layout face buttons (use glyph_standard but swap positions)
+			// 2. Glyph standard (swapped Face Buttons positions)
 			if (buttonIndex >= 0 && buttonIndex <= 3) {
 				int mappedIndex = buttonIndex;
-				// Map Nintendo physical positions to standard button names  
 				switch (buttonIndex) {
-					case 0: mappedIndex = 1; break; // SDL button 0 → B_BTN (Nintendo's bottom button is B)
-					case 1: mappedIndex = 0; break; // SDL button 1 → A_BTN (Nintendo's right button is A)
-					case 2: mappedIndex = 3; break; // SDL button 2 → Y_BTN (Nintendo's left button is Y)
-					case 3: mappedIndex = 2; break; // SDL button 3 → X_BTN (Nintendo's top button is X)
+					case 0: mappedIndex = 1; break;
+					case 1: mappedIndex = 0; break;
+					case 2: mappedIndex = 3; break;
+					case 3: mappedIndex = 2; break;
 				}
 				result = searchOverrides(glyph_standard, sizeof(glyph_standard) / sizeof(glyph_standard[0]), mappedIndex);
 				if (result) return result;
