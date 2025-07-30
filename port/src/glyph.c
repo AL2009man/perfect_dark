@@ -126,10 +126,6 @@ static const struct button_override ps5_overrides[] = {
 
 // Nintendo Switch-specific overrides
 static const struct button_override switch_specific[] = {
-	{ 0, "B_BTN" },          // Nintendo bottom button → "B" equivalent
-	{ 1, "A_BTN" },          // Nintendo right button → "A" equivalent
-	{ 2, "Y_BTN" },          // Nintendo left button → "Y" equivalent
-	{ 3, "X_BTN" },          // Nintendo top button → "X" equivalent
 	{ 4, "MINUS_BTN" },
 	{ 5, "HOME_BTN" },
 	{ 6, "PLUS_BTN" },
@@ -142,7 +138,7 @@ static const struct button_override switch_specific[] = {
 	{ 31, "ZR_TRIG" },
 };
 
-// Helper function to search an override a specific button index
+// Helper function to search an override array
 static const char* searchOverrides(const struct button_override* overrides, int count, int buttonIndex) {
 	for (int i = 0; i < count; i++) {
 		if (overrides[i].button_index == buttonIndex) {
@@ -162,10 +158,10 @@ const char *glyphGetButtonName(int controllerType, int buttonIndex)
 			// Xbox 360-specific overrides
 			result = searchOverrides(xbox360_overrides, sizeof(xbox360_overrides) / sizeof(xbox360_overrides[0]), buttonIndex);
 			if (result) return result;
-			// Xbox overrides
+			// 2. Xbox overrides
 			result = searchOverrides(xbox_specific, sizeof(xbox_specific) / sizeof(xbox_specific[0]), buttonIndex);
 			if (result) return result;
-			// Glyph standard (Face Button only)
+			// 3. Glyph standard (Face Button only)
 			if (buttonIndex >= 0 && buttonIndex <= 3) {
 				result = searchOverrides(glyph_standard, sizeof(glyph_standard) / sizeof(glyph_standard[0]), buttonIndex);
 				if (result) return result;
@@ -173,13 +169,13 @@ const char *glyphGetButtonName(int controllerType, int buttonIndex)
 			break;
 			
 		case CONTROLLER_ICON_XBOXONE:
-			// Xbox One/Series X|S-specific overrides
+			// 1. Xbox One/Series X|S-specific overrides
 			result = searchOverrides(xboxone_overrides, sizeof(xboxone_overrides) / sizeof(xboxone_overrides[0]), buttonIndex);
 			if (result) return result;
-			// Xbox overrides
+			// 2. Xbox overrides
 			result = searchOverrides(xbox_specific, sizeof(xbox_specific) / sizeof(xbox_specific[0]), buttonIndex);
 			if (result) return result;
-			// Glyph standard (Face Button only)
+			// 3. Glyph standard (Face Button only)
 			if (buttonIndex >= 0 && buttonIndex <= 3) {
 				result = searchOverrides(glyph_standard, sizeof(glyph_standard) / sizeof(glyph_standard[0]), buttonIndex);
 				if (result) return result;
@@ -190,10 +186,10 @@ const char *glyphGetButtonName(int controllerType, int buttonIndex)
 			// PS3-specific overrides
 			result = searchOverrides(ps3_overrides, sizeof(ps3_overrides) / sizeof(ps3_overrides[0]), buttonIndex);
 			if (result) return result;
-			// PlayStation overrides
+			// 2. PlayStation overrides
 			result = searchOverrides(playstation_specific, sizeof(playstation_specific) / sizeof(playstation_specific[0]), buttonIndex);
 			if (result) return result;
-			// Glyph standard (Face, Shoulders, Triggers only)
+			// 3. Glyph standard (Face, Shoulders, Triggers only)
 			if ((buttonIndex >= 0 && buttonIndex <= 10) || (buttonIndex >= 30 && buttonIndex <= 31)) {
 				result = searchOverrides(glyph_standard, sizeof(glyph_standard) / sizeof(glyph_standard[0]), buttonIndex);
 				if (result) return result;
@@ -201,13 +197,13 @@ const char *glyphGetButtonName(int controllerType, int buttonIndex)
 			break;
 			
 		case CONTROLLER_ICON_PS4:
-			// PS4-specific overrides
+			// 1. PS4-specific overrides
 			result = searchOverrides(ps4_overrides, sizeof(ps4_overrides) / sizeof(ps4_overrides[0]), buttonIndex);
 			if (result) return result;
-			// PlayStation overrides
+			// 2. PlayStation overrides
 			result = searchOverrides(playstation_specific, sizeof(playstation_specific) / sizeof(playstation_specific[0]), buttonIndex);
 			if (result) return result;
-			// Glyph standard (Face, Shoulders, Triggers only)
+			// 3. Glyph standard (Face, Shoulders, Triggers only)
 			if ((buttonIndex >= 0 && buttonIndex <= 10) || (buttonIndex >= 30 && buttonIndex <= 31)) {
 				result = searchOverrides(glyph_standard, sizeof(glyph_standard) / sizeof(glyph_standard[0]), buttonIndex);
 				if (result) return result;
@@ -215,13 +211,13 @@ const char *glyphGetButtonName(int controllerType, int buttonIndex)
 			break;
 			
 		case CONTROLLER_ICON_PS5:
-			// PS5-specific overrides
+			// 1. PS5-specific overrides
 			result = searchOverrides(ps5_overrides, sizeof(ps5_overrides) / sizeof(ps5_overrides[0]), buttonIndex);
 			if (result) return result;
-			// PlayStation overrides
+			// 2. PlayStation overrides
 			result = searchOverrides(playstation_specific, sizeof(playstation_specific) / sizeof(playstation_specific[0]), buttonIndex);
 			if (result) return result;
-			// Glyph standard (Face, Shoulders, Triggers only)
+			// 3. Glyph standard (Face, Shoulders, Triggers only)
 			if ((buttonIndex >= 0 && buttonIndex <= 10) || (buttonIndex >= 30 && buttonIndex <= 31)) {
 				result = searchOverrides(glyph_standard, sizeof(glyph_standard) / sizeof(glyph_standard[0]), buttonIndex);
 				if (result) return result;
@@ -229,10 +225,21 @@ const char *glyphGetButtonName(int controllerType, int buttonIndex)
 			break;
 			
 		case CONTROLLER_ICON_NINTENDO_SWITCH:
-			// Nintendo Switch specific overrides
+			// 1. Nintendo Switch specific overrides
 			result = searchOverrides(switch_specific, sizeof(switch_specific) / sizeof(switch_specific[0]), buttonIndex);
 			if (result) return result;
-			// Glyph standard (will fallback to generic prompts going forward)
+			// 2. Glyph standard (swapped Face Buttons positions)
+			if (buttonIndex >= 0 && buttonIndex <= 3) {
+				int mappedIndex = buttonIndex;
+				switch (buttonIndex) {
+					case 0: mappedIndex = 1; break;
+					case 1: mappedIndex = 0; break;
+					case 2: mappedIndex = 3; break;
+					case 3: mappedIndex = 2; break;
+				}
+				result = searchOverrides(glyph_standard, sizeof(glyph_standard) / sizeof(glyph_standard[0]), mappedIndex);
+				if (result) return result;
+			}
 			break;
 			
 		case CONTROLLER_ICON_GENERIC:
