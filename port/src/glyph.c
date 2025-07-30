@@ -148,7 +148,7 @@ static const char* searchOverrides(const struct button_override* overrides, int 
 	return NULL;
 }
 
-// Function to get controller-specific button name with fallback to generic
+// Function to get controller-specific button names
 const char *glyphGetButtonName(int controllerType, int buttonIndex)
 {
 	const char *result = NULL;
