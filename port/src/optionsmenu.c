@@ -1730,6 +1730,32 @@ struct menuitem g_ExtendedBindsMenuItems[] = {
 	{ MENUITEMTYPE_END },
 };
 
+// Helper function to swap A/B buttons for Japanese layout
+static s32 menuSwapConfirmCancel(s32 key, u32 bindKey)
+{
+	// Only swap for CK_ACCEPT/CK_CANCEL when Japanese layout is active
+	if (!inputControllerIsNintendoSwitch(g_ExtMenuPlayer) ||
+		(bindKey != CK_ACCEPT && bindKey != CK_CANCEL) ||
+		inputConfirmCancelButtonSwap(g_ExtMenuPlayer, BUTTON_UI_ACCEPT) == BUTTON_UI_ACCEPT ||
+		key < VK_JOY_BEGIN || key >= VK_TOTAL_COUNT) {
+		return key;
+	}
+
+	s32 controllerIdx = (key - VK_JOY_BEGIN) / INPUT_MAX_CONTROLLER_BUTTONS;
+	if (controllerIdx != g_ExtMenuPlayer) {
+		return key;
+	}
+
+	s32 buttonIdx = (key - VK_JOY_BEGIN) % INPUT_MAX_CONTROLLER_BUTTONS;
+	if (buttonIdx == 0) {
+		return key + 1; 
+	} else if (buttonIdx == 1) {
+		return key - 1;
+	}
+	
+	return key;
+}
+
 static MenuItemHandlerResult menuhandlerDoBind(s32 operation, struct menuitem *item, union handlerdata *data)
 {
 	if (!menuIsDialogOpen(&g_ExtendedBindKeyMenuDialog)) {
@@ -1743,25 +1769,7 @@ static MenuItemHandlerResult menuhandlerDoBind(s32 operation, struct menuitem *i
 
 	const s32 key = inputGetLastKey();
 	if (key && key != VK_DELETE && key != VK_ESCAPE) {
-		s32 adjustedKey = key;
-		
-		// Handle Nintendo Switch controller button swapping for Japanese layout
-		if (inputControllerIsNintendoSwitch(g_ExtMenuPlayer) &&
-			inputConfirmCancelButtonSwap(g_ExtMenuPlayer, key) &&
-			key >= VK_JOY_BEGIN && key < VK_TOTAL_COUNT) {
-
-			s32 keyControllerIdx = (key - VK_JOY_BEGIN) / INPUT_MAX_CONTROLLER_BUTTONS;
-			if (keyControllerIdx == g_ExtMenuPlayer) {
-			s32 buttonInController = (key - VK_JOY_BEGIN) % INPUT_MAX_CONTROLLER_BUTTONS;
-
-			// Swap A and B buttons for Japanese layout
-			if (buttonInController == CK_A) {
-				adjustedKey = key + (CK_B - CK_A);
-			} else if (buttonInController == CK_B) {
-				adjustedKey = key + (CK_A - CK_B);
-			}
-			}
-		}
+		s32 adjustedKey = menuSwapConfirmCancel(key, g_BindContKey);
 		
 		inputKeyBind(g_ExtMenuPlayer, g_BindContKey, g_BindIndex, adjustedKey);
 		menuPopDialog();
@@ -1797,6 +1805,8 @@ static MenuItemHandlerResult menuhandlerBind(s32 operation, struct menuitem *ite
 	case MENUOP_GETOPTIONTEXT:
 		binds = inputKeyGetBinds(g_ExtMenuPlayer, menuBinds[idx].ck);
 		if (binds && binds[data->dropdown.value]) {
+			s32 displayKey = menuSwapConfirmCancel(binds[data->dropdown.value], menuBinds[idx].ck);
+			
 			strncpy(keyname, inputGetKeyName(binds[data->dropdown.value]), sizeof(keyname) - 1);
 			for (char *p = keyname; *p; ++p) {
 				if (*p == '_') *p = ' ';
