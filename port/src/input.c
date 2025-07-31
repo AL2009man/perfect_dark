@@ -1492,21 +1492,6 @@ const char *inputGetButtonDisplayName(s32 vk)
 				}
 				return glyphGetButtonName(CONTROLLER_ICON_NINTENDO_SWITCH, jbtn);
 			case SDL_CONTROLLER_TYPE_VIRTUAL:
-				if (ctrl) {
-					SDL_Joystick *joystick = SDL_GameControllerGetJoystick(ctrl);
-					if (joystick) {
-						Uint16 vendor = SDL_JoystickGetVendor(joystick);
-						if (vendor == 0x28de) {  // Valve Corporation
-							Uint16 product = SDL_JoystickGetProduct(joystick);
-							
-							// Steam Virtual Gamepad
-							if (product == 0x11ff) {
-								return glyphGetButtonName(CONTROLLER_ICON_STEAM_DECK, jbtn);
-							}
-						}
-					}
-				}
-				break;
 			case SDL_CONTROLLER_TYPE_UNKNOWN:
 			default:
                 if (ctrl) {
@@ -1516,8 +1501,12 @@ const char *inputGetButtonDisplayName(s32 vk)
                         if (vendor == 0x28de) {  // Valve Corporation
                             Uint16 product = SDL_JoystickGetProduct(joystick);
                             
+                            // Steam Virtual Gamepad
+                            if (product == 0x11ff) {
+                                return glyphGetButtonName(CONTROLLER_ICON_STEAM_DECK, jbtn);
+                            }
                             // Steam Controllers
-                            if (product == 0x1101 || product == 0x1102 || product == 0x1105 || 
+                            else if (product == 0x1101 || product == 0x1102 || product == 0x1105 || 
                                 product == 0x1106 || product == 0x1142 || product == 0x1201 || 
                                 product == 0x1202) {
                                 return glyphGetButtonName(CONTROLLER_ICON_STEAM_CONTROLLER, jbtn);
