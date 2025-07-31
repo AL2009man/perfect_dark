@@ -1372,7 +1372,6 @@ const char *inputGetKeyName(s32 vk)
 	return vkNames[vk];
 }
 
-
 const char *inputGetButtonDisplayName(s32 vk)
 {
 	if (vk < VK_JOY_BEGIN || vk >= VK_TOTAL_COUNT) {
@@ -1417,7 +1416,10 @@ const char *inputGetButtonDisplayName(s32 vk)
 				if (ctrl) {
 					SDL_Joystick *joystick = SDL_GameControllerGetJoystick(ctrl);
 					if (joystick && SDL_JoystickGetVendor(joystick) == 0x28de) {
-						return glyphGetButtonName(CONTROLLER_ICON_XBOX360, jbtn);
+						Uint16 product = SDL_JoystickGetProduct(joystick);
+						if (product == 0x11ff) {
+							return glyphGetButtonName(CONTROLLER_ICON_XBOX360, jbtn);
+						}
 					}
 				}
 				return glyphGetButtonName(CONTROLLER_ICON_XBOX360, jbtn);
@@ -1425,7 +1427,10 @@ const char *inputGetButtonDisplayName(s32 vk)
 				if (ctrl) {
 					SDL_Joystick *joystick = SDL_GameControllerGetJoystick(ctrl);
 					if (joystick && SDL_JoystickGetVendor(joystick) == 0x28de) {
-						return glyphGetButtonName(CONTROLLER_ICON_XBOXONE, jbtn);
+						Uint16 product = SDL_JoystickGetProduct(joystick);
+						if (product == 0x11ff) {
+							return glyphGetButtonName(CONTROLLER_ICON_XBOXONE, jbtn);
+						}
 					}
 				}
 				return glyphGetButtonName(CONTROLLER_ICON_XBOXONE, jbtn);
@@ -1433,7 +1438,10 @@ const char *inputGetButtonDisplayName(s32 vk)
 				if (ctrl) {
 					SDL_Joystick *joystick = SDL_GameControllerGetJoystick(ctrl);
 					if (joystick && SDL_JoystickGetVendor(joystick) == 0x28de) {
-						return glyphGetButtonName(CONTROLLER_ICON_PS3, jbtn);
+						Uint16 product = SDL_JoystickGetProduct(joystick);
+						if (product == 0x11ff) { 
+							return glyphGetButtonName(CONTROLLER_ICON_PS3, jbtn);
+						}
 					}
 				}
 				return glyphGetButtonName(CONTROLLER_ICON_PS3, jbtn);
@@ -1441,7 +1449,10 @@ const char *inputGetButtonDisplayName(s32 vk)
 				if (ctrl) {
 					SDL_Joystick *joystick = SDL_GameControllerGetJoystick(ctrl);
 					if (joystick && SDL_JoystickGetVendor(joystick) == 0x28de) {
-						return glyphGetButtonName(CONTROLLER_ICON_PS4, jbtn);
+						Uint16 product = SDL_JoystickGetProduct(joystick);
+						if (product == 0x11ff) {
+							return glyphGetButtonName(CONTROLLER_ICON_PS4, jbtn);
+						}
 					}
 				}
 				return glyphGetButtonName(CONTROLLER_ICON_PS4, jbtn);
@@ -1450,7 +1461,10 @@ const char *inputGetButtonDisplayName(s32 vk)
 				if (ctrl) {
 					SDL_Joystick *joystick = SDL_GameControllerGetJoystick(ctrl);
 					if (joystick && SDL_JoystickGetVendor(joystick) == 0x28de) {
-						return glyphGetButtonName(CONTROLLER_ICON_PS5, jbtn);
+						Uint16 product = SDL_JoystickGetProduct(joystick);
+						if (product == 0x11ff) { 
+							return glyphGetButtonName(CONTROLLER_ICON_PS5, jbtn);
+						}
 					}
 				}
 				return glyphGetButtonName(CONTROLLER_ICON_PS5, jbtn);
@@ -1470,38 +1484,41 @@ const char *inputGetButtonDisplayName(s32 vk)
 				if (ctrl) {
 					SDL_Joystick *joystick = SDL_GameControllerGetJoystick(ctrl);
 					if (joystick && SDL_JoystickGetVendor(joystick) == 0x28de) {
-						return glyphGetButtonName(CONTROLLER_ICON_NINTENDO_SWITCH, jbtn);
+						Uint16 product = SDL_JoystickGetProduct(joystick);
+						if (product == 0x11ff) {
+							return glyphGetButtonName(CONTROLLER_ICON_NINTENDO_SWITCH, jbtn);
+						}
 					}
 				}
 				return glyphGetButtonName(CONTROLLER_ICON_NINTENDO_SWITCH, jbtn);
 			case SDL_CONTROLLER_TYPE_VIRTUAL:
 			case SDL_CONTROLLER_TYPE_UNKNOWN:
 			default:
-				if (ctrl) {
-					SDL_Joystick *joystick = SDL_GameControllerGetJoystick(ctrl);
-					if (joystick) {
-						Uint16 vendor = SDL_JoystickGetVendor(joystick);
-						if (vendor == 0x28de) {  // Valve Corporation
-							Uint16 product = SDL_JoystickGetProduct(joystick);
-							
-							// Physical Steam Controllers
-							if (product == 0x1101 || product == 0x1102 || product == 0x1105 || 
-								product == 0x1106 || product == 0x1142 || product == 0x1201 || 
-								product == 0x1202) {
-								return glyphGetButtonName(CONTROLLER_ICON_STEAM_CONTROLLER, jbtn);
-							}
-							// Steam Deck
-							else if (product == 0x1205) {
-								return glyphGetButtonName(CONTROLLER_ICON_STEAM_DECK, jbtn);
-							}
-							// Steam Virtual Gamepad or other Valve devices
-							else {
-								return glyphGetButtonName(CONTROLLER_ICON_STEAM_DECK, jbtn);
-							}
-						}
-					}
-				}
-				break;
+                if (ctrl) {
+                    SDL_Joystick *joystick = SDL_GameControllerGetJoystick(ctrl);
+                    if (joystick) {
+                        Uint16 vendor = SDL_JoystickGetVendor(joystick);
+                        if (vendor == 0x28de) {  // Valve Corporation
+                            Uint16 product = SDL_JoystickGetProduct(joystick);
+                            
+                            // Steam Virtual Gamepad
+                            if (product == 0x11ff) {
+                                return glyphGetButtonName(CONTROLLER_ICON_STEAM_DECK, jbtn);
+                            }
+                            // Steam Controllers
+                            else if (product == 0x1101 || product == 0x1102 || product == 0x1105 || 
+                                product == 0x1106 || product == 0x1142 || product == 0x1201 || 
+                                product == 0x1202) {
+                                return glyphGetButtonName(CONTROLLER_ICON_STEAM_CONTROLLER, jbtn);
+                            }
+                            // Steam Deck
+                            else if (product == 0x1205) {
+                                return glyphGetButtonName(CONTROLLER_ICON_STEAM_DECK, jbtn);
+                            }
+                        }
+                    }
+                }
+                break;
 		}
 	}
 	
