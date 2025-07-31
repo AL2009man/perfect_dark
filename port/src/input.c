@@ -1526,12 +1526,35 @@ const char *inputGetButtonDisplayName(s32 vk)
 #endif
 #endif
 				return glyphGetButtonName(CONTROLLER_ICON_NINTENDO_SWITCH, jbtn);
+			case SDL_CONTROLLER_TYPE_VIRTUAL:
+				// Check for Steam Controllers by VID/PID
+				if (ctrl) {
+					SDL_Joystick *joystick = SDL_GameControllerGetJoystick(ctrl);
+					if (joystick) {
+						Uint16 vendor = SDL_JoystickGetVendor(joystick);
+						Uint16 product = SDL_JoystickGetProduct(joystick);
+						
+						if (vendor == 0x28de) {  // Valve Corporation
+							// Steam Controllers 
+							if (product == 0x1101 || product == 0x1102 || product == 0x1105 || 
+								product == 0x1106 || product == 0x1142 || product == 0x1201 || 
+								product == 0x1202) {
+								return glyphGetButtonName(CONTROLLER_ICON_STEAM_CONTROLLER, jbtn);
+							}
+							// Steam Deck
+							else if (product == 0x1205) {
+								return glyphGetButtonName(CONTROLLER_ICON_STEAM_DECK, jbtn);
+							}
+						}
+					}
+				}
+			case SDL_CONTROLLER_TYPE_UNKNOWN:
 			default:
 				return glyphGetButtonName(CONTROLLER_ICON_GENERIC, jbtn);
 		}
 	}
 	
-	// Fallback to generic controller
+	// fallback to generic type if no controller is connected or recognized
 	return glyphGetButtonName(CONTROLLER_ICON_GENERIC, jbtn);
 }
 

@@ -631,7 +631,9 @@ static MenuItemHandlerResult menuhandlerButtonPromptOverride(s32 operation, stru
 		{ "DualShock 3", GLYPH_PS3 },
 		{ "DualShock 4", GLYPH_PS4 },
 		{ "DualSense", GLYPH_PS5 },
-		{ "Nintendo Switch Controller", GLYPH_NINTENDO_SWITCH }
+		{ "Nintendo Switch Controller", GLYPH_NINTENDO_SWITCH },
+		{ "Steam Controller", GLYPH_STEAM_CONTROLLER },
+		{ "Steam Deck", GLYPH_STEAM_DECK },
 	};
 
 	switch (operation) {
