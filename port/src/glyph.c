@@ -117,11 +117,13 @@ static const struct button_override ps4_overrides[] = {
 
 // PS5-specific button overrides
 static const struct button_override ps5_overrides[] = {
-	{ 4, "CREATE_BTN" },
-	{ 6, "OPTIONS_BTN" },
-	{ 15, "MIC_BTN" },       // PS5 microphone mute button
-	{ 18, "LB_PADDLE" },     // DualSense Edge left back button
-	{ 19, "RB_PADDLE" },     // DualSense Edge right back button
+	{ 4,  "CREATE_BTN" },
+	{ 6,  "OPTIONS_BTN" },
+	{ 15, "MIC_BTN" },
+	{ 16, "RB_PADDLE" },          // DualSense Edge RB Button  
+	{ 17, "LB_PADDLE" },          // DualSense Edge LB Button
+	{ 18, "FN_RIGHT_BTN" },       // DualSense Edge right function button
+	{ 19, "FN_LEFT_BTN" },        // DualSense Edge left function button
 };
 
 // Nintendo Switch-specific overrides
@@ -131,12 +133,27 @@ static const struct button_override switch_specific[] = {
 	{ 6, "PLUS_BTN" },
 	{ 9, "L_SHOULDER" },
 	{ 10, "R_SHOULDER" },
-	{ 15, "CAPTURE_BTN" },
-	{ 16, "SL_BTN" },
-	{ 17, "SR_BTN" },
+	{ 15, "CAPTURE_BTN" },  
+	{ 16, "SL_BTN" },       // Left Joy-Con SL
+	{ 17, "SR_BTN" },       // Left Joy-Con SR
+	{ 18, "SL_BTN" },       // Right Joy-Con SL
+	{ 19, "SR_BTN" },       // Right Joy-Con SR
 	{ 30, "ZL_TRIG" },
 	{ 31, "ZR_TRIG" },
 };
+
+// Steam Deck-specific overrides
+static const struct button_override steamdeck_overrides[] = {
+	{ 4, "VIEW_BTN" },
+	{ 6, "MENU_BTN" },
+};
+
+// Steam Controller-specific overrides
+static const struct button_override steamcontroller_overrides[] = {
+	{ 16, "RG_BTN" },       // Steam Controller left grip
+	{ 17, "LG_BTN" },       // Steam Controller right grip
+};
+
 
 // Function to search an override for a specific button index
 static const char* searchOverrides(const struct button_override* overrides, int count, int buttonIndex) {
@@ -162,6 +179,20 @@ const char *glyphGetButtonName(int controllerType, int buttonIndex)
 			result = searchOverrides(xbox_specific, sizeof(xbox_specific) / sizeof(xbox_specific[0]), buttonIndex);
 			if (result) return result;
 			// Glyph standard (Face Button only)
+			if (buttonIndex >= 0 && buttonIndex <= 3) {
+				result = searchOverrides(glyph_standard, sizeof(glyph_standard) / sizeof(glyph_standard[0]), buttonIndex);
+				if (result) return result;
+			}
+			break;
+
+		case CONTROLLER_ICON_STEAM_CONTROLLER:
+			// Steam Controller-specific overrides
+			result = searchOverrides(steamcontroller_overrides, sizeof(steamcontroller_overrides) / sizeof(steamcontroller_overrides[0]), buttonIndex);
+			if (result) return result;
+			// Xbox overrides (Shoulders and triggers)
+			result = searchOverrides(xbox_specific, sizeof(xbox_specific) / sizeof(xbox_specific[0]), buttonIndex);
+			if (result) return result;
+			// Glyph standard (Face buttons)
 			if (buttonIndex >= 0 && buttonIndex <= 3) {
 				result = searchOverrides(glyph_standard, sizeof(glyph_standard) / sizeof(glyph_standard[0]), buttonIndex);
 				if (result) return result;
@@ -238,6 +269,17 @@ const char *glyphGetButtonName(int controllerType, int buttonIndex)
 					case 3: mappedIndex = 2; break; // X (Top face button)
 				}
 				result = searchOverrides(glyph_standard, sizeof(glyph_standard) / sizeof(glyph_standard[0]), mappedIndex);
+				if (result) return result;
+			}
+			break;
+
+		case CONTROLLER_ICON_STEAM_DECK:
+			// Steam Deck-specific overrides
+			result = searchOverrides(steamdeck_overrides, sizeof(steamdeck_overrides) / sizeof(steamdeck_overrides[0]), buttonIndex);
+			if (result) return result;
+			// Glyph standard
+			if ((buttonIndex >= 0 && buttonIndex <= 19) || (buttonIndex >= 30 && buttonIndex <= 31)) {
+				result = searchOverrides(glyph_standard, sizeof(glyph_standard) / sizeof(glyph_standard[0]), buttonIndex);
 				if (result) return result;
 			}
 			break;

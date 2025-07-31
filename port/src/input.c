@@ -1377,28 +1377,37 @@ const char *inputGetButtonDisplayName(s32 vk)
 	if (vk < VK_JOY_BEGIN || vk >= VK_TOTAL_COUNT) {
 		return inputGetKeyName(vk);
 	}
-	
+
 	const u32 cidx = (vk - VK_JOY_BEGIN) / INPUT_MAX_CONTROLLER_BUTTONS;
-	const u32 jbtn = (vk - VK_JOY_BEGIN) % INPUT_MAX_CONTROLLER_BUTTONS;
-	
+	u32 jbtn = (vk - VK_JOY_BEGIN) % INPUT_MAX_CONTROLLER_BUTTONS;
+
 	if (jbtn >= INPUT_MAX_CONTROLLER_BUTTONS) {
 		return inputGetKeyName(vk);
 	}
-	
+
 	const s32 override = (cidx < INPUT_MAX_CONTROLLERS) ? padsCfg[cidx].buttonPromptOverride : GLYPH_AUTO;
-	
+
 	// Internal glyphs (optional)
 	if (override == GLYPH_INTERNAL) {
 		if (jbtn < sizeof(vkJoyNames) / sizeof(vkJoyNames[0])) {
 			static char playerButtonName[64];
 			const char *baseName = vkJoyNames[jbtn];
-			snprintf(playerButtonName, sizeof(playerButtonName), "JOY%d_%s", 
+			snprintf(playerButtonName, sizeof(playerButtonName), "JOY%d_%s",
 				(int)(cidx + 1), baseName + 5);
 			return playerButtonName;
 		}
 		return inputGetKeyName(vk);
 	}
-	
+
+	// Use glyphs based on controller type
+	SDL_GameController *ctrl = (cidx < INPUT_MAX_CONTROLLERS) ? pads[cidx] : NULL;
+	SDL_GameControllerType type = SDL_CONTROLLER_TYPE_UNKNOWN;
+#if SDL_VERSION_ATLEAST(2, 0, 12)
+	if (ctrl) {
+		type = SDL_GameControllerGetType(ctrl);
+	}
+#endif
+
 	// Glyph override
 	if (override != GLYPH_AUTO) {
 		const ControllerIconType iconType = (ControllerIconType)(override - 1);
@@ -1434,12 +1443,35 @@ const char *inputGetButtonDisplayName(s32 vk)
 #endif
 #endif
 				return glyphGetButtonName(CONTROLLER_ICON_NINTENDO_SWITCH, jbtn);
+			case SDL_CONTROLLER_TYPE_VIRTUAL:
+				// Check for Steam Controllers by VID/PID
+				if (ctrl) {
+					SDL_Joystick *joystick = SDL_GameControllerGetJoystick(ctrl);
+					if (joystick) {
+						Uint16 vendor = SDL_JoystickGetVendor(joystick);
+						Uint16 product = SDL_JoystickGetProduct(joystick);
+						
+						if (vendor == 0x28de) {  // Valve Corporation
+							// Steam Controllers 
+							if (product == 0x1101 || product == 0x1102 || product == 0x1105 || 
+								product == 0x1106 || product == 0x1142 || product == 0x1201 || 
+								product == 0x1202) {
+								return glyphGetButtonName(CONTROLLER_ICON_STEAM_CONTROLLER, jbtn);
+							}
+							// Steam Deck
+							else if (product == 0x1205) {
+								return glyphGetButtonName(CONTROLLER_ICON_STEAM_DECK, jbtn);
+							}
+						}
+					}
+				}
+			case SDL_CONTROLLER_TYPE_UNKNOWN:
 			default:
 				return glyphGetButtonName(CONTROLLER_ICON_GENERIC, jbtn);
 		}
 	}
 	
-	// Fallback to generic controller
+	// fallback to generic type if no controller is connected or recognized
 	return glyphGetButtonName(CONTROLLER_ICON_GENERIC, jbtn);
 }
 
@@ -1626,7 +1658,7 @@ PD_CONSTRUCTOR static void inputConfigInit(void)
 		configRegisterInt(strFmt("%s.CancelCButtons", secname), &padsCfg[c].cancelCButtons, 0, 1);
 		configRegisterInt(strFmt("%s.SwapSticks", secname), &padsCfg[c].swapSticks, 0, 1);
 		configRegisterInt(strFmt("%s.ControllerIndex", secname), &padsCfg[c].deviceIndex, -1, 0x7FFFFFFF);
-		configRegisterInt(strFmt("%s.ButtonPromptOverride", secname), &padsCfg[c].buttonPromptOverride, GLYPH_AUTO, GLYPH_NINTENDO_SWITCH);
+		configRegisterInt(strFmt("%s.ButtonPromptOverride", secname), &padsCfg[c].buttonPromptOverride, GLYPH_AUTO, GLYPH_STEAM_DECK);
 		secname[13] = '.';
 		for (u32 ck = 0; ck < CK_TOTAL_COUNT; ++ck) {
 			snprintf(keyname, sizeof(keyname), "%s.%s", secname, inputGetContKeyName(ck));

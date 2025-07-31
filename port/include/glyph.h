@@ -10,6 +10,8 @@ typedef enum {
 	CONTROLLER_ICON_PS4,
 	CONTROLLER_ICON_PS5,
 	CONTROLLER_ICON_NINTENDO_SWITCH,
+	CONTROLLER_ICON_STEAM_CONTROLLER,
+	CONTROLLER_ICON_STEAM_DECK,
 } ControllerIconType;
 
 // Generic display names for controller buttons
