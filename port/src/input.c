@@ -1466,9 +1466,13 @@ const char *inputGetButtonDisplayName(s32 vk)
 					else if (product == 0x1205) {
 						return glyphGetButtonName(CONTROLLER_ICON_STEAM_DECK, jbtn);
 					}
+					// Steam Virtual Gamepad
+					else if (product == 0x11ff) {
+						return glyphGetButtonName(CONTROLLER_ICON_STEAM_DECK, jbtn);
+					}
 					else {
-						// Default to generic for other Valve-related devices (including virtual gamepad)
-						return glyphGetButtonName(CONTROLLER_ICON_GENERIC, jbtn);
+						// Default to Steam Deck for other Valve-related devices
+						return glyphGetButtonName(CONTROLLER_ICON_STEAM_DECK, jbtn);
 					}
 				}
 			}
