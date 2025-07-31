@@ -1502,15 +1502,50 @@ const char *inputGetButtonDisplayName(s32 vk)
 		
 		switch (type) {
 			case SDL_CONTROLLER_TYPE_XBOX360:
+				// Check if it's Steam Virtual Gamepad masquerading as Xbox360
+				if (ctrl) {
+					SDL_Joystick *joystick = SDL_GameControllerGetJoystick(ctrl);
+					if (joystick && SDL_JoystickGetVendor(joystick) == 0x28de) {
+						return glyphGetButtonName(CONTROLLER_ICON_XBOX360, jbtn);
+					}
+				}
 				return glyphGetButtonName(CONTROLLER_ICON_XBOX360, jbtn);
 			case SDL_CONTROLLER_TYPE_XBOXONE:
+				// Check if it's Steam Virtual Gamepad masquerading as XboxOne
+				if (ctrl) {
+					SDL_Joystick *joystick = SDL_GameControllerGetJoystick(ctrl);
+					if (joystick && SDL_JoystickGetVendor(joystick) == 0x28de) {
+						return glyphGetButtonName(CONTROLLER_ICON_XBOXONE, jbtn);
+					}
+				}
 				return glyphGetButtonName(CONTROLLER_ICON_XBOXONE, jbtn);
 			case SDL_CONTROLLER_TYPE_PS3:
+				// Check if it's Steam Virtual Gamepad masquerading as PS3
+				if (ctrl) {
+					SDL_Joystick *joystick = SDL_GameControllerGetJoystick(ctrl);
+					if (joystick && SDL_JoystickGetVendor(joystick) == 0x28de) {
+						return glyphGetButtonName(CONTROLLER_ICON_PS3, jbtn);
+					}
+				}
 				return glyphGetButtonName(CONTROLLER_ICON_PS3, jbtn);
 			case SDL_CONTROLLER_TYPE_PS4:
+				// Check if it's Steam Virtual Gamepad masquerading as PS4
+				if (ctrl) {
+					SDL_Joystick *joystick = SDL_GameControllerGetJoystick(ctrl);
+					if (joystick && SDL_JoystickGetVendor(joystick) == 0x28de) {
+						return glyphGetButtonName(CONTROLLER_ICON_PS4, jbtn);
+					}
+				}
 				return glyphGetButtonName(CONTROLLER_ICON_PS4, jbtn);
 #if SDL_VERSION_ATLEAST(2, 0, 14)
-			case SDL_CONTROLLER_TYPE_PS5:
+			case SDL_CONTROLLER_TYPE_PS5: 
+				// Check if it's Steam Virtual Gamepad masquerading as PS5
+				if (ctrl) {
+					SDL_Joystick *joystick = SDL_GameControllerGetJoystick(ctrl);
+					if (joystick && SDL_JoystickGetVendor(joystick) == 0x28de) {
+						return glyphGetButtonName(CONTROLLER_ICON_PS5, jbtn);
+					}
+				}
 				return glyphGetButtonName(CONTROLLER_ICON_PS5, jbtn);
 #endif
 			case SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_PRO:
@@ -1529,36 +1564,32 @@ const char *inputGetButtonDisplayName(s32 vk)
 			case SDL_CONTROLLER_TYPE_VIRTUAL:
 			case SDL_CONTROLLER_TYPE_UNKNOWN:
 			default:
-				break;
-		}
-		
-		if (ctrl) {
-			SDL_Joystick *joystick = SDL_GameControllerGetJoystick(ctrl);
-			if (joystick) {
-				Uint16 vendor = SDL_JoystickGetVendor(joystick);
-				if (vendor == 0x28de) {  // Valve Corporation
-					Uint16 product = SDL_JoystickGetProduct(joystick);
-					
-					// Steam Controllers (all variants)
-					if (product == 0x1101 || product == 0x1102 || product == 0x1105 || 
-						product == 0x1106 || product == 0x1142 || product == 0x1201 || 
-						product == 0x1202) {
-						return glyphGetButtonName(CONTROLLER_ICON_STEAM_CONTROLLER, jbtn);
-					}
-					// Steam Deck
-					else if (product == 0x1205) {
-						return glyphGetButtonName(CONTROLLER_ICON_STEAM_DECK, jbtn);
-					}
-					// Steam Virtual Gamepad
-					else if (product == 0x11ff) {
-						return glyphGetButtonName(CONTROLLER_ICON_STEAM_DECK, jbtn);
-					}
-					else {
-						// Default to Steam Deck for other Valve-related devices
-						return glyphGetButtonName(CONTROLLER_ICON_STEAM_DECK, jbtn);
+				// Check for physical Steam devices by VID/PID
+				if (ctrl) {
+					SDL_Joystick *joystick = SDL_GameControllerGetJoystick(ctrl);
+					if (joystick) {
+						Uint16 vendor = SDL_JoystickGetVendor(joystick);
+						if (vendor == 0x28de) {  // Valve Corporation
+							Uint16 product = SDL_JoystickGetProduct(joystick);
+							
+							// Physical Steam Controllers
+							if (product == 0x1101 || product == 0x1102 || product == 0x1105 || 
+								product == 0x1106 || product == 0x1142 || product == 0x1201 || 
+								product == 0x1202) {
+								return glyphGetButtonName(CONTROLLER_ICON_STEAM_CONTROLLER, jbtn);
+							}
+							// Steam Deck
+							else if (product == 0x1205) {
+								return glyphGetButtonName(CONTROLLER_ICON_STEAM_DECK, jbtn);
+							}
+							// Steam Virtual Gamepad or other Valve devices
+							else {
+								return glyphGetButtonName(CONTROLLER_ICON_STEAM_DECK, jbtn);
+							}
+						}
 					}
 				}
-			}
+				break;
 		}
 	}
 	
