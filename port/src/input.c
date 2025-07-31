@@ -1470,7 +1470,7 @@ const char *inputGetButtonDisplayName(s32 vk)
 
 	const s32 override = (cidx < INPUT_MAX_CONTROLLERS) ? padsCfg[cidx].buttonPromptOverride : GLYPH_AUTO;
 
-	// Internal glyphs (optional)
+	// Internal glyphs (legacy)
 	if (override == GLYPH_INTERNAL) {
 		if (jbtn < sizeof(vkJoyNames) / sizeof(vkJoyNames[0])) {
 			static char playerButtonName[64];
@@ -1490,7 +1490,7 @@ const char *inputGetButtonDisplayName(s32 vk)
 	}
 #endif
 
-	// Glyph override
+	// Glyph override function
 	if (override != GLYPH_AUTO) {
 		const ControllerIconType iconType = (ControllerIconType)(override - 1);
 		return glyphGetButtonName(iconType, jbtn);
@@ -1500,7 +1500,6 @@ const char *inputGetButtonDisplayName(s32 vk)
 	if (cidx < INPUT_MAX_CONTROLLERS && pads[cidx]) {
 		const SDL_GameControllerType type = SDL_GameControllerGetType(pads[cidx]);
 		
-		// First check SDL controller type detection
 		switch (type) {
 			case SDL_CONTROLLER_TYPE_XBOX360:
 				return glyphGetButtonName(CONTROLLER_ICON_XBOX360, jbtn);
@@ -1533,7 +1532,6 @@ const char *inputGetButtonDisplayName(s32 vk)
 				break;
 		}
 		
-		// If SDL controller type detection didn't match, try VID/PID detection
 		if (ctrl) {
 			SDL_Joystick *joystick = SDL_GameControllerGetJoystick(ctrl);
 			if (joystick) {
@@ -1551,9 +1549,13 @@ const char *inputGetButtonDisplayName(s32 vk)
 					else if (product == 0x1205) {
 						return glyphGetButtonName(CONTROLLER_ICON_STEAM_DECK, jbtn);
 					}
+					// Steam Virtual Gamepad
+					else if (product == 0x11ff) {
+						return glyphGetButtonName(CONTROLLER_ICON_STEAM_DECK, jbtn);
+					}
 					else {
-						// Default to generic for other Valve-related devices (including virtual gamepad)
-						return glyphGetButtonName(CONTROLLER_ICON_GENERIC, jbtn);
+						// Default to Steam Deck for other Valve-related devices
+						return glyphGetButtonName(CONTROLLER_ICON_STEAM_DECK, jbtn);
 					}
 				}
 			}
