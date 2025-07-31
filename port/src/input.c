@@ -1500,6 +1500,47 @@ const char *inputGetButtonDisplayName(s32 vk)
 	// Auto-detect glyphs based on controller type
 	if (cidx < INPUT_MAX_CONTROLLERS && pads[cidx]) {
 		const SDL_GameControllerType type = SDL_GameControllerGetType(pads[cidx]);
+		
+		// First check for Steam/Valve devices (VID 0x28de) to handle virtual gamepad emulation
+		if (ctrl) {
+			SDL_Joystick *joystick = SDL_GameControllerGetJoystick(ctrl);
+			if (joystick) {
+				Uint16 vendor = SDL_JoystickGetVendor(joystick);
+				if (vendor == 0x28de) {  // Valve Corporation
+					Uint16 product = SDL_JoystickGetProduct(joystick);
+					
+					// Check if Steam Virtual Gamepad is masquerading as PlayStation
+					if (type == SDL_CONTROLLER_TYPE_PS3) {
+						return glyphGetButtonName(CONTROLLER_ICON_PS3, jbtn);
+					}
+					else if (type == SDL_CONTROLLER_TYPE_PS4) {
+						return glyphGetButtonName(CONTROLLER_ICON_PS4, jbtn);
+					}
+#if SDL_VERSION_ATLEAST(2, 0, 14)
+					else if (type == SDL_CONTROLLER_TYPE_PS5) {
+						return glyphGetButtonName(CONTROLLER_ICON_PS5, jbtn);
+					}
+#endif
+					else {
+						// Physical Steam Controllers
+						if (product == 0x1101 || product == 0x1102 || product == 0x1105 || 
+							product == 0x1106 || product == 0x1142 || product == 0x1201 || 
+							product == 0x1202) {
+							return glyphGetButtonName(CONTROLLER_ICON_STEAM_CONTROLLER, jbtn);
+						}
+						// Steam Deck
+						else if (product == 0x1205) {
+							return glyphGetButtonName(CONTROLLER_ICON_STEAM_DECK, jbtn);
+						}
+						else {
+							// Default to Steam Deck for other Valve devices (including virtual gamepad)
+							return glyphGetButtonName(CONTROLLER_ICON_STEAM_DECK, jbtn);
+						}
+					}
+				}
+			}
+		}
+		
 		switch (type) {
 			case SDL_CONTROLLER_TYPE_XBOX360:
 				return glyphGetButtonName(CONTROLLER_ICON_XBOX360, jbtn);
@@ -1527,27 +1568,6 @@ const char *inputGetButtonDisplayName(s32 vk)
 #endif
 				return glyphGetButtonName(CONTROLLER_ICON_NINTENDO_SWITCH, jbtn);
 			case SDL_CONTROLLER_TYPE_VIRTUAL:
-				// Check for Steam Controllers by VID/PID
-				if (ctrl) {
-					SDL_Joystick *joystick = SDL_GameControllerGetJoystick(ctrl);
-					if (joystick) {
-						Uint16 vendor = SDL_JoystickGetVendor(joystick);
-						Uint16 product = SDL_JoystickGetProduct(joystick);
-						
-						if (vendor == 0x28de) {  // Valve Corporation
-							// Steam Controllers 
-							if (product == 0x1101 || product == 0x1102 || product == 0x1105 || 
-								product == 0x1106 || product == 0x1142 || product == 0x1201 || 
-								product == 0x1202) {
-								return glyphGetButtonName(CONTROLLER_ICON_STEAM_CONTROLLER, jbtn);
-							}
-							// Steam Deck
-							else if (product == 0x1205) {
-								return glyphGetButtonName(CONTROLLER_ICON_STEAM_DECK, jbtn);
-							}
-						}
-					}
-				}
 			case SDL_CONTROLLER_TYPE_UNKNOWN:
 			default:
 				return glyphGetButtonName(CONTROLLER_ICON_GENERIC, jbtn);
