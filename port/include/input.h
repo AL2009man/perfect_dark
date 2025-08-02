@@ -130,7 +130,9 @@ enum buttonpromptmode {
 	GLYPH_PS3 = 5,
 	GLYPH_PS4 = 6,
 	GLYPH_PS5 = 7,
-	GLYPH_NINTENDO_SWITCH = 8
+	GLYPH_NINTENDO_SWITCH = 8,
+	GLYPH_STEAM_CONTROLLER = 9,
+	GLYPH_STEAM_DECK = 10
 };
 
 // returns bitmask of connected controllers or -1 if failed
