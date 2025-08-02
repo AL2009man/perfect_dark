@@ -52,6 +52,14 @@
 #include "video.h"
 #include "input.h"
 #include "platform.h"
+#include "glyph.h"
+
+// Forward declarations for glyph functions
+extern char* glyphReplaceWithControllerBinding(char* text, int textSize, const char* placeholder, int controllerIndex, int controlKey);
+#ifndef CK_START
+#define CK_START 6  // START button control key
+#endif
+
 #define BLUR_OFS 10
 #else
 #define BLUR_OFS 30
@@ -5612,28 +5620,9 @@ Gfx *menuRender(Gfx *gdl)
 					}
 
 					// "Player %d: " and dynamic "Press [BUTTON]!"
-					const char *buttonName = "START";
-					if (i >= 0 && i < MAXCONTROLLERS) {
-						const u32 *startBinds = inputKeyGetBinds(i, CK_START);
-						if (startBinds && startBinds[0] != 0) {
-							const char *dynamicButtonName = inputGetButtonDisplayName(startBinds[0]);
-							if (dynamicButtonName && strcmp(dynamicButtonName, "UNKNOWN BUTTON") != 0) {
-								buttonName = dynamicButtonName;
-							}
-						}
-					}
-					
 					static char pressText[128];
 					strcpy(pressText, langGet(L_MPMENU_483));
-					char *startPos = strstr(pressText, "START");
-					if (startPos) {
-						char tempText[128];
-						size_t prefixLen = startPos - pressText;
-						snprintf(tempText, sizeof(tempText), "%.*s%s%s", 
-							(int)prefixLen, pressText, buttonName, startPos + 5);
-						strcpy(pressText, tempText);
-					}
-					
+					glyphReplaceWithControllerBinding(pressText, sizeof(pressText), "START", i, CK_START);
 					sprintf(text, "%s%s", langGet(L_MPMENU_482), pressText);
 				}
 
@@ -5705,27 +5694,7 @@ Gfx *menuRender(Gfx *gdl)
 						} else {
 							// "Press START!"
 							strcpy(text, langGet(L_MPMENU_483));
-							char *startPtr = strstr(text, "START");
-							if (startPtr) {
-								// Get the button name for START button
-								const char *buttonName = "START";
-								if (i >= 0 && i < MAXCONTROLLERS) {
-									const u32 *startBinds = inputKeyGetBinds(i, CK_START);
-									if (startBinds && startBinds[0] != 0) {
-										const char *dynamicButtonName = inputGetButtonDisplayName(startBinds[0]);
-										if (dynamicButtonName && strcmp(dynamicButtonName, "UNKNOWN BUTTON") != 0) {
-											buttonName = dynamicButtonName;
-										}
-									}
-								}
-								if (buttonName && strlen(buttonName) > 0) {
-									char newText[128];
-									size_t prefixLen = startPtr - text;
-									snprintf(newText, sizeof(newText), "%.*s%s%s", 
-											(int)prefixLen, text, buttonName, startPtr + 5);
-									strcpy(text, newText);
-								}
-							}
+							glyphReplaceWithControllerBinding(text, sizeof(text), "START", i, CK_START);
 							colour = colourBlend(0x00ffff00, 0xffffff00, weight) | g_MenuData.playerjoinalpha[i];
 						}
 
