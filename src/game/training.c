@@ -1,4 +1,5 @@
 #include <ultra64.h>
+#include <string.h>
 #include "constants.h"
 #include "game/atan2f.h"
 #include "game/bg.h"
@@ -26,8 +27,13 @@
 #include "game/training.h"
 #include "game/trainingmenus.h"
 #include "game/wallhit.h"
+#include "input.h"
+#ifndef PLATFORM_N64
+#include "glyph.h"
+#endif
 #include "bss.h"
 #include "lib/vi.h"
+#include "types.h"
 #include "lib/dma.h"
 #include "lib/main.h"
 #include "lib/snd.h"
@@ -809,8 +815,36 @@ bool frTargetIsAtScriptStart(s32 targetnum)
 char *frGetInstructionalText(u32 index)
 {
 	u16 textid = (u16)(g_FrRomData[index * 2] << 8) | g_FrRomData[index * 2 + 1];
-
-	return langGet(textid);
+	char *originalText = langGet(textid);
+	
+	// Apply dynamic button replacement for firing range instructions
+	static char modifiedText[1024]; // Larger buffer to prevent text cutoff
+	strcpy(modifiedText, originalText);
+	
+#ifndef PLATFORM_N64
+	// Replace button references - use simple button names for localization compatibility
+	// Note: Perfect Dark has inverted Y-axis, so we swap the C button mappings for intuitive gamepad controls
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "B Button", 0, CK_B, 0);
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "R Button", 0, CK_RTRIG, 0);
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Z Button", 0, CK_ZTRIG, 0);
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "A Button", 0, CK_A, 0);
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "UP C BUTTON", 0, CK_C_D, 0);      // Uppercase variant
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "DOWN C BUTTON", 0, CK_C_U, 0);    // Uppercase variant
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Up C Button", 0, CK_C_D, 0);      // Swapped: Up C = look down
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Down C Button", 0, CK_C_U, 0);    // Swapped: Down C = look up
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "UP C", 0, CK_C_D, 0);             // Short uppercase
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "DOWN C", 0, CK_C_U, 0);           // Short uppercase  
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "up C", 0, CK_C_D, 0);             // Lowercase variant
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "down C", 0, CK_C_U, 0);           // Lowercase variant
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "C-Up", 0, CK_C_D, 0);             // Hyphenated variant
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "C-Down", 0, CK_C_U, 0);           // Hyphenated variant
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Left C Button", 0, CK_C_L, 0);
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Right C Button", 0, CK_C_R, 0);
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "C Button", 0, CK_C_U, 0); // Fallback for generic C Button
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "START", 0, CK_START, 0);
+#endif
+	
+	return modifiedText;
 }
 
 void frExecuteHelpScript(void)
@@ -3001,7 +3035,38 @@ char *dtGetDescription(void)
 #endif
 	};
 
-	return langGet(texts[dtGetIndexBySlot(g_DtSlot)]);
+	char *originalText = langGet(texts[dtGetIndexBySlot(g_DtSlot)]);
+	
+	// Apply dynamic button replacement for device training descriptions  
+	static char modifiedText[1024]; // Larger buffer for device descriptions
+	strcpy(modifiedText, originalText);
+	
+#ifndef PLATFORM_N64
+	// Replace button references - use simple button names for localization compatibility
+	// Note: Perfect Dark has inverted Y-axis, so we swap the C button mappings for intuitive gamepad controls
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "B Button", 0, CK_B, 0);
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "R Button", 0, CK_RTRIG, 0);
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Z Button", 0, CK_ZTRIG, 0);
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "A Button", 0, CK_A, 0);
+	
+	// Handle various C button patterns - all with swapped Y-axis mapping for localization compatibility
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "UP C BUTTON", 0, CK_C_D, 0);      // Uppercase variant
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "DOWN C BUTTON", 0, CK_C_U, 0);    // Uppercase variant
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Up C Button", 0, CK_C_D, 0);      // Swapped: Up C = look down
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Down C Button", 0, CK_C_U, 0);    // Swapped: Down C = look up
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "UP C", 0, CK_C_D, 0);             // Short uppercase
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "DOWN C", 0, CK_C_U, 0);           // Short uppercase  
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "up C", 0, CK_C_D, 0);             // Lowercase variant
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "down C", 0, CK_C_U, 0);           // Lowercase variant
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "C-Up", 0, CK_C_D, 0);             // Hyphenated variant
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "C-Down", 0, CK_C_U, 0);           // Hyphenated variant
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Left C Button", 0, CK_C_L, 0);
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Right C Button", 0, CK_C_R, 0);
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "C Button", 0, CK_C_U, 0); // Fallback for generic C Button
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "START", 0, CK_START, 0);
+#endif
+	
+	return modifiedText;
 }
 
 char *dtGetTip1(void)
@@ -3032,7 +3097,39 @@ char *dtGetTip1(void)
 #endif
 	};
 
-	return langGet(texts[dtGetIndexBySlot(g_DtSlot)]);
+	char *originalText = langGet(texts[dtGetIndexBySlot(g_DtSlot)]);
+	
+	// Apply dynamic button replacement for device training tip 1
+	static char modifiedText[1024];
+	strcpy(modifiedText, originalText);
+	
+#ifndef PLATFORM_N64
+	// Replace button references - use simple button names for localization compatibility
+	// Note: Perfect Dark has inverted Y-axis, so we swap the C button mappings for intuitive gamepad controls
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "B Button", 0, CK_B, 0);
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "R Button", 0, CK_RTRIG, 0);
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Z Button", 0, CK_ZTRIG, 0);
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "A Button", 0, CK_A, 0);
+	
+	// Handle various C button patterns - all with swapped Y-axis mapping for localization compatibility
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "UP C BUTTON", 0, CK_C_D, 0);      // Uppercase variant
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "DOWN C BUTTON", 0, CK_C_U, 0);    // Uppercase variant
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Up C Button", 0, CK_C_D, 0);      // Swapped: Up C = look down
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Down C Button", 0, CK_C_U, 0);    // Swapped: Down C = look up
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "UP C", 0, CK_C_D, 0);             // Short uppercase
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "DOWN C", 0, CK_C_U, 0);           // Short uppercase  
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "up C", 0, CK_C_D, 0);             // Lowercase variant
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "down C", 0, CK_C_U, 0);           // Lowercase variant
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "C-Up", 0, CK_C_D, 0);             // Hyphenated variant
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "C-Down", 0, CK_C_U, 0);           // Hyphenated variant
+	
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Left C Button", 0, CK_C_L, 0);
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Right C Button", 0, CK_C_R, 0);
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "C Button", 0, CK_C_U, 0);
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "START", 0, CK_START, 0);
+#endif
+	
+	return modifiedText;
 }
 
 char *dtGetTip2(void)
@@ -3063,7 +3160,39 @@ char *dtGetTip2(void)
 #endif
 	};
 
-	return langGet(texts[dtGetIndexBySlot(g_DtSlot)]);
+	char *originalText = langGet(texts[dtGetIndexBySlot(g_DtSlot)]);
+	
+	// Apply dynamic button replacement for device training tip 2
+	static char modifiedText[1024];
+	strcpy(modifiedText, originalText);
+	
+#ifndef PLATFORM_N64
+	// Replace button references - use simple button names for localization compatibility
+	// Note: Perfect Dark has inverted Y-axis, so we swap the C button mappings for intuitive gamepad controls
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "B Button", 0, CK_B, 0);
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "R Button", 0, CK_RTRIG, 0);
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Z Button", 0, CK_ZTRIG, 0);
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "A Button", 0, CK_A, 0);
+	
+	// Handle various C button patterns - all with swapped Y-axis mapping for localization compatibility
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "UP C BUTTON", 0, CK_C_D, 0);      // Uppercase variant
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "DOWN C BUTTON", 0, CK_C_U, 0);    // Uppercase variant
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Up C Button", 0, CK_C_D, 0);      // Swapped: Up C = look down
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Down C Button", 0, CK_C_U, 0);    // Swapped: Down C = look up
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "UP C", 0, CK_C_D, 0);             // Short uppercase
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "DOWN C", 0, CK_C_U, 0);           // Short uppercase  
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "up C", 0, CK_C_D, 0);             // Lowercase variant
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "down C", 0, CK_C_U, 0);           // Lowercase variant
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "C-Up", 0, CK_C_D, 0);             // Hyphenated variant
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "C-Down", 0, CK_C_U, 0);           // Hyphenated variant
+	
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Left C Button", 0, CK_C_L, 0);
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Right C Button", 0, CK_C_R, 0);
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "C Button", 0, CK_C_U, 0);
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "START", 0, CK_START, 0);
+#endif
+	
+	return modifiedText;
 }
 
 struct trainingdata *getHoloTrainingData(void)
@@ -3309,7 +3438,39 @@ char *htGetDescription(void)
 #endif
 	};
 
-	return langGet(texts[htGetIndexBySlot(var80088bb4)]);
+	char *originalText = langGet(texts[htGetIndexBySlot(var80088bb4)]);
+	
+	// Apply dynamic button replacement for holographic training descriptions
+	static char modifiedText[1024]; // Larger buffer for holographic descriptions
+	strcpy(modifiedText, originalText);
+	
+#ifndef PLATFORM_N64
+	// Replace button references - use simple button names for localization compatibility
+	// Note: Perfect Dark has inverted Y-axis, so we swap the C button mappings for intuitive gamepad controls
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "B Button", 0, CK_B, 0);
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "R Button", 0, CK_RTRIG, 0);
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Z Button", 0, CK_ZTRIG, 0);
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "A Button", 0, CK_A, 0);
+	
+	// Handle various C button patterns - all with swapped Y-axis mapping for localization compatibility
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "UP C BUTTON", 0, CK_C_D, 0);      // Uppercase variant
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "DOWN C BUTTON", 0, CK_C_U, 0);    // Uppercase variant
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Up C Button", 0, CK_C_D, 0);      // Swapped: Up C = look down
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Down C Button", 0, CK_C_U, 0);    // Swapped: Down C = look up
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "UP C", 0, CK_C_D, 0);             // Short uppercase
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "DOWN C", 0, CK_C_U, 0);           // Short uppercase  
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "up C", 0, CK_C_D, 0);             // Lowercase variant
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "down C", 0, CK_C_U, 0);           // Lowercase variant
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "C-Up", 0, CK_C_D, 0);             // Hyphenated variant
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "C-Down", 0, CK_C_U, 0);           // Hyphenated variant
+	
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Left C Button", 0, CK_C_L, 0);
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Right C Button", 0, CK_C_R, 0);
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "C Button", 0, CK_C_U, 0);
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "START", 0, CK_START, 0);
+#endif
+	
+	return modifiedText;
 }
 
 char *htGetTip1(void)
@@ -3334,7 +3495,28 @@ char *htGetTip1(void)
 #endif
 	};
 
-	return langGet(texts[htGetIndexBySlot(var80088bb4)]);
+	char *originalText = langGet(texts[htGetIndexBySlot(var80088bb4)]);
+	
+	// Apply dynamic button replacement for holographic training tip 1
+	static char modifiedText[1024];
+	strcpy(modifiedText, originalText);
+	
+#ifndef PLATFORM_N64
+	// Replace button references - use simple button names for localization compatibility
+	// Note: Perfect Dark has inverted Y-axis, so we swap the C button mappings for intuitive gamepad controls
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "B Button", 0, CK_B, 0);
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "R Button", 0, CK_RTRIG, 0);
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Z Button", 0, CK_ZTRIG, 0);
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "A Button", 0, CK_A, 0);
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Up C Button", 0, CK_C_D, 0);    // Swapped: Up C = look down
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Down C Button", 0, CK_C_U, 0);  // Swapped: Down C = look up
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Left C Button", 0, CK_C_L, 0);
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Right C Button", 0, CK_C_R, 0);
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "C Button", 0, CK_C_U, 0);
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "START", 0, CK_START, 0);
+#endif
+	
+	return modifiedText;
 }
 
 char *htGetTip2(void)
@@ -3359,7 +3541,28 @@ char *htGetTip2(void)
 #endif
 	};
 
-	return langGet(texts[htGetIndexBySlot(var80088bb4)]);
+	char *originalText = langGet(texts[htGetIndexBySlot(var80088bb4)]);
+	
+	// Apply dynamic button replacement for holographic training tip 2
+	static char modifiedText[1024];
+	strcpy(modifiedText, originalText);
+	
+#ifndef PLATFORM_N64
+	// Replace button references - use simple button names for localization compatibility
+	// Note: Perfect Dark has inverted Y-axis, so we swap the C button mappings for intuitive gamepad controls
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "B Button", 0, CK_B, 0);
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "R Button", 0, CK_RTRIG, 0);
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Z Button", 0, CK_ZTRIG, 0);
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "A Button", 0, CK_A, 0);
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Up C Button", 0, CK_C_D, 0);    // Swapped: Up C = look down
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Down C Button", 0, CK_C_U, 0);  // Swapped: Down C = look up
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Left C Button", 0, CK_C_L, 0);
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Right C Button", 0, CK_C_R, 0);
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "C Button", 0, CK_C_U, 0);
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "START", 0, CK_START, 0);
+#endif
+	
+	return modifiedText;
 }
 
 #if VERSION >= VERSION_JPN_FINAL

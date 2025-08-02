@@ -28,6 +28,11 @@
 #include "game/weather.h"
 #include "game/bg.h"
 #include "game/stagetable.h"
+#ifndef PLATFORM_N64
+#include <string.h>
+#include "input.h"
+#include "glyph.h"
+#endif
 #include "game/env.h"
 #include "game/lv.h"
 #include "game/music.h"
@@ -4379,11 +4384,37 @@ bool aiShowHudmsgMiddle(void)
 	if (cmd[2] == 0) {
 		u32 text_id = cmd[5] | (cmd[4] << 8);
 		char *text = langGet(text_id);
+#ifndef PLATFORM_N64
+		// Apply dynamic button replacement for training messages
+		static char modifiedText[256];
+		strcpy(modifiedText, text);
+		// Replace common button references in training messages
+		glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "A Button", 0, CK_A, 0);
+		glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "B Button", 0, CK_B, 0);
+		glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Z Button", 0, CK_ZTRIG, 0);
+		glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "R Button", 0, CK_RTRIG, 0);
+		glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "START", 0, CK_START, 0);
+		hudmsgCreateWithColour(modifiedText, HUDMSGTYPE_7, cmd[3]);
+#else
 		hudmsgCreateWithColour(text, HUDMSGTYPE_7, cmd[3]);
+#endif
 	} else if (cmd[2] == 1) {
 		u32 text_id = cmd[5] | (cmd[4] << 8);
 		char *text = langGet(text_id);
+#ifndef PLATFORM_N64
+		// Apply dynamic button replacement for training messages
+		static char modifiedText[256];
+		strcpy(modifiedText, text);
+		// Replace common button references in training messages
+		glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "A Button", 0, CK_A, 0);
+		glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "B Button", 0, CK_B, 0);
+		glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Z Button", 0, CK_ZTRIG, 0);
+		glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "R Button", 0, CK_RTRIG, 0);
+		glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "START", 0, CK_START, 0);
+		hudmsgCreateWithColour(modifiedText, HUDMSGTYPE_8, cmd[3]);
+#else
 		hudmsgCreateWithColour(text, HUDMSGTYPE_8, cmd[3]);
+#endif
 	} else {
 		hudmsgRemoveAll();
 	}

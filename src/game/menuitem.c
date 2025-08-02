@@ -24,6 +24,7 @@
 #include "types.h"
 #ifndef PLATFORM_N64
 #include "input.h"
+#include "glyph.h"
 #define MENU_KEYBOARD_ROWS 6
 #else
 #define MENU_KEYBOARD_ROWS 5
@@ -4354,8 +4355,50 @@ Gfx *menuitemControllerRenderText(Gfx *gdl, s32 curmode, struct menurendercontex
 #if VERSION < VERSION_NTSC_1_0
 			ry = i * 7 + context->y + pady;
 #endif
+#ifndef PLATFORM_N64
+			// Use dynamic controller binding for button labels
+			static char buttonText[64];
+			strcpy(buttonText, langGet(labels[i]));
+			
+			switch (i) {
+				case 0: // L_MPWEAPONS_185 - "L/R BUTTONS:" -> L and R triggers
+					glyphReplaceWithControllerBinding(buttonText, sizeof(buttonText), "L/R BUTTONS", g_MpPlayerNum, CK_LTRIG, 0);
+					break;
+				case 1: // L_MPWEAPONS_186 - "UP C BUTTON:" -> C-Up
+					glyphReplaceWithControllerBinding(buttonText, sizeof(buttonText), "UP C BUTTON", g_MpPlayerNum, CK_C_U, 0);
+					break;
+				case 2: // L_MPWEAPONS_187 - "LEFT/RIGHT C BUTTONS:" -> C-Left/Right
+					glyphReplaceWithControllerBinding(buttonText, sizeof(buttonText), "LEFT/RIGHT C BUTTONS", g_MpPlayerNum, CK_C_L, 0);
+					break;
+				case 3: // L_MPWEAPONS_188 - "DOWN C BUTTON:" -> C-Down
+					glyphReplaceWithControllerBinding(buttonText, sizeof(buttonText), "DOWN C BUTTON", g_MpPlayerNum, CK_C_D, 0);
+					break;
+				case 4: // L_MPWEAPONS_189 - "A BUTTON:" -> A button
+					glyphReplaceWithControllerBinding(buttonText, sizeof(buttonText), "A BUTTON", g_MpPlayerNum, CK_A, 0);
+					break;
+				case 5: // L_MPWEAPONS_190 - "B BUTTON:" -> B button
+					glyphReplaceWithControllerBinding(buttonText, sizeof(buttonText), "B BUTTON", g_MpPlayerNum, CK_B, 0);
+					break;
+				case 6: // L_MPWEAPONS_191 - "CONTROL STICK:" -> (no replacement - analog stick)
+					// No replacement for analog stick
+					break;
+				case 7: // L_MPWEAPONS_192 - "Z BUTTON:" -> Z trigger
+					glyphReplaceWithControllerBinding(buttonText, sizeof(buttonText), "Z BUTTON", g_MpPlayerNum, CK_ZTRIG, 0);
+					break;
+				case 8: // L_MPWEAPONS_193 - "+ CONTROL PAD:" -> D-pad
+					glyphReplaceWithControllerBinding(buttonText, sizeof(buttonText), "+ CONTROL PAD", g_MpPlayerNum, CK_DPAD_U, 0);
+					break;
+				default:
+					// No replacement
+					break;
+			}
+			
+			gdl = textRenderProjected(gdl, &rx, &ry, buttonText,
+					g_CharsHandelGothicXs, g_FontHandelGothicXs, labelcolour, viGetWidth(), viGetHeight(), 0, 0);
+#else
 			gdl = textRenderProjected(gdl, &rx, &ry, langGet(labels[i]),
 					g_CharsHandelGothicXs, g_FontHandelGothicXs, labelcolour, viGetWidth(), viGetHeight(), 0, 0);
+#endif
 		}
 
 		textnum = menuitemControllerGetButtonAction(curmode, i);

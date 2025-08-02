@@ -21,6 +21,7 @@ extern const char *vkJoyDisplayNames[];
 const char *glyphGetButtonName(int controllerType, int buttonIndex);
 
 // Function to replace baked-in button text with dynamic controller bindings
-char* glyphReplaceWithControllerBinding(char* text, int textSize, const char* placeholder, int controllerType, int buttonIndex);
+char* glyphReplaceWithControllerBinding(char* text, int textSize, const char* placeholder, 
+                                       int controllerIndex, int controlKey, int forceController);
 
 #endif

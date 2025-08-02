@@ -6,6 +6,9 @@
 #include "input.h"
 #include "glyph.h"
 
+// Static variable to preserve input method state across UI popups
+static int lastKnownInputMethod = 0; // 0 = unknown/default, 1 = keyboard/mouse, 2 = controller
+
 // Generic display names for controller buttons (maps to same indices as vkJoyNames)
 const char *vkJoyDisplayNames[] = {
 	"SOUTH_BTN",        // A button (Bottom face button)
@@ -302,9 +305,8 @@ const char *glyphGetButtonName(int controllerType, int buttonIndex)
 	return "UNKNOWN BUTTON";
 }
 
-// Helper function to replace baked-in button text with dynamic controller bindings
 char* glyphReplaceWithControllerBinding(char* text, int textSize, const char* placeholder, 
-                                       int controllerIndex, int controlKey)
+                                       int controllerIndex, int controlKey, int forceController)
 {
 	if (!text || !placeholder) {
 		return text;
@@ -315,21 +317,50 @@ char* glyphReplaceWithControllerBinding(char* text, int textSize, const char* pl
 		return text;
 	}
 	
-	const char* buttonName = placeholder; // fallback
+	const char* buttonName = placeholder;
+	int lastKey = inputGetLastKey();
+	int useKeyboardMouse = 0;
 	
-	// Look up the actual controller binding
-	if (controllerIndex >= 0 && controllerIndex < 4) {
-		const unsigned int* binds = inputKeyGetBinds(controllerIndex, controlKey);
+	if (lastKey > 0) {
+		if (lastKey < VK_JOY_BEGIN) {
+			lastKnownInputMethod = 1;
+		} else {
+			lastKnownInputMethod = 2;
+		}
+	}
+	
+	if (!forceController) {
+		if (lastKnownInputMethod == 1) {
+			useKeyboardMouse = 1;
+		} else if (lastKnownInputMethod == 0 && lastKey > 0 && lastKey < VK_JOY_BEGIN) {
+			useKeyboardMouse = 1;
+		}
+	}
+	
+	const unsigned int* binds = NULL;
+	int playerIndex = useKeyboardMouse ? 0 : controllerIndex;
+	
+	if (playerIndex >= 0 && playerIndex < 4) {
+		binds = inputKeyGetBinds(playerIndex, controlKey);
+		
 		if (binds && binds[0] != 0) {
-			const char* dynamicButtonName = inputGetButtonDisplayName(binds[0]);
-			if (dynamicButtonName && strcmp(dynamicButtonName, "UNKNOWN BUTTON") != 0) {
-				buttonName = dynamicButtonName;
+			for (int i = 0; binds[i] != 0; i++) {
+				int isCorrectInputType = useKeyboardMouse ? 
+					(binds[i] < VK_JOY_BEGIN) : 
+					(binds[i] >= VK_JOY_BEGIN);
+					
+				if (isCorrectInputType) {
+					const char* dynamicButtonName = inputGetButtonDisplayName(binds[i]);
+					if (dynamicButtonName && strcmp(dynamicButtonName, "UNKNOWN BUTTON") != 0) {
+						buttonName = dynamicButtonName;
+						break;
+					}
+				}
 			}
 		}
 	}
 	
-	// Simple replacement using a temp buffer
-	char tempText[128];
+	char tempText[1024];
 	int prefixLen = placeholderPos - text;
 	snprintf(tempText, sizeof(tempText), "%.*s%s%s", 
 		prefixLen, text, buttonName, placeholderPos + strlen(placeholder));
@@ -340,5 +371,3 @@ char* glyphReplaceWithControllerBinding(char* text, int textSize, const char* pl
 	
 	return text;
 }
-
-

@@ -501,43 +501,42 @@ static int inputEventFilter(void *data, SDL_Event *event)
 
 		case SDL_MOUSEWHEEL:
 			mouseWheel = event->wheel.y;
-			if (!lastKey && mouseWheel) {
+			if (mouseWheel) {
 				lastKey = (mouseWheel < 0) + VK_MOUSE_WHEEL_UP;
 			}
 			break;
 
 		case SDL_MOUSEBUTTONDOWN:
-			if (!lastKey) {
-				lastKey = VK_MOUSE_BEGIN - 1 + event->button.button;
-			}
+			lastKey = VK_MOUSE_BEGIN - 1 + event->button.button;
 			break;
 
 		case SDL_KEYDOWN:
-			if (!lastKey) {
-				lastKey = VK_KEYBOARD_BEGIN + event->key.keysym.scancode;
-			}
+			lastKey = VK_KEYBOARD_BEGIN + event->key.keysym.scancode;
 			break;
 
 		case SDL_CONTROLLERBUTTONDOWN:
-			if (!lastKey) {
-				lastKey = VK_JOY1_BEGIN + event->cbutton.button;
+			lastKey = VK_JOY1_BEGIN + event->cbutton.button;
+			SDL_GameController *ctrl = SDL_GameControllerFromInstanceID(event->cdevice.which);
+			const s32 idx = inputControllerGetIndex(ctrl);
+			if (idx >= 0) {
+				lastKey += idx * INPUT_MAX_CONTROLLER_BUTTONS;
+			}
+			break;
+
+		case SDL_CONTROLLERAXISMOTION:
+			if (event->caxis.axis >= SDL_CONTROLLER_AXIS_TRIGGERLEFT && event->caxis.value > TRIG_THRESHOLD) {
+				lastKey = VK_JOY1_LTRIG + (event->caxis.axis - SDL_CONTROLLER_AXIS_TRIGGERLEFT);
 				SDL_GameController *ctrl = SDL_GameControllerFromInstanceID(event->cdevice.which);
 				const s32 idx = inputControllerGetIndex(ctrl);
 				if (idx >= 0) {
 					lastKey += idx * INPUT_MAX_CONTROLLER_BUTTONS;
 				}
 			}
-			break;
-
-		case SDL_CONTROLLERAXISMOTION:
-			if (!lastKey) {
-				if (event->caxis.axis >= SDL_CONTROLLER_AXIS_TRIGGERLEFT && event->caxis.value > TRIG_THRESHOLD) {
-					lastKey = VK_JOY1_LTRIG + (event->caxis.axis - SDL_CONTROLLER_AXIS_TRIGGERLEFT);
-					SDL_GameController *ctrl = SDL_GameControllerFromInstanceID(event->cdevice.which);
-					const s32 idx = inputControllerGetIndex(ctrl);
-					if (idx >= 0) {
-						lastKey += idx * INPUT_MAX_CONTROLLER_BUTTONS;
-					}
+			else if (abs(event->caxis.value) > TRIG_THRESHOLD) {
+				SDL_GameController *ctrl = SDL_GameControllerFromInstanceID(event->cdevice.which);
+				const s32 idx = inputControllerGetIndex(ctrl);
+				if (idx >= 0) {
+					lastKey = VK_JOY1_BEGIN + idx * INPUT_MAX_CONTROLLER_BUTTONS;
 				}
 			}
 			break;
