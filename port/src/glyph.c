@@ -1,9 +1,4 @@
-#include <stdio.h>
-#include <string.h>
 #include <PR/ultratypes.h>
-#include <PR/os_thread.h>
-#include <PR/os_cont.h>
-#include "input.h"
 #include "glyph.h"
 
 // Generic display names for controller buttons (maps to same indices as vkJoyNames)
@@ -301,44 +296,3 @@ const char *glyphGetButtonName(int controllerType, int buttonIndex)
 	
 	return "UNKNOWN BUTTON";
 }
-
-// Helper function to replace baked-in button text with dynamic controller bindings
-char* glyphReplaceWithControllerBinding(char* text, int textSize, const char* placeholder, 
-                                       int controllerIndex, int controlKey)
-{
-	if (!text || !placeholder) {
-		return text;
-	}
-	
-	char* placeholderPos = strstr(text, placeholder);
-	if (!placeholderPos) {
-		return text;
-	}
-	
-	const char* buttonName = placeholder; // fallback
-	
-	// Look up the actual controller binding
-	if (controllerIndex >= 0 && controllerIndex < 4) {
-		const unsigned int* binds = inputKeyGetBinds(controllerIndex, controlKey);
-		if (binds && binds[0] != 0) {
-			const char* dynamicButtonName = inputGetButtonDisplayName(binds[0]);
-			if (dynamicButtonName && strcmp(dynamicButtonName, "UNKNOWN BUTTON") != 0) {
-				buttonName = dynamicButtonName;
-			}
-		}
-	}
-	
-	// Simple replacement using a temp buffer
-	char tempText[128];
-	int prefixLen = placeholderPos - text;
-	snprintf(tempText, sizeof(tempText), "%.*s%s%s", 
-		prefixLen, text, buttonName, placeholderPos + strlen(placeholder));
-	
-	if (strlen(tempText) < textSize) {
-		strcpy(text, tempText);
-	}
-	
-	return text;
-}
-
-
