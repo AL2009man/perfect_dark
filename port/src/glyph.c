@@ -3,32 +3,32 @@
 
 // Generic display names for controller buttons (maps to same indices as vkJoyNames)
 const char *vkJoyDisplayNames[] = {
-	"BTN_SOUTH",        // A button (Bottom face button)
-	"BTN_EAST",         // B button (Right face button)
-	"BTN_WEST",         // X button (Left face button)
-	"BTN_NORTH",        // Y button (Top face button)
-	"BTN_BACK",
-	"BTN_GUIDE",
-	"BTN_START",
-	"STICK_LEFT_CLICK",
-	"STICK_RIGHT_CLICK",
-	"SHOULDER_LEFT",
-	"SHOULDER_RIGHT",
+	"SOUTH_BTN",        // A button (Bottom face button)
+	"EAST_BTN",         // B button (Right face button)
+	"WEST_BTN",         // X button (Left face button)
+	"NORTH_BTN",        // Y button (Top face button)
+	"BACK_BTN",
+	"GUIDE_BTN",
+	"START_BTN",
+	"LEFT_STICK_CLICK",
+	"RIGHT_STICK_CLICK",
+	"LEFT_SHOULDER",
+	"RIGHT_SHOULDER",
 	"D-PAD_UP",
 	"D-PAD_DOWN",
 	"D-PAD_LEFT",
 	"D-PAD_RIGHT",
-	"BTN_MISC_1",        // Additional button (e.g. Xbox Series X share button, PS5 microphone button, Switch capture button)
+	"MISC1_BTN",       // Additional button (e.g. Xbox Series X share button, PS5 microphone button, Switch capture button)
 	"RIGHT_PADDLE_1",   // Upper or primary paddle, under your right hand (e.g. Xbox Elite paddle P1)
 	"LEFT_PADDLE_1",    // Upper or primary paddle, under your left hand (e.g. Xbox Elite paddle P3)
 	"RIGHT_PADDLE_2",   // Lower or secondary paddle, under your right hand (e.g. Xbox Elite paddle P2)
 	"LEFT_PADDLE_2",    // Lower or secondary paddle, under your left hand (e.g. Xbox Elite paddle P4)
-	"BTN_TOUCHPAD",     // PS4/PS5 touchpad button
-	"BTN_MISC_2",
-	"BTN_MISC_3",
-	"BTN_MISC_4",
-	"BTN_MISC_5",
-	"BTN_MISC_6",
+	"TOUCHPAD_BTN",     // PS4/PS5 touchpad button
+	"MISC2_BTN",
+	"MISC3_BTN",
+	"MISC4_BTN",
+	"MISC5_BTN",
+	"MISC6_BTN",
 	"BTN_26",
 	"BTN_27",
 	"BTN_28",
@@ -39,209 +39,260 @@ const char *vkJoyDisplayNames[] = {
 
 // Controller-specific overrides
 
-// Common Xbox controller button overrides
-static const struct {
+// Common struct type for button overrides
+struct button_override {
 	int button_index;
 	const char *name;
-} xbox_prompts[] = {
-	{ 0, "BTN_A" },
-	{ 1, "BTN_B" },
-	{ 2, "BTN_X" },
-	{ 3, "BTN_Y" },
-	{ 5, "BTN_XBOX"},
-	{ 9, "SHOULDER_LB" },
-	{ 10, "SHOULDER_RB" },
+};
+
+// Standard button overrides (shared across controllers)
+static const struct button_override glyph_standard[] = {
+	{  0, "A_BTN" },          // Bottom face button (A)
+	{  1, "B_BTN" },          // Right face button (B)
+	{  2, "X_BTN" },          // Left face button (X)
+	{  3, "Y_BTN" },          // Top face button (Y)
+	{  7, "L3_STICK_CLICK" }, // Left stick press (L3)
+	{  8, "R3_STICK_CLICK" }, // Right stick press (R3)
+	{  9, "L1_SHOULDER" },    // Left shoulder (L1)
+	{ 10, "R1_SHOULDER" },    // Right shoulder (R1)
+	{ 15, "M1_BTN" },         // M1 button (MISC 1)
+	{ 16, "L4_BTN" },         // Left paddle (L4)
+	{ 17, "L5_BTN" },         // Left paddle (L5)
+	{ 18, "R4_BTN" },         // Right paddle (R4)
+	{ 19, "R5_BTN" },         // Right paddle (R5)
+	{ 21, "M2_BTN" },         // M2 button (MISC 2)
+	{ 22, "M3_BTN" },         // M3 button (MISC 3)
+	{ 23, "M4_BTN" },         // M4 button (MISC 4)
+	{ 30, "L2_TRIG" },        // Left trigger (L2)
+	{ 31, "R2_TRIG" },        // Right trigger (R2)
+};
+
+// Xbox-specific overrides
+static const struct button_override xbox_specific[] = {
+	{ 5,  "XBOX_BTN" },
+	{ 9,  "LB_SHOULDER" },
+	{ 10, "RB_SHOULDER" },
+	{ 30, "LT_TRIG" },
+	{ 31, "RT_TRIG" },
 };
 
 // Xbox 360 specific button overrides
-static const struct {
-	int button_index;
-	const char *name;
-} xbox360_overrides[] = {
-	{ 4, "BTN_BACK" },
-	{ 6, "BTN_START" },
+static const struct button_override xbox360_overrides[] = {
+	{ 4, "BACK_BTN" },
+	{ 6, "START_BTN" },
 };
 
-// Xbox One specific button overrides
-static const struct {
-	int button_index;
-	const char *name;
-} xboxone_overrides[] = {
-	{ 4, "BTN_VIEW" },
-	{ 6, "BTN_MENU" },
-	{ 15, "BTN_SHARE" },
-	{ 16, "PADDLE_P1" },    // Xbox Elite right upper paddle
-	{ 17, "PADDLE_P2" },    // Xbox Elite left upper paddle
-	{ 18, "PADDLE_P3" },    // Xbox Elite right lower paddle
-	{ 19, "PADDLE_P4" },    // Xbox Elite left lower paddle
+// Xbox One/Series X|S-specific button overrides
+static const struct button_override xboxone_overrides[] = {
+	{ 4, "VIEW_BTN" },
+	{ 6, "MENU_BTN" },
+	{ 15, "SHARE_BTN" },
+	{ 16, "PADDLE_1" },     // Xbox Elite right upper paddle
+	{ 17, "PADDLE_2" },     // Xbox Elite left upper paddle
+	{ 18, "PADDLE_3" },     // Xbox Elite right lower paddle
+	{ 19, "PADDLE_4" },     // Xbox Elite left lower paddle
 };
 
-// Common PlayStation controller button overrides
-static const struct {
-	int button_index;
-	const char *name;
-} playstation_prompts[] = {
-	{ 0, "BTN_CROSS" },
-	{ 1, "BTN_CIRCLE" },
-	{ 2, "BTN_SQUARE" },
-	{ 3, "BTN_TRIANGLE" },
-	{ 5, "BTN_PS" },
-	{ 7, "STICK_L3" },
-	{ 8, "STICK_R3" },
-	{ 9, "SHOULDER_L1" },
-	{ 10, "SHOULDER_R1" },
-	{ 30, "TRIG_L2" },
-	{ 31, "TRIG_R2" },
+// PlayStation-specific overrides
+static const struct button_override playstation_specific[] = {
+	{ 0, "CROSS_BTN" },
+	{ 1, "CIRCLE_BTN" },
+	{ 2, "SQUARE_BTN" },
+	{ 3, "TRIANGLE_BTN" },
+	{ 5, "PS_BTN" },
+	{ 20, "TOUCHPAD_BTN" },
 };
 
-// PS3 specific button overrides
-static const struct {
-	int button_index;
-	const char *name;
-} ps3_overrides[] = {
-	{ 4, "BTN_SELECT" },
-	{ 6, "BTN_START" },
+// PS3-specific button overrides
+static const struct button_override ps3_overrides[] = {
+	{ 4, "SELECT_BTN" },
+	{ 6, "START_BTN" },
 };
 
-// PS4 specific button overrides
-static const struct {
-	int button_index;
-	const char *name;
-} ps4_overrides[] = {
-	{ 4, "BTN_SHARE" },
-	{ 6, "BTN_OPTIONS" },
+// PS4-specific button overrides
+static const struct button_override ps4_overrides[] = {
+	{ 4, "SHARE_BTN" },
+	{ 6, "OPTIONS_BTN" },
 };
 
-// PS5 specific button overrides
-static const struct {
-	int button_index;
-	const char *name;
-} ps5_overrides[] = {
-	{ 4, "BTN_CREATE" },
-	{ 6, "BTN_OPTIONS" },
-	{ 15, "BTN_MIC" },       // PS5 microphone mute button
-	{ 18, "PADDLE_LB" },        // DualSense Edge left back button
-	{ 19, "PADDLE_RB" },        // DualSense Edge right back button
+// PS5-specific button overrides
+static const struct button_override ps5_overrides[] = {
+	{ 4,  "CREATE_BTN" },
+	{ 6,  "OPTIONS_BTN" },
+	{ 15, "MIC_BTN" },
+	{ 16, "RB_PADDLE" },          // DualSense Edge RB Button  
+	{ 17, "LB_PADDLE" },          // DualSense Edge LB Button
+	{ 18, "FN_RIGHT_BTN" },       // DualSense Edge right function button
+	{ 19, "FN_LEFT_BTN" },        // DualSense Edge left function button
 };
 
-// Nintendo Switch controller button overrides
-static const struct {
-	int button_index;
-	const char *name;
-} switch_overrides[] = {
-	{ 0, "BTN_B" },          // Nintendo layout, A button (Bottom face button)
-	{ 1, "BTN_A" },          // Nintendo layout, B button (Right face button)
-	{ 2, "BTN_Y" },          // Nintendo layout, X button (Left face button)
-	{ 3, "BTN_X" },          // Nintendo layout, Y button (Top face button)
-	{ 4, "BTN_MINUS" },
-	{ 5, "BTN_HOME" },
-	{ 6, "BTN_PLUS" },
-	{ 9, "SHOULDER_L" },
-	{ 10, "SHOULDER_R" },
-	{ 15, "BTN_CAPTURE" },
-	{ 16, "BTN_SL" },
-	{ 17, "BTN_SR" },
-	{ 30, "TRIG_ZL" },
-	{ 31, "TRIG_ZR" },
+// Nintendo Switch-specific overrides
+static const struct button_override switch_specific[] = {
+	{ 4, "MINUS_BTN" },
+	{ 5, "HOME_BTN" },
+	{ 6, "PLUS_BTN" },
+	{ 9, "L_SHOULDER" },
+	{ 10, "R_SHOULDER" },
+	{ 15, "CAPTURE_BTN" },  
+	{ 16, "SL_BTN" },       // Left Joy-Con SL
+	{ 17, "SR_BTN" },       // Left Joy-Con SR
+	{ 18, "SL_BTN" },       // Right Joy-Con SL
+	{ 19, "SR_BTN" },       // Right Joy-Con SR
+	{ 30, "ZL_TRIG" },
+	{ 31, "ZR_TRIG" },
 };
 
-// Function to get controller-specific button name with fallback to generic
+// Steam Deck-specific overrides
+static const struct button_override steamdeck_overrides[] = {
+	{ 4, "VIEW_BTN" },
+	{ 6, "MENU_BTN" },
+};
+
+// Steam Controller-specific overrides
+static const struct button_override steamcontroller_overrides[] = {
+	{ 16, "RG_BTN" },       // Steam Controller left grip
+	{ 17, "LG_BTN" },       // Steam Controller right grip
+};
+
+
+// Function to search an override for a specific button index
+static const char* searchOverrides(const struct button_override* overrides, int count, int buttonIndex) {
+	for (int i = 0; i < count; i++) {
+		if (overrides[i].button_index == buttonIndex) {
+			return overrides[i].name;
+		}
+	}
+	return NULL;
+}
+
+// Function to get controller-specific button names
 const char *glyphGetButtonName(int controllerType, int buttonIndex)
 {
+	const char *result = NULL;
+
 	switch (controllerType) {
 		case CONTROLLER_ICON_XBOX360:
-			// Check Xbox 360 specific overrides first
-			for (int i = 0; i < sizeof(xbox360_overrides) / sizeof(xbox360_overrides[0]); i++) {
-				if (xbox360_overrides[i].button_index == buttonIndex) {
-					return xbox360_overrides[i].name;
-				}
+			// Xbox 360-specific overrides
+			result = searchOverrides(xbox360_overrides, sizeof(xbox360_overrides) / sizeof(xbox360_overrides[0]), buttonIndex);
+			if (result) return result;
+			// Xbox overrides
+			result = searchOverrides(xbox_specific, sizeof(xbox_specific) / sizeof(xbox_specific[0]), buttonIndex);
+			if (result) return result;
+			// Glyph standard (Face Button only)
+			if (buttonIndex >= 0 && buttonIndex <= 3) {
+				result = searchOverrides(glyph_standard, sizeof(glyph_standard) / sizeof(glyph_standard[0]), buttonIndex);
+				if (result) return result;
 			}
-			// Fallback to common Xbox overrides
-			for (int i = 0; i < sizeof(xbox_prompts) / sizeof(xbox_prompts[0]); i++) {
-				if (xbox_prompts[i].button_index == buttonIndex) {
-					return xbox_prompts[i].name;
-				}
+			break;
+
+		case CONTROLLER_ICON_STEAM_CONTROLLER:
+			// Steam Controller-specific overrides
+			result = searchOverrides(steamcontroller_overrides, sizeof(steamcontroller_overrides) / sizeof(steamcontroller_overrides[0]), buttonIndex);
+			if (result) return result;
+			// Xbox overrides (Shoulders and triggers)
+			result = searchOverrides(xbox_specific, sizeof(xbox_specific) / sizeof(xbox_specific[0]), buttonIndex);
+			if (result) return result;
+			// Glyph standard (Face buttons)
+			if (buttonIndex >= 0 && buttonIndex <= 3) {
+				result = searchOverrides(glyph_standard, sizeof(glyph_standard) / sizeof(glyph_standard[0]), buttonIndex);
+				if (result) return result;
 			}
 			break;
 			
 		case CONTROLLER_ICON_XBOXONE:
-			// Check Xbox One specific overrides first
-			for (int i = 0; i < sizeof(xboxone_overrides) / sizeof(xboxone_overrides[0]); i++) {
-				if (xboxone_overrides[i].button_index == buttonIndex) {
-					return xboxone_overrides[i].name;
-				}
-			}
-			// Fallback to common Xbox overrides
-			for (int i = 0; i < sizeof(xbox_prompts) / sizeof(xbox_prompts[0]); i++) {
-				if (xbox_prompts[i].button_index == buttonIndex) {
-					return xbox_prompts[i].name;
-				}
+			// Xbox One/Series X|S-specific overrides
+			result = searchOverrides(xboxone_overrides, sizeof(xboxone_overrides) / sizeof(xboxone_overrides[0]), buttonIndex);
+			if (result) return result;
+			// Xbox overrides
+			result = searchOverrides(xbox_specific, sizeof(xbox_specific) / sizeof(xbox_specific[0]), buttonIndex);
+			if (result) return result;
+			// Glyph standard (Face Button only)
+			if (buttonIndex >= 0 && buttonIndex <= 3) {
+				result = searchOverrides(glyph_standard, sizeof(glyph_standard) / sizeof(glyph_standard[0]), buttonIndex);
+				if (result) return result;
 			}
 			break;
 			
 		case CONTROLLER_ICON_PS3:
-			// Check PS3 specific overrides first
-			for (int i = 0; i < sizeof(ps3_overrides) / sizeof(ps3_overrides[0]); i++) {
-				if (ps3_overrides[i].button_index == buttonIndex) {
-					return ps3_overrides[i].name;
-				}
-			}
-			// Fallback to common PlayStation overrides
-			for (int i = 0; i < sizeof(playstation_prompts) / sizeof(playstation_prompts[0]); i++) {
-				if (playstation_prompts[i].button_index == buttonIndex) {
-					return playstation_prompts[i].name;
-				}
+			// PS3-specific overrides
+			result = searchOverrides(ps3_overrides, sizeof(ps3_overrides) / sizeof(ps3_overrides[0]), buttonIndex);
+			if (result) return result;
+			// PlayStation overrides
+			result = searchOverrides(playstation_specific, sizeof(playstation_specific) / sizeof(playstation_specific[0]), buttonIndex);
+			if (result) return result;
+			// Glyph standard (Face, Shoulders, Triggers only)
+			if ((buttonIndex >= 0 && buttonIndex <= 10) || (buttonIndex >= 30 && buttonIndex <= 31)) {
+				result = searchOverrides(glyph_standard, sizeof(glyph_standard) / sizeof(glyph_standard[0]), buttonIndex);
+				if (result) return result;
 			}
 			break;
 			
 		case CONTROLLER_ICON_PS4:
-			// Check PS4 specific overrides first
-			for (int i = 0; i < sizeof(ps4_overrides) / sizeof(ps4_overrides[0]); i++) {
-				if (ps4_overrides[i].button_index == buttonIndex) {
-					return ps4_overrides[i].name;
-				}
-			}
-			// Fallback to common PlayStation overrides
-			for (int i = 0; i < sizeof(playstation_prompts) / sizeof(playstation_prompts[0]); i++) {
-				if (playstation_prompts[i].button_index == buttonIndex) {
-					return playstation_prompts[i].name;
-				}
+			// PS4-specific overrides
+			result = searchOverrides(ps4_overrides, sizeof(ps4_overrides) / sizeof(ps4_overrides[0]), buttonIndex);
+			if (result) return result;
+			// PlayStation overrides
+			result = searchOverrides(playstation_specific, sizeof(playstation_specific) / sizeof(playstation_specific[0]), buttonIndex);
+			if (result) return result;
+			// Glyph standard (Face, Shoulders, Triggers only)
+			if ((buttonIndex >= 0 && buttonIndex <= 10) || (buttonIndex >= 30 && buttonIndex <= 31)) {
+				result = searchOverrides(glyph_standard, sizeof(glyph_standard) / sizeof(glyph_standard[0]), buttonIndex);
+				if (result) return result;
 			}
 			break;
 			
 		case CONTROLLER_ICON_PS5:
-			// Check PS5 specific overrides first
-			for (int i = 0; i < sizeof(ps5_overrides) / sizeof(ps5_overrides[0]); i++) {
-				if (ps5_overrides[i].button_index == buttonIndex) {
-					return ps5_overrides[i].name;
-				}
-			}
-			// Fallback to common PlayStation overrides
-			for (int i = 0; i < sizeof(playstation_prompts) / sizeof(playstation_prompts[0]); i++) {
-				if (playstation_prompts[i].button_index == buttonIndex) {
-					return playstation_prompts[i].name;
-				}
+			// PS5-specific overrides
+			result = searchOverrides(ps5_overrides, sizeof(ps5_overrides) / sizeof(ps5_overrides[0]), buttonIndex);
+			if (result) return result;
+			// PlayStation overrides
+			result = searchOverrides(playstation_specific, sizeof(playstation_specific) / sizeof(playstation_specific[0]), buttonIndex);
+			if (result) return result;
+			// Glyph standard (Face, Shoulders, Triggers only)
+			if ((buttonIndex >= 0 && buttonIndex <= 10) || (buttonIndex >= 30 && buttonIndex <= 31)) {
+				result = searchOverrides(glyph_standard, sizeof(glyph_standard) / sizeof(glyph_standard[0]), buttonIndex);
+				if (result) return result;
 			}
 			break;
 			
 		case CONTROLLER_ICON_NINTENDO_SWITCH:
-			for (int i = 0; i < sizeof(switch_overrides) / sizeof(switch_overrides[0]); i++) {
-				if (switch_overrides[i].button_index == buttonIndex) {
-					return switch_overrides[i].name;
+			// Nintendo Switch specific overrides
+			result = searchOverrides(switch_specific, sizeof(switch_specific) / sizeof(switch_specific[0]), buttonIndex);
+			if (result) return result;
+			// Glyph standard (swapped Face Buttons positions)
+			if (buttonIndex >= 0 && buttonIndex <= 3) {
+				int mappedIndex = buttonIndex;
+				switch (buttonIndex) {
+					case 0: mappedIndex = 1; break; // B (Bottom face button)
+					case 1: mappedIndex = 0; break; // A (Right face button)
+					case 2: mappedIndex = 3; break; // Y (Left face button)
+					case 3: mappedIndex = 2; break; // X (Top face button)
 				}
+				result = searchOverrides(glyph_standard, sizeof(glyph_standard) / sizeof(glyph_standard[0]), mappedIndex);
+				if (result) return result;
+			}
+			break;
+
+		case CONTROLLER_ICON_STEAM_DECK:
+			// Steam Deck-specific overrides
+			result = searchOverrides(steamdeck_overrides, sizeof(steamdeck_overrides) / sizeof(steamdeck_overrides[0]), buttonIndex);
+			if (result) return result;
+			// Glyph standard
+			if ((buttonIndex >= 0 && buttonIndex <= 19) || (buttonIndex >= 30 && buttonIndex <= 31)) {
+				result = searchOverrides(glyph_standard, sizeof(glyph_standard) / sizeof(glyph_standard[0]), buttonIndex);
+				if (result) return result;
 			}
 			break;
 			
-		case CONTROLLER_ICON_GENERIC: // Generic/fallback
+		case CONTROLLER_ICON_GENERIC:
 		default:
 			break;
 	}
-	
-	// Fallback to generic names if no override found or unknown controller type
+
+	// Fallback to Generic type
 	if (buttonIndex >= 0 && buttonIndex < 32) {
 		return vkJoyDisplayNames[buttonIndex];
 	}
 	
 	return "UNKNOWN BUTTON";
 }
-
