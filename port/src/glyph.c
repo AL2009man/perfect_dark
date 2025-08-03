@@ -127,7 +127,7 @@ static const struct button_override ps5_overrides[] = {
 };
 
 // Nintendo Switch-specific overrides
-static const struct button_override switch_specific[] = {
+static const struct button_override nintendoswitch_override[] = {
 	{ 4, "MINUS_BTN" },
 	{ 5, "HOME_BTN" },
 	{ 6, "PLUS_BTN" },
@@ -145,15 +145,28 @@ static const struct button_override switch_specific[] = {
 // Steam Deck-specific overrides
 static const struct button_override steamdeck_overrides[] = {
 	{ 4, "VIEW_BTN" },
+	{ 5, "STEAM_BTN" },
 	{ 6, "MENU_BTN" },
 };
 
 // Steam Controller-specific overrides
 static const struct button_override steamcontroller_overrides[] = {
-	{ 16, "RG_BTN" },       // Steam Controller left grip
-	{ 17, "LG_BTN" },       // Steam Controller right grip
+	{ 5, "STEAM_BTN" },
+	{ 16, "RG_BTN" }, // Steam Controller left grip
+	{ 17, "LG_BTN" }, // Steam Controller right grip
 };
 
+// Nintendo 64-specific overrides (based on NSO N64 controller's button layout)
+static const struct button_override nintendo64_overrides[] = {
+	{ 2, "C-LEFT_BTN" },
+	{ 3, "C-UP_BTN" },
+	{ 4, "C-RIGHT_BTN" },
+	{ 6, "START_BTN" },
+	{ 9, "L_BTN" },
+	{ 10, "R_BTN" },
+	{ 30, "C-DOWN_BTN" },
+	{ 31, "Z_BTN" },
+};
 
 // Function to search an override for a specific button index
 static const char* searchOverrides(const struct button_override* overrides, int count, int buttonIndex) {
@@ -166,7 +179,7 @@ static const char* searchOverrides(const struct button_override* overrides, int 
 }
 
 // Function to get controller-specific button names
-const char *glyphGetButtonName(int controllerType, int buttonIndex)
+const char *glyphGetControllerButtonName(int controllerType, int buttonIndex)
 {
 	const char *result = NULL;
 
@@ -257,7 +270,7 @@ const char *glyphGetButtonName(int controllerType, int buttonIndex)
 			
 		case CONTROLLER_ICON_NINTENDO_SWITCH:
 			// Nintendo Switch specific overrides
-			result = searchOverrides(switch_specific, sizeof(switch_specific) / sizeof(switch_specific[0]), buttonIndex);
+			result = searchOverrides(nintendoswitch_override, sizeof(nintendoswitch_override) / sizeof(nintendoswitch_override[0]), buttonIndex);
 			if (result) return result;
 			// Glyph standard (swapped Face Buttons positions)
 			if (buttonIndex >= 0 && buttonIndex <= 3) {
@@ -269,6 +282,22 @@ const char *glyphGetButtonName(int controllerType, int buttonIndex)
 					case 3: mappedIndex = 2; break; // X (Top face button)
 				}
 				result = searchOverrides(glyph_standard, sizeof(glyph_standard) / sizeof(glyph_standard[0]), mappedIndex);
+				if (result) return result;
+			}
+			break;
+
+		case CONTROLLER_ICON_NINTENDO_64:
+			// Nintendo 64-specific overrides
+			result = searchOverrides(nintendo64_overrides, sizeof(nintendo64_overrides) / sizeof(nintendo64_overrides[0]), buttonIndex);
+			if (result) return result;
+			// Nintendo Switch specific overrides (for NSO N64 controller's Home and Capture buttons)
+			if (buttonIndex == 5 || buttonIndex == 15) {
+				result = searchOverrides(nintendoswitch_override, sizeof(nintendoswitch_override) / sizeof(nintendoswitch_override[0]), buttonIndex);
+				if (result) return result;
+			}
+			// Glyph standard (N64 face buttons)
+			if (buttonIndex >= 0 && buttonIndex <= 1) {
+				result = searchOverrides(glyph_standard, sizeof(glyph_standard) / sizeof(glyph_standard[0]), buttonIndex);
 				if (result) return result;
 			}
 			break;

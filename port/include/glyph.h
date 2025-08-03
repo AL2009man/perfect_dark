@@ -10,6 +10,7 @@ typedef enum {
 	CONTROLLER_ICON_PS4,
 	CONTROLLER_ICON_PS5,
 	CONTROLLER_ICON_NINTENDO_SWITCH,
+	CONTROLLER_ICON_NINTENDO_64,
 	CONTROLLER_ICON_STEAM_CONTROLLER,
 	CONTROLLER_ICON_STEAM_DECK,
 } ControllerIconType;
@@ -18,6 +19,10 @@ typedef enum {
 extern const char *vkJoyDisplayNames[];
 
 // Function to get controller-specific button name with fallback to generic
-const char *glyphGetButtonName(int controllerType, int buttonIndex);
+const char *glyphGetControllerButtonName(int controllerType, int buttonIndex);
+
+// Function to replace baked-in button text with dynamic controller bindings
+char* glyphInputBindingDetect(char* text, int textSize, const char* placeholder, 
+                                       int controllerIndex, int controlKey, int forceController);
 
 #endif
