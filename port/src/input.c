@@ -510,7 +510,15 @@ static int inputEventFilter(void *data, SDL_Event *event)
 			lastKey = VK_MOUSE_BEGIN - 1 + event->button.button;
 			break;
 
+		case SDL_MOUSEBUTTONUP
+			lastKey = VK_MOUSE_BEGIN - 1 + event->button.button;
+			break;
+
 		case SDL_KEYDOWN:
+			lastKey = VK_KEYBOARD_BEGIN + event->key.keysym.scancode;
+			break;
+
+		case SDL_KEYUP:
 			lastKey = VK_KEYBOARD_BEGIN + event->key.keysym.scancode;
 			break;
 
@@ -522,6 +530,16 @@ static int inputEventFilter(void *data, SDL_Event *event)
 				lastKey += idx * INPUT_MAX_CONTROLLER_BUTTONS;
 			}
 			break;
+
+		case SDL_CONTROLLERBUTTONUP: {
+			lastKey = VK_JOY1_BEGIN + event->cbutton.button;
+			SDL_GameController *ctrl2 = SDL_GameControllerFromInstanceID(event->cdevice.which);
+			const s32 idx2 = inputControllerGetIndex(ctrl2);
+			if (idx2 >= 0) {
+				lastKey += idx2 * INPUT_MAX_CONTROLLER_BUTTONS;
+			}
+			break;
+		}
 
 		case SDL_CONTROLLERAXISMOTION:
 			if (event->caxis.axis >= SDL_CONTROLLER_AXIS_TRIGGERLEFT && event->caxis.value > TRIG_THRESHOLD) {

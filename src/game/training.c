@@ -828,16 +828,8 @@ char *frGetInstructionalText(u32 index)
 	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "R Button", 0, CK_RTRIG, 0);
 	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Z Button", 0, CK_ZTRIG, 0);
 	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "A Button", 0, CK_A, 0);
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "UP C BUTTON", 0, CK_C_D, 0);      // Uppercase variant
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "DOWN C BUTTON", 0, CK_C_U, 0);    // Uppercase variant
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Up C Button", 0, CK_C_D, 0);      // Swapped: Up C = look down
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Down C Button", 0, CK_C_U, 0);    // Swapped: Down C = look up
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "UP C", 0, CK_C_D, 0);             // Short uppercase
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "DOWN C", 0, CK_C_U, 0);           // Short uppercase  
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "up C", 0, CK_C_D, 0);             // Lowercase variant
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "down C", 0, CK_C_U, 0);           // Lowercase variant
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "C-Up", 0, CK_C_D, 0);             // Hyphenated variant
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "C-Down", 0, CK_C_U, 0);           // Hyphenated variant
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Up C Button", 0, CK_C_D, 0);    // Swapped: Up C = look down
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Down C Button", 0, CK_C_U, 0);  // Swapped: Down C = look up
 	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Left C Button", 0, CK_C_L, 0);
 	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Right C Button", 0, CK_C_R, 0);
 	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "C Button", 0, CK_C_U, 0); // Fallback for generic C Button
@@ -3042,24 +3034,13 @@ char *dtGetDescription(void)
 	strcpy(modifiedText, originalText);
 	
 #ifndef PLATFORM_N64
-	// Replace button references - use simple button names for localization compatibility
 	// Note: Perfect Dark has inverted Y-axis, so we swap the C button mappings for intuitive gamepad controls
 	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "B Button", 0, CK_B, 0);
 	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "R Button", 0, CK_RTRIG, 0);
 	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Z Button", 0, CK_ZTRIG, 0);
 	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "A Button", 0, CK_A, 0);
-	
-	// Handle various C button patterns - all with swapped Y-axis mapping for localization compatibility
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "UP C BUTTON", 0, CK_C_D, 0);      // Uppercase variant
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "DOWN C BUTTON", 0, CK_C_U, 0);    // Uppercase variant
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Up C Button", 0, CK_C_D, 0);      // Swapped: Up C = look down
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Down C Button", 0, CK_C_U, 0);    // Swapped: Down C = look up
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "UP C", 0, CK_C_D, 0);             // Short uppercase
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "DOWN C", 0, CK_C_U, 0);           // Short uppercase  
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "up C", 0, CK_C_D, 0);             // Lowercase variant
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "down C", 0, CK_C_U, 0);           // Lowercase variant
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "C-Up", 0, CK_C_D, 0);             // Hyphenated variant
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "C-Down", 0, CK_C_U, 0);           // Hyphenated variant
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Up C Button", 0, CK_C_D, 0);    // Swapped: Up C = look down
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Down C Button", 0, CK_C_U, 0);  // Swapped: Down C = look up
 	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Left C Button", 0, CK_C_L, 0);
 	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Right C Button", 0, CK_C_R, 0);
 	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "C Button", 0, CK_C_U, 0); // Fallback for generic C Button
@@ -3110,19 +3091,8 @@ char *dtGetTip1(void)
 	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "R Button", 0, CK_RTRIG, 0);
 	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Z Button", 0, CK_ZTRIG, 0);
 	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "A Button", 0, CK_A, 0);
-	
-	// Handle various C button patterns - all with swapped Y-axis mapping for localization compatibility
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "UP C BUTTON", 0, CK_C_D, 0);      // Uppercase variant
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "DOWN C BUTTON", 0, CK_C_U, 0);    // Uppercase variant
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Up C Button", 0, CK_C_D, 0);      // Swapped: Up C = look down
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Down C Button", 0, CK_C_U, 0);    // Swapped: Down C = look up
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "UP C", 0, CK_C_D, 0);             // Short uppercase
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "DOWN C", 0, CK_C_U, 0);           // Short uppercase  
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "up C", 0, CK_C_D, 0);             // Lowercase variant
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "down C", 0, CK_C_U, 0);           // Lowercase variant
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "C-Up", 0, CK_C_D, 0);             // Hyphenated variant
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "C-Down", 0, CK_C_U, 0);           // Hyphenated variant
-	
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Up C Button", 0, CK_C_D, 0);    // Swapped: Up C = look down
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Down C Button", 0, CK_C_U, 0);  // Swapped: Down C = look up
 	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Left C Button", 0, CK_C_L, 0);
 	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Right C Button", 0, CK_C_R, 0);
 	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "C Button", 0, CK_C_U, 0);
@@ -3167,25 +3137,14 @@ char *dtGetTip2(void)
 	strcpy(modifiedText, originalText);
 	
 #ifndef PLATFORM_N64
-	// Replace button references - use simple button names for localization compatibility
+	// Replace button references
 	// Note: Perfect Dark has inverted Y-axis, so we swap the C button mappings for intuitive gamepad controls
 	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "B Button", 0, CK_B, 0);
 	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "R Button", 0, CK_RTRIG, 0);
 	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Z Button", 0, CK_ZTRIG, 0);
 	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "A Button", 0, CK_A, 0);
-	
-	// Handle various C button patterns - all with swapped Y-axis mapping for localization compatibility
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "UP C BUTTON", 0, CK_C_D, 0);      // Uppercase variant
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "DOWN C BUTTON", 0, CK_C_U, 0);    // Uppercase variant
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Up C Button", 0, CK_C_D, 0);      // Swapped: Up C = look down
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Down C Button", 0, CK_C_U, 0);    // Swapped: Down C = look up
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "UP C", 0, CK_C_D, 0);             // Short uppercase
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "DOWN C", 0, CK_C_U, 0);           // Short uppercase  
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "up C", 0, CK_C_D, 0);             // Lowercase variant
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "down C", 0, CK_C_U, 0);           // Lowercase variant
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "C-Up", 0, CK_C_D, 0);             // Hyphenated variant
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "C-Down", 0, CK_C_U, 0);           // Hyphenated variant
-	
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Up C Button", 0, CK_C_D, 0);
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Down C Button", 0, CK_C_U, 0);
 	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Left C Button", 0, CK_C_L, 0);
 	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Right C Button", 0, CK_C_R, 0);
 	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "C Button", 0, CK_C_U, 0);
@@ -3451,19 +3410,8 @@ char *htGetDescription(void)
 	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "R Button", 0, CK_RTRIG, 0);
 	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Z Button", 0, CK_ZTRIG, 0);
 	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "A Button", 0, CK_A, 0);
-	
-	// Handle various C button patterns - all with swapped Y-axis mapping for localization compatibility
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "UP C BUTTON", 0, CK_C_D, 0);      // Uppercase variant
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "DOWN C BUTTON", 0, CK_C_U, 0);    // Uppercase variant
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Up C Button", 0, CK_C_D, 0);      // Swapped: Up C = look down
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Down C Button", 0, CK_C_U, 0);    // Swapped: Down C = look up
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "UP C", 0, CK_C_D, 0);             // Short uppercase
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "DOWN C", 0, CK_C_U, 0);           // Short uppercase  
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "up C", 0, CK_C_D, 0);             // Lowercase variant
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "down C", 0, CK_C_U, 0);           // Lowercase variant
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "C-Up", 0, CK_C_D, 0);             // Hyphenated variant
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "C-Down", 0, CK_C_U, 0);           // Hyphenated variant
-	
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Up C Button", 0, CK_C_D, 0);    // Swapped: Up C = look down
+	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Down C Button", 0, CK_C_U, 0);  // Swapped: Down C = look up
 	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Left C Button", 0, CK_C_L, 0);
 	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Right C Button", 0, CK_C_R, 0);
 	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "C Button", 0, CK_C_U, 0);
