@@ -55,7 +55,7 @@
 #include "glyph.h"
 
 // Forward declarations for glyph functions
-extern char* glyphReplaceWithControllerBinding(char* text, int textSize, const char* placeholder, int controllerIndex, int controlKey, int forceController);
+extern char* glyphInputBindingDetect(char* text, int textSize, const char* placeholder, int controllerIndex, int controlKey, int forceController);
 #ifndef CK_START
 #define CK_START 6  // START button control key
 #endif
@@ -5622,7 +5622,7 @@ Gfx *menuRender(Gfx *gdl)
 					// "Player %d: " and dynamic "Press [BUTTON]!"
 					static char pressText[128];
 					strcpy(pressText, langGet(L_MPMENU_483));
-					glyphReplaceWithControllerBinding(pressText, sizeof(pressText), "START", i, CK_START, 1);
+					glyphInputBindingDetect(pressText, sizeof(pressText), "START", i, CK_START, 1);
 					sprintf(text, "%s%s", langGet(L_MPMENU_482), pressText);
 				}
 
@@ -5694,7 +5694,7 @@ Gfx *menuRender(Gfx *gdl)
 						} else {
 							// "Press START!"
 							strcpy(text, langGet(L_MPMENU_483));
-							glyphReplaceWithControllerBinding(text, sizeof(text), "START", i, CK_START, 1);
+							glyphInputBindingDetect(text, sizeof(text), "START", i, CK_START, 1);
 							colour = colourBlend(0x00ffff00, 0xffffff00, weight) | g_MenuData.playerjoinalpha[i];
 						}
 

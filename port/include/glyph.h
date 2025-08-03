@@ -18,10 +18,10 @@ typedef enum {
 extern const char *vkJoyDisplayNames[];
 
 // Function to get controller-specific button name with fallback to generic
-const char *glyphGetButtonName(int controllerType, int buttonIndex);
+const char *glyphGetControllerButtonName(int controllerType, int buttonIndex);
 
 // Function to replace baked-in button text with dynamic controller bindings
-char* glyphReplaceWithControllerBinding(char* text, int textSize, const char* placeholder, 
+char* glyphInputBindingDetect(char* text, int textSize, const char* placeholder, 
                                        int controllerIndex, int controlKey, int forceController);
 
 #endif

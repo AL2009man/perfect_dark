@@ -4389,11 +4389,11 @@ bool aiShowHudmsgMiddle(void)
 		static char modifiedText[256];
 		strcpy(modifiedText, text);
 		// Replace common button references in training messages
-		glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "A Button", 0, CK_A, 0);
-		glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "B Button", 0, CK_B, 0);
-		glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Z Button", 0, CK_ZTRIG, 0);
-		glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "R Button", 0, CK_RTRIG, 0);
-		glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "START", 0, CK_START, 0);
+		glyphInputBindingDetect(modifiedText, sizeof(modifiedText), "A Button", 0, CK_A, 0);
+		glyphInputBindingDetect(modifiedText, sizeof(modifiedText), "B Button", 0, CK_B, 0);
+		glyphInputBindingDetect(modifiedText, sizeof(modifiedText), "Z Button", 0, CK_ZTRIG, 0);
+		glyphInputBindingDetect(modifiedText, sizeof(modifiedText), "R Button", 0, CK_RTRIG, 0);
+		glyphInputBindingDetect(modifiedText, sizeof(modifiedText), "START", 0, CK_START, 0);
 		hudmsgCreateWithColour(modifiedText, HUDMSGTYPE_7, cmd[3]);
 #else
 		hudmsgCreateWithColour(text, HUDMSGTYPE_7, cmd[3]);
@@ -4406,11 +4406,11 @@ bool aiShowHudmsgMiddle(void)
 		static char modifiedText[256];
 		strcpy(modifiedText, text);
 		// Replace common button references in training messages
-		glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "A Button", 0, CK_A, 0);
-		glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "B Button", 0, CK_B, 0);
-		glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Z Button", 0, CK_ZTRIG, 0);
-		glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "R Button", 0, CK_RTRIG, 0);
-		glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "START", 0, CK_START, 0);
+		glyphInputBindingDetect(modifiedText, sizeof(modifiedText), "A Button", 0, CK_A, 0);
+		glyphInputBindingDetect(modifiedText, sizeof(modifiedText), "B Button", 0, CK_B, 0);
+		glyphInputBindingDetect(modifiedText, sizeof(modifiedText), "Z Button", 0, CK_ZTRIG, 0);
+		glyphInputBindingDetect(modifiedText, sizeof(modifiedText), "R Button", 0, CK_RTRIG, 0);
+		glyphInputBindingDetect(modifiedText, sizeof(modifiedText), "START", 0, CK_START, 0);
 		hudmsgCreateWithColour(modifiedText, HUDMSGTYPE_8, cmd[3]);
 #else
 		hudmsgCreateWithColour(text, HUDMSGTYPE_8, cmd[3]);

@@ -824,16 +824,16 @@ char *frGetInstructionalText(u32 index)
 #ifndef PLATFORM_N64
 	// Replace button references - use simple button names for localization compatibility
 	// Note: Perfect Dark has inverted Y-axis, so we swap the C button mappings for intuitive gamepad controls
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "B Button", 0, CK_B, 0);
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "R Button", 0, CK_RTRIG, 0);
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Z Button", 0, CK_ZTRIG, 0);
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "A Button", 0, CK_A, 0);
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Up C Button", 0, CK_C_D, 0);    // Swapped: Up C = look down
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Down C Button", 0, CK_C_U, 0);  // Swapped: Down C = look up
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Left C Button", 0, CK_C_L, 0);
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Right C Button", 0, CK_C_R, 0);
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "C Button", 0, CK_C_U, 0); // Fallback for generic C Button
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "START", 0, CK_START, 0);
+	glyphInputBindingDetect(modifiedText, sizeof(modifiedText), "B Button", 0, CK_B, 0);
+	glyphInputBindingDetect(modifiedText, sizeof(modifiedText), "R Button", 0, CK_RTRIG, 0);
+	glyphInputBindingDetect(modifiedText, sizeof(modifiedText), "Z Button", 0, CK_ZTRIG, 0);
+	glyphInputBindingDetect(modifiedText, sizeof(modifiedText), "A Button", 0, CK_A, 0);
+	glyphInputBindingDetect(modifiedText, sizeof(modifiedText), "Up C Button", 0, CK_C_D, 0);    // Swapped: Up C = look down
+	glyphInputBindingDetect(modifiedText, sizeof(modifiedText), "Down C Button", 0, CK_C_U, 0);  // Swapped: Down C = look up
+	glyphInputBindingDetect(modifiedText, sizeof(modifiedText), "Left C Button", 0, CK_C_L, 0);
+	glyphInputBindingDetect(modifiedText, sizeof(modifiedText), "Right C Button", 0, CK_C_R, 0);
+	glyphInputBindingDetect(modifiedText, sizeof(modifiedText), "C Button", 0, CK_C_U, 0); // Fallback for generic C Button
+	glyphInputBindingDetect(modifiedText, sizeof(modifiedText), "START", 0, CK_START, 0);
 #endif
 	
 	return modifiedText;
@@ -3035,16 +3035,16 @@ char *dtGetDescription(void)
 	
 #ifndef PLATFORM_N64
 	// Note: Perfect Dark has inverted Y-axis, so we swap the C button mappings for intuitive gamepad controls
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "B Button", 0, CK_B, 0);
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "R Button", 0, CK_RTRIG, 0);
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Z Button", 0, CK_ZTRIG, 0);
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "A Button", 0, CK_A, 0);
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Up C Button", 0, CK_C_D, 0);    // Swapped: Up C = look down
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Down C Button", 0, CK_C_U, 0);  // Swapped: Down C = look up
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Left C Button", 0, CK_C_L, 0);
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Right C Button", 0, CK_C_R, 0);
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "C Button", 0, CK_C_U, 0); // Fallback for generic C Button
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "START", 0, CK_START, 0);
+	glyphInputBindingDetect(modifiedText, sizeof(modifiedText), "B Button", 0, CK_B, 0);
+	glyphInputBindingDetect(modifiedText, sizeof(modifiedText), "R Button", 0, CK_RTRIG, 0);
+	glyphInputBindingDetect(modifiedText, sizeof(modifiedText), "Z Button", 0, CK_ZTRIG, 0);
+	glyphInputBindingDetect(modifiedText, sizeof(modifiedText), "A Button", 0, CK_A, 0);
+	glyphInputBindingDetect(modifiedText, sizeof(modifiedText), "Up C Button", 0, CK_C_D, 0);    // Swapped: Up C = look down
+	glyphInputBindingDetect(modifiedText, sizeof(modifiedText), "Down C Button", 0, CK_C_U, 0);  // Swapped: Down C = look up
+	glyphInputBindingDetect(modifiedText, sizeof(modifiedText), "Left C Button", 0, CK_C_L, 0);
+	glyphInputBindingDetect(modifiedText, sizeof(modifiedText), "Right C Button", 0, CK_C_R, 0);
+	glyphInputBindingDetect(modifiedText, sizeof(modifiedText), "C Button", 0, CK_C_U, 0); // Fallback for generic C Button
+	glyphInputBindingDetect(modifiedText, sizeof(modifiedText), "START", 0, CK_START, 0);
 #endif
 	
 	return modifiedText;
@@ -3087,16 +3087,16 @@ char *dtGetTip1(void)
 #ifndef PLATFORM_N64
 	// Replace button references - use simple button names for localization compatibility
 	// Note: Perfect Dark has inverted Y-axis, so we swap the C button mappings for intuitive gamepad controls
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "B Button", 0, CK_B, 0);
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "R Button", 0, CK_RTRIG, 0);
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Z Button", 0, CK_ZTRIG, 0);
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "A Button", 0, CK_A, 0);
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Up C Button", 0, CK_C_D, 0);    // Swapped: Up C = look down
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Down C Button", 0, CK_C_U, 0);  // Swapped: Down C = look up
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Left C Button", 0, CK_C_L, 0);
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Right C Button", 0, CK_C_R, 0);
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "C Button", 0, CK_C_U, 0);
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "START", 0, CK_START, 0);
+	glyphInputBindingDetect(modifiedText, sizeof(modifiedText), "B Button", 0, CK_B, 0);
+	glyphInputBindingDetect(modifiedText, sizeof(modifiedText), "R Button", 0, CK_RTRIG, 0);
+	glyphInputBindingDetect(modifiedText, sizeof(modifiedText), "Z Button", 0, CK_ZTRIG, 0);
+	glyphInputBindingDetect(modifiedText, sizeof(modifiedText), "A Button", 0, CK_A, 0);
+	glyphInputBindingDetect(modifiedText, sizeof(modifiedText), "Up C Button", 0, CK_C_D, 0);    // Swapped: Up C = look down
+	glyphInputBindingDetect(modifiedText, sizeof(modifiedText), "Down C Button", 0, CK_C_U, 0);  // Swapped: Down C = look up
+	glyphInputBindingDetect(modifiedText, sizeof(modifiedText), "Left C Button", 0, CK_C_L, 0);
+	glyphInputBindingDetect(modifiedText, sizeof(modifiedText), "Right C Button", 0, CK_C_R, 0);
+	glyphInputBindingDetect(modifiedText, sizeof(modifiedText), "C Button", 0, CK_C_U, 0);
+	glyphInputBindingDetect(modifiedText, sizeof(modifiedText), "START", 0, CK_START, 0);
 #endif
 	
 	return modifiedText;
@@ -3139,16 +3139,16 @@ char *dtGetTip2(void)
 #ifndef PLATFORM_N64
 	// Replace button references
 	// Note: Perfect Dark has inverted Y-axis, so we swap the C button mappings for intuitive gamepad controls
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "B Button", 0, CK_B, 0);
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "R Button", 0, CK_RTRIG, 0);
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Z Button", 0, CK_ZTRIG, 0);
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "A Button", 0, CK_A, 0);
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Up C Button", 0, CK_C_D, 0);
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Down C Button", 0, CK_C_U, 0);
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Left C Button", 0, CK_C_L, 0);
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Right C Button", 0, CK_C_R, 0);
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "C Button", 0, CK_C_U, 0);
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "START", 0, CK_START, 0);
+	glyphInputBindingDetect(modifiedText, sizeof(modifiedText), "B Button", 0, CK_B, 0);
+	glyphInputBindingDetect(modifiedText, sizeof(modifiedText), "R Button", 0, CK_RTRIG, 0);
+	glyphInputBindingDetect(modifiedText, sizeof(modifiedText), "Z Button", 0, CK_ZTRIG, 0);
+	glyphInputBindingDetect(modifiedText, sizeof(modifiedText), "A Button", 0, CK_A, 0);
+	glyphInputBindingDetect(modifiedText, sizeof(modifiedText), "Up C Button", 0, CK_C_D, 0);
+	glyphInputBindingDetect(modifiedText, sizeof(modifiedText), "Down C Button", 0, CK_C_U, 0);
+	glyphInputBindingDetect(modifiedText, sizeof(modifiedText), "Left C Button", 0, CK_C_L, 0);
+	glyphInputBindingDetect(modifiedText, sizeof(modifiedText), "Right C Button", 0, CK_C_R, 0);
+	glyphInputBindingDetect(modifiedText, sizeof(modifiedText), "C Button", 0, CK_C_U, 0);
+	glyphInputBindingDetect(modifiedText, sizeof(modifiedText), "START", 0, CK_START, 0);
 #endif
 	
 	return modifiedText;
@@ -3406,16 +3406,16 @@ char *htGetDescription(void)
 #ifndef PLATFORM_N64
 	// Replace button references - use simple button names for localization compatibility
 	// Note: Perfect Dark has inverted Y-axis, so we swap the C button mappings for intuitive gamepad controls
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "B Button", 0, CK_B, 0);
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "R Button", 0, CK_RTRIG, 0);
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Z Button", 0, CK_ZTRIG, 0);
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "A Button", 0, CK_A, 0);
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Up C Button", 0, CK_C_D, 0);    // Swapped: Up C = look down
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Down C Button", 0, CK_C_U, 0);  // Swapped: Down C = look up
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Left C Button", 0, CK_C_L, 0);
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Right C Button", 0, CK_C_R, 0);
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "C Button", 0, CK_C_U, 0);
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "START", 0, CK_START, 0);
+	glyphInputBindingDetect(modifiedText, sizeof(modifiedText), "B Button", 0, CK_B, 0);
+	glyphInputBindingDetect(modifiedText, sizeof(modifiedText), "R Button", 0, CK_RTRIG, 0);
+	glyphInputBindingDetect(modifiedText, sizeof(modifiedText), "Z Button", 0, CK_ZTRIG, 0);
+	glyphInputBindingDetect(modifiedText, sizeof(modifiedText), "A Button", 0, CK_A, 0);
+	glyphInputBindingDetect(modifiedText, sizeof(modifiedText), "Up C Button", 0, CK_C_D, 0);    // Swapped: Up C = look down
+	glyphInputBindingDetect(modifiedText, sizeof(modifiedText), "Down C Button", 0, CK_C_U, 0);  // Swapped: Down C = look up
+	glyphInputBindingDetect(modifiedText, sizeof(modifiedText), "Left C Button", 0, CK_C_L, 0);
+	glyphInputBindingDetect(modifiedText, sizeof(modifiedText), "Right C Button", 0, CK_C_R, 0);
+	glyphInputBindingDetect(modifiedText, sizeof(modifiedText), "C Button", 0, CK_C_U, 0);
+	glyphInputBindingDetect(modifiedText, sizeof(modifiedText), "START", 0, CK_START, 0);
 #endif
 	
 	return modifiedText;
@@ -3452,16 +3452,16 @@ char *htGetTip1(void)
 #ifndef PLATFORM_N64
 	// Replace button references - use simple button names for localization compatibility
 	// Note: Perfect Dark has inverted Y-axis, so we swap the C button mappings for intuitive gamepad controls
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "B Button", 0, CK_B, 0);
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "R Button", 0, CK_RTRIG, 0);
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Z Button", 0, CK_ZTRIG, 0);
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "A Button", 0, CK_A, 0);
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Up C Button", 0, CK_C_D, 0);    // Swapped: Up C = look down
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Down C Button", 0, CK_C_U, 0);  // Swapped: Down C = look up
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Left C Button", 0, CK_C_L, 0);
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Right C Button", 0, CK_C_R, 0);
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "C Button", 0, CK_C_U, 0);
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "START", 0, CK_START, 0);
+	glyphInputBindingDetect(modifiedText, sizeof(modifiedText), "B Button", 0, CK_B, 0);
+	glyphInputBindingDetect(modifiedText, sizeof(modifiedText), "R Button", 0, CK_RTRIG, 0);
+	glyphInputBindingDetect(modifiedText, sizeof(modifiedText), "Z Button", 0, CK_ZTRIG, 0);
+	glyphInputBindingDetect(modifiedText, sizeof(modifiedText), "A Button", 0, CK_A, 0);
+	glyphInputBindingDetect(modifiedText, sizeof(modifiedText), "Up C Button", 0, CK_C_D, 0);    // Swapped: Up C = look down
+	glyphInputBindingDetect(modifiedText, sizeof(modifiedText), "Down C Button", 0, CK_C_U, 0);  // Swapped: Down C = look up
+	glyphInputBindingDetect(modifiedText, sizeof(modifiedText), "Left C Button", 0, CK_C_L, 0);
+	glyphInputBindingDetect(modifiedText, sizeof(modifiedText), "Right C Button", 0, CK_C_R, 0);
+	glyphInputBindingDetect(modifiedText, sizeof(modifiedText), "C Button", 0, CK_C_U, 0);
+	glyphInputBindingDetect(modifiedText, sizeof(modifiedText), "START", 0, CK_START, 0);
 #endif
 	
 	return modifiedText;
@@ -3498,16 +3498,16 @@ char *htGetTip2(void)
 #ifndef PLATFORM_N64
 	// Replace button references - use simple button names for localization compatibility
 	// Note: Perfect Dark has inverted Y-axis, so we swap the C button mappings for intuitive gamepad controls
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "B Button", 0, CK_B, 0);
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "R Button", 0, CK_RTRIG, 0);
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Z Button", 0, CK_ZTRIG, 0);
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "A Button", 0, CK_A, 0);
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Up C Button", 0, CK_C_D, 0);    // Swapped: Up C = look down
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Down C Button", 0, CK_C_U, 0);  // Swapped: Down C = look up
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Left C Button", 0, CK_C_L, 0);
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "Right C Button", 0, CK_C_R, 0);
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "C Button", 0, CK_C_U, 0);
-	glyphReplaceWithControllerBinding(modifiedText, sizeof(modifiedText), "START", 0, CK_START, 0);
+	glyphInputBindingDetect(modifiedText, sizeof(modifiedText), "B Button", 0, CK_B, 0);
+	glyphInputBindingDetect(modifiedText, sizeof(modifiedText), "R Button", 0, CK_RTRIG, 0);
+	glyphInputBindingDetect(modifiedText, sizeof(modifiedText), "Z Button", 0, CK_ZTRIG, 0);
+	glyphInputBindingDetect(modifiedText, sizeof(modifiedText), "A Button", 0, CK_A, 0);
+	glyphInputBindingDetect(modifiedText, sizeof(modifiedText), "Up C Button", 0, CK_C_D, 0);    // Swapped: Up C = look down
+	glyphInputBindingDetect(modifiedText, sizeof(modifiedText), "Down C Button", 0, CK_C_U, 0);  // Swapped: Down C = look up
+	glyphInputBindingDetect(modifiedText, sizeof(modifiedText), "Left C Button", 0, CK_C_L, 0);
+	glyphInputBindingDetect(modifiedText, sizeof(modifiedText), "Right C Button", 0, CK_C_R, 0);
+	glyphInputBindingDetect(modifiedText, sizeof(modifiedText), "C Button", 0, CK_C_U, 0);
+	glyphInputBindingDetect(modifiedText, sizeof(modifiedText), "START", 0, CK_START, 0);
 #endif
 	
 	return modifiedText;

@@ -174,7 +174,7 @@ static const char* searchOverrides(const struct button_override* overrides, int 
 }
 
 // Function to get controller-specific button names
-const char *glyphGetButtonName(int controllerType, int buttonIndex)
+const char *glyphGetControllerButtonName(int controllerType, int buttonIndex)
 {
 	const char *result = NULL;
 
@@ -305,7 +305,7 @@ const char *glyphGetButtonName(int controllerType, int buttonIndex)
 	return "UNKNOWN BUTTON";
 }
 
-char* glyphReplaceWithControllerBinding(char* text, int textSize, const char* placeholder, 
+char* glyphInputBindingDetect(char* text, int textSize, const char* placeholder, 
                                        int controllerIndex, int controlKey, int forceController)
 {
 	if (!text || !placeholder) {

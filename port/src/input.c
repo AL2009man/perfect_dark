@@ -510,7 +510,7 @@ static int inputEventFilter(void *data, SDL_Event *event)
 			lastKey = VK_MOUSE_BEGIN - 1 + event->button.button;
 			break;
 
-		case SDL_MOUSEBUTTONUP
+		case SDL_MOUSEBUTTONUP:
 			lastKey = VK_MOUSE_BEGIN - 1 + event->button.button;
 			break;
 
@@ -1421,7 +1421,7 @@ const char *inputGetButtonDisplayName(s32 vk)
 	// Glyph override function
 	if (override != GLYPH_AUTO) {
 		const ControllerIconType iconType = (ControllerIconType)(override - 1);
-		return glyphGetButtonName(iconType, jbtn);
+		return glyphGetControllerButtonName(iconType, jbtn);
 	}
 	
 	// Auto-detect glyphs based on controller type
@@ -1435,44 +1435,44 @@ const char *inputGetButtonDisplayName(s32 vk)
 					if (joystick && SDL_JoystickGetVendor(joystick) == 0x28de) {
 						Uint16 product = SDL_JoystickGetProduct(joystick);
 						if (product == 0x11ff) {
-							return glyphGetButtonName(CONTROLLER_ICON_XBOX360, jbtn);
+							return glyphGetControllerButtonName(CONTROLLER_ICON_XBOX360, jbtn);
 						}
 					}
 				}
-				return glyphGetButtonName(CONTROLLER_ICON_XBOX360, jbtn);
+				return glyphGetControllerButtonName(CONTROLLER_ICON_XBOX360, jbtn);
 			case SDL_CONTROLLER_TYPE_XBOXONE:
 				if (ctrl) {
 					SDL_Joystick *joystick = SDL_GameControllerGetJoystick(ctrl);
 					if (joystick && SDL_JoystickGetVendor(joystick) == 0x28de) {
 						Uint16 product = SDL_JoystickGetProduct(joystick);
 						if (product == 0x11ff) {
-							return glyphGetButtonName(CONTROLLER_ICON_XBOXONE, jbtn);
+							return glyphGetControllerButtonName(CONTROLLER_ICON_XBOXONE, jbtn);
 						}
 					}
 				}
-				return glyphGetButtonName(CONTROLLER_ICON_XBOXONE, jbtn);
+				return glyphGetControllerButtonName(CONTROLLER_ICON_XBOXONE, jbtn);
 			case SDL_CONTROLLER_TYPE_PS3:
 				if (ctrl) {
 					SDL_Joystick *joystick = SDL_GameControllerGetJoystick(ctrl);
 					if (joystick && SDL_JoystickGetVendor(joystick) == 0x28de) {
 						Uint16 product = SDL_JoystickGetProduct(joystick);
 						if (product == 0x11ff) { 
-							return glyphGetButtonName(CONTROLLER_ICON_PS3, jbtn);
+							return glyphGetControllerButtonName(CONTROLLER_ICON_PS3, jbtn);
 						}
 					}
 				}
-				return glyphGetButtonName(CONTROLLER_ICON_PS3, jbtn);
+				return glyphGetControllerButtonName(CONTROLLER_ICON_PS3, jbtn);
 			case SDL_CONTROLLER_TYPE_PS4:
 				if (ctrl) {
 					SDL_Joystick *joystick = SDL_GameControllerGetJoystick(ctrl);
 					if (joystick && SDL_JoystickGetVendor(joystick) == 0x28de) {
 						Uint16 product = SDL_JoystickGetProduct(joystick);
 						if (product == 0x11ff) {
-							return glyphGetButtonName(CONTROLLER_ICON_PS4, jbtn);
+							return glyphGetControllerButtonName(CONTROLLER_ICON_PS4, jbtn);
 						}
 					}
 				}
-				return glyphGetButtonName(CONTROLLER_ICON_PS4, jbtn);
+				return glyphGetControllerButtonName(CONTROLLER_ICON_PS4, jbtn);
 #if SDL_VERSION_ATLEAST(2, 0, 14)
 			case SDL_CONTROLLER_TYPE_PS5:
 				if (ctrl) {
@@ -1480,11 +1480,11 @@ const char *inputGetButtonDisplayName(s32 vk)
 					if (joystick && SDL_JoystickGetVendor(joystick) == 0x28de) {
 						Uint16 product = SDL_JoystickGetProduct(joystick);
 						if (product == 0x11ff) { 
-							return glyphGetButtonName(CONTROLLER_ICON_PS5, jbtn);
+							return glyphGetControllerButtonName(CONTROLLER_ICON_PS5, jbtn);
 						}
 					}
 				}
-				return glyphGetButtonName(CONTROLLER_ICON_PS5, jbtn);
+				return glyphGetControllerButtonName(CONTROLLER_ICON_PS5, jbtn);
 #endif
 			case SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_PRO:
 #if SDL_VERSION_ATLEAST(2, 24, 0)
@@ -1503,11 +1503,11 @@ const char *inputGetButtonDisplayName(s32 vk)
 					if (joystick && SDL_JoystickGetVendor(joystick) == 0x28de) {
 						Uint16 product = SDL_JoystickGetProduct(joystick);
 						if (product == 0x11ff) {
-							return glyphGetButtonName(CONTROLLER_ICON_NINTENDO_SWITCH, jbtn);
+							return glyphGetControllerButtonName(CONTROLLER_ICON_NINTENDO_SWITCH, jbtn);
 						}
 					}
 				}
-				return glyphGetButtonName(CONTROLLER_ICON_NINTENDO_SWITCH, jbtn);
+				return glyphGetControllerButtonName(CONTROLLER_ICON_NINTENDO_SWITCH, jbtn);
 			case SDL_CONTROLLER_TYPE_VIRTUAL:
 			case SDL_CONTROLLER_TYPE_UNKNOWN:
 			default:
@@ -1520,17 +1520,17 @@ const char *inputGetButtonDisplayName(s32 vk)
                             
                             // Steam Virtual Gamepad
                             if (product == 0x11ff) {
-                                return glyphGetButtonName(CONTROLLER_ICON_STEAM_DECK, jbtn);
+                                return glyphGetControllerButtonName(CONTROLLER_ICON_STEAM_DECK, jbtn);
                             }
                             // Steam Controllers
                             else if (product == 0x1101 || product == 0x1102 || product == 0x1105 || 
                                 product == 0x1106 || product == 0x1142 || product == 0x1201 || 
                                 product == 0x1202) {
-                                return glyphGetButtonName(CONTROLLER_ICON_STEAM_CONTROLLER, jbtn);
+                                return glyphGetControllerButtonName(CONTROLLER_ICON_STEAM_CONTROLLER, jbtn);
                             }
                             // Steam Deck
                             else if (product == 0x1205) {
-                                return glyphGetButtonName(CONTROLLER_ICON_STEAM_DECK, jbtn);
+                                return glyphGetControllerButtonName(CONTROLLER_ICON_STEAM_DECK, jbtn);
                             }
                         }
                     }
@@ -1540,7 +1540,7 @@ const char *inputGetButtonDisplayName(s32 vk)
 	}
 	
 	// fallback to generic type if no controller is connected or recognized
-	return glyphGetButtonName(CONTROLLER_ICON_GENERIC, jbtn);
+	return glyphGetControllerButtonName(CONTROLLER_ICON_GENERIC, jbtn);
 }
 
 s32 inputGetKeyByName(const char *name)
