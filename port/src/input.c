@@ -1472,17 +1472,17 @@ const char *inputGetButtonDisplayName(s32 vk)
                             if (vendor == VALVE_VENDOR_ID) {
                                 Uint16 product = SDL_JoystickGetProduct(joystick);
                                 
+                                // Steam Deck
+                                if (product == STEAM_DECK_BUILTIN_PID) {
+                                    iconType = CONTROLLER_ICON_STEAM_DECK;
+                                }
                                 // Steam Virtual Gamepad
-                                if (product == STEAM_VIRTUAL_GAMEPAD_PID) {
+                                else if (product == STEAM_VIRTUAL_GAMEPAD_PID) {
                                     iconType = getSteamVirtualControllerDetection(ctrl, CONTROLLER_ICON_STEAM_DECK);
                                 }
                                 // Steam Controller
                                 else if (isSteamControllerPID(product)) {
                                     iconType = CONTROLLER_ICON_STEAM_CONTROLLER;
-                                }
-                                // Steam Deck
-                                else if (product == STEAM_DECK_BUILTIN_PID) {
-                                    iconType = CONTROLLER_ICON_STEAM_DECK;
                                 }
                             }
                         }
