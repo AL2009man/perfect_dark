@@ -17,10 +17,10 @@ typedef enum {
 	CONTROLLER_ICON_STEAM_DECK,
 } ControllerIconType;
 
-// Steam/Valve Corporation VID/PID definitions
+// Valve Corporation VID/PID definitions
 #define VALVE_VENDOR_ID 0x28de
 
-// Steam Controller product IDs (all generations)
+// Steam Controller product IDs
 #define STEAM_CONTROLLER_LEGACY_PID     0x1101  // Valve Legacy Steam Controller (CHELL)
 #define STEAM_CONTROLLER_WIRED_PID      0x1102  // Valve wired Steam Controller (D0G)
 #define STEAM_CONTROLLER_BT_1_PID       0x1105  // Valve Bluetooth Steam Controller (D0G)
@@ -29,11 +29,11 @@ typedef enum {
 #define STEAM_CONTROLLER_V2_WIRED_PID   0x1201  // Valve wired Steam Controller (HEADCRAB)
 #define STEAM_CONTROLLER_V2_BT_PID      0x1202  // Valve Bluetooth Steam Controller (HEADCRAB)
 
-// Other Steam/Valve product IDs
+// Other Valve product IDs
 #define STEAM_VIRTUAL_GAMEPAD_PID       0x11ff  // Steam Virtual Gamepad
 #define STEAM_DECK_BUILTIN_PID          0x1205  // Valve Steam Deck Builtin
 
-// Helper function to check if a product ID is any Steam Controller variant
+// Check if a product ID is any Steam Controller variant
 static inline int isSteamControllerPID(unsigned short productId) {
 	return (productId == STEAM_CONTROLLER_LEGACY_PID ||
 	        productId == STEAM_CONTROLLER_WIRED_PID ||
@@ -44,25 +44,24 @@ static inline int isSteamControllerPID(unsigned short productId) {
 	        productId == STEAM_CONTROLLER_V2_BT_PID);
 }
 
-// Helper function to handle Steam Virtual Gamepad hybrid approach
-static inline int getSteamVirtualControllerDetection(SDL_GameController* ctrl, int fallbackControllerType) {
+// Steam Virtual Gamepad detection 
+static inline int getSteamVirtualControllerDetection(SDL_GameController* ctrl, int SDLControllerType) {
 	if (!ctrl) {
-		return fallbackControllerType;
+		return SDLControllerType;
 	}
 	
 	SDL_Joystick *joystick = SDL_GameControllerGetJoystick(ctrl);
 	if (!joystick || SDL_JoystickGetVendor(joystick) != VALVE_VENDOR_ID) {
-		return fallbackControllerType;
+		return SDLControllerType;
 	}
 	
 	unsigned short product = SDL_JoystickGetProduct(joystick);
 	
-	// Steam Virtual Gamepad: Use the controller type's default glyphs (hybrid approach)
 	if (product == STEAM_VIRTUAL_GAMEPAD_PID) {
-		return fallbackControllerType;
+		return SDLControllerType;
 	}
 	
-	return fallbackControllerType;
+	return SDLControllerType;
 }
 
 // Generic display names for controller buttons
