@@ -1418,61 +1418,31 @@ const char *inputGetButtonDisplayName(s32 vk)
 		
 		switch (type) {
 			case SDL_CONTROLLER_TYPE_XBOX360:
-				if (ctrl) {
-					SDL_Joystick *joystick = SDL_GameControllerGetJoystick(ctrl);
-					if (joystick && SDL_JoystickGetVendor(joystick) == VALVE_VENDOR_ID) {
-						Uint16 product = SDL_JoystickGetProduct(joystick);
-						if (product == STEAM_VIRTUAL_GAMEPAD_PID) {
-							return glyphGetControllerButtonName(CONTROLLER_ICON_XBOX360, jbtn);
-						}
-					}
+				{
+					int iconType = getSteamVirtualControllerDetection(ctrl, CONTROLLER_ICON_XBOX360);
+					return glyphGetControllerButtonName(iconType, jbtn);
 				}
-				return glyphGetControllerButtonName(CONTROLLER_ICON_XBOX360, jbtn);
 			case SDL_CONTROLLER_TYPE_XBOXONE:
-				if (ctrl) {
-					SDL_Joystick *joystick = SDL_GameControllerGetJoystick(ctrl);
-					if (joystick && SDL_JoystickGetVendor(joystick) == VALVE_VENDOR_ID) {
-						Uint16 product = SDL_JoystickGetProduct(joystick);
-						if (product == STEAM_VIRTUAL_GAMEPAD_PID) {
-							return glyphGetControllerButtonName(CONTROLLER_ICON_XBOXONE, jbtn);
-						}
-					}
+				{
+					int iconType = getSteamVirtualControllerDetection(ctrl, CONTROLLER_ICON_XBOXONE);
+					return glyphGetControllerButtonName(iconType, jbtn);
 				}
-				return glyphGetControllerButtonName(CONTROLLER_ICON_XBOXONE, jbtn);
 			case SDL_CONTROLLER_TYPE_PS3:
-				if (ctrl) {
-					SDL_Joystick *joystick = SDL_GameControllerGetJoystick(ctrl);
-					if (joystick && SDL_JoystickGetVendor(joystick) == VALVE_VENDOR_ID) {
-						Uint16 product = SDL_JoystickGetProduct(joystick);
-						if (product == STEAM_VIRTUAL_GAMEPAD_PID) { 
-							return glyphGetControllerButtonName(CONTROLLER_ICON_PS3, jbtn);
-						}
-					}
+				{
+					int iconType = getSteamVirtualControllerDetection(ctrl, CONTROLLER_ICON_PS3);
+					return glyphGetControllerButtonName(iconType, jbtn);
 				}
-				return glyphGetControllerButtonName(CONTROLLER_ICON_PS3, jbtn);
 			case SDL_CONTROLLER_TYPE_PS4:
-				if (ctrl) {
-					SDL_Joystick *joystick = SDL_GameControllerGetJoystick(ctrl);
-					if (joystick && SDL_JoystickGetVendor(joystick) == VALVE_VENDOR_ID) {
-						Uint16 product = SDL_JoystickGetProduct(joystick);
-						if (product == STEAM_VIRTUAL_GAMEPAD_PID) {
-							return glyphGetControllerButtonName(CONTROLLER_ICON_PS4, jbtn);
-						}
-					}
+				{
+					int iconType = getSteamVirtualControllerDetection(ctrl, CONTROLLER_ICON_PS4);
+					return glyphGetControllerButtonName(iconType, jbtn);
 				}
-				return glyphGetControllerButtonName(CONTROLLER_ICON_PS4, jbtn);
 #if SDL_VERSION_ATLEAST(2, 0, 14)
 			case SDL_CONTROLLER_TYPE_PS5:
-				if (ctrl) {
-					SDL_Joystick *joystick = SDL_GameControllerGetJoystick(ctrl);
-					if (joystick && SDL_JoystickGetVendor(joystick) == VALVE_VENDOR_ID) {
-						Uint16 product = SDL_JoystickGetProduct(joystick);
-						if (product == STEAM_VIRTUAL_GAMEPAD_PID) { 
-							return glyphGetControllerButtonName(CONTROLLER_ICON_PS5, jbtn);
-						}
-					}
+				{
+					int iconType = getSteamVirtualControllerDetection(ctrl, CONTROLLER_ICON_PS5);
+					return glyphGetControllerButtonName(iconType, jbtn);
 				}
-				return glyphGetControllerButtonName(CONTROLLER_ICON_PS5, jbtn);
 #endif
 			case SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_PRO:
 #if SDL_VERSION_ATLEAST(2, 24, 0)
@@ -1486,42 +1456,39 @@ const char *inputGetButtonDisplayName(s32 vk)
 			case SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_JOYCON_PAIR:
 #endif
 #endif
-				if (ctrl) {
-					SDL_Joystick *joystick = SDL_GameControllerGetJoystick(ctrl);
-					if (joystick && SDL_JoystickGetVendor(joystick) == VALVE_VENDOR_ID) {
-						Uint16 product = SDL_JoystickGetProduct(joystick);
-						if (product == STEAM_VIRTUAL_GAMEPAD_PID) {
-							return glyphGetControllerButtonName(CONTROLLER_ICON_NINTENDO_SWITCH, jbtn);
-						}
-					}
+				{
+					int iconType = getSteamVirtualControllerDetection(ctrl, CONTROLLER_ICON_NINTENDO_SWITCH);
+					return glyphGetControllerButtonName(iconType, jbtn);
 				}
-				return glyphGetControllerButtonName(CONTROLLER_ICON_NINTENDO_SWITCH, jbtn);
-			case SDL_CONTROLLER_TYPE_VIRTUAL:
-			case SDL_CONTROLLER_TYPE_UNKNOWN:
-			default:
-                if (ctrl) {
-                    SDL_Joystick *joystick = SDL_GameControllerGetJoystick(ctrl);
-                    if (joystick) {
-                        Uint16 vendor = SDL_JoystickGetVendor(joystick);
-                        if (vendor == VALVE_VENDOR_ID) {  // Valve Corporation
-                            Uint16 product = SDL_JoystickGetProduct(joystick);
-                            
-                            // Steam Virtual Gamepad
-                            if (product == STEAM_VIRTUAL_GAMEPAD_PID) {
-                                return glyphGetControllerButtonName(CONTROLLER_ICON_STEAM_DECK, jbtn);
-                            }
-                            // Steam Controllers
-                            else if (isSteamControllerPID(product)) {
-                                return glyphGetControllerButtonName(CONTROLLER_ICON_STEAM_CONTROLLER, jbtn);
-                            }
-                            // Steam Deck
-                            else if (product == STEAM_DECK_BUILTIN_PID) {
-                                return glyphGetControllerButtonName(CONTROLLER_ICON_STEAM_DECK, jbtn);
+            case SDL_CONTROLLER_TYPE_VIRTUAL:
+            case SDL_CONTROLLER_TYPE_UNKNOWN:
+            default:
+                {
+                    int iconType = CONTROLLER_ICON_GENERIC;
+                    if (ctrl) {
+                        SDL_Joystick *joystick = SDL_GameControllerGetJoystick(ctrl);
+                        if (joystick) {
+                            Uint16 vendor = SDL_JoystickGetVendor(joystick);
+                            if (vendor == VALVE_VENDOR_ID) {
+                                Uint16 product = SDL_JoystickGetProduct(joystick);
+                                
+                                // Steam Virtual Gamepad
+                                if (product == STEAM_VIRTUAL_GAMEPAD_PID) {
+                                    iconType = getSteamVirtualControllerDetection(ctrl, CONTROLLER_ICON_STEAM_DECK);
+                                }
+                                // Steam Controller
+                                else if (isSteamControllerPID(product)) {
+                                    iconType = CONTROLLER_ICON_STEAM_CONTROLLER;
+                                }
+                                // Steam Deck
+                                else if (product == STEAM_DECK_BUILTIN_PID) {
+                                    iconType = CONTROLLER_ICON_STEAM_DECK;
+                                }
                             }
                         }
                     }
+                    return glyphGetControllerButtonName(iconType, jbtn);
                 }
-                break;
 		}
 	}
 	

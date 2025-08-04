@@ -44,6 +44,27 @@ static inline int isSteamControllerPID(unsigned short productId) {
 	        productId == STEAM_CONTROLLER_V2_BT_PID);
 }
 
+// Helper function to handle Steam Virtual Gamepad hybrid approach
+static inline int getSteamVirtualControllerDetection(SDL_GameController* ctrl, int fallbackControllerType) {
+	if (!ctrl) {
+		return fallbackControllerType;
+	}
+	
+	SDL_Joystick *joystick = SDL_GameControllerGetJoystick(ctrl);
+	if (!joystick || SDL_JoystickGetVendor(joystick) != VALVE_VENDOR_ID) {
+		return fallbackControllerType;
+	}
+	
+	unsigned short product = SDL_JoystickGetProduct(joystick);
+	
+	// Steam Virtual Gamepad: Use the controller type's default glyphs (hybrid approach)
+	if (product == STEAM_VIRTUAL_GAMEPAD_PID) {
+		return fallbackControllerType;
+	}
+	
+	return fallbackControllerType;
+}
+
 // Generic display names for controller buttons
 extern const char *vkJoyDisplayNames[];
 
