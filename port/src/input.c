@@ -1480,6 +1480,10 @@ const char *inputGetButtonDisplayName(s32 vk)
                                 else if (isSteamControllerPID(product)) {
                                     iconType = getSteamVirtualControllerDetection(ctrl, CONTROLLER_ICON_STEAM_CONTROLLER);
                                 }
+                                // Steam Virtual Gamepad
+                                else if (product == STEAM_VIRTUAL_GAMEPAD_PID) {
+                                    iconType = getSteamVirtualControllerDetection(ctrl, CONTROLLER_ICON_STEAM_DECK);
+                                }
                             }
                         }
                     }
