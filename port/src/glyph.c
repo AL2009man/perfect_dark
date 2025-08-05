@@ -124,8 +124,8 @@ static const struct button_override ps5_overrides[] = {
 	{ 15, "MIC_BTN" },
 	{ 16, "RB_PADDLE" },          // DualSense Edge RB Button  
 	{ 17, "LB_PADDLE" },          // DualSense Edge LB Button
-	{ 18, "FN_RIGHT_BTN" },       // DualSense Edge right Fn button
-	{ 19, "FN_LEFT_BTN" },        // DualSense Edge left Fn button
+	{ 18, "RIGHT_FN_BTN" },       // DualSense Edge right Fn button
+	{ 19, "LEFT_FN_BTN" },        // DualSense Edge left Fn button
 };
 
 // Nintendo Switch-specific overrides
@@ -136,10 +136,10 @@ static const struct button_override nintendoswitch_overrides[] = {
 	{  9, "L_SHOULDER" },
 	{ 10, "R_SHOULDER" },
 	{ 15, "CAPTURE_BTN" },
-	{ 16, "LEFT_SR_BTN" },    // Left Joy-Con SR
+	{ 16, "RIGHT_SR_BTN" },    // Right Joy-Con SR
 	{ 17, "LEFT_SL_BTN" },    // Left Joy-Con SL
 	{ 18, "RIGHT_SL_BTN" },   // Right Joy-Con SL
-	{ 19, "RIGHT_SR_BTN" },   // Right Joy-Con SR
+	{ 19, "LEFT_SR_BTN" },   // Left Joy-Con SR
 	{ 30, "ZL_TRIG" },
 	{ 31, "ZR_TRIG" },
 };
