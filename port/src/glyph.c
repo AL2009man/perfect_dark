@@ -18,15 +18,15 @@ const char *vkJoyDisplayNames[] = {
 	"D-PAD_DOWN",
 	"D-PAD_LEFT",
 	"D-PAD_RIGHT",
-	"MISC1_BTN",       // Additional button (e.g. Xbox Series X share button, PS5 microphone button, Switch capture button)
-	"RIGHT_PADDLE_1",   // Upper or primary paddle, under your right hand (e.g. Xbox Elite paddle P1)
-	"LEFT_PADDLE_1",    // Upper or primary paddle, under your left hand (e.g. Xbox Elite paddle P3)
-	"RIGHT_PADDLE_2",   // Lower or secondary paddle, under your right hand (e.g. Xbox Elite paddle P2)
-	"LEFT_PADDLE_2",    // Lower or secondary paddle, under your left hand (e.g. Xbox Elite paddle P4)
+	"MISC1_BTN",        // Additional button (e.g. Xbox Series X share button, PS5 microphone button, Switch capture button)
+	"RIGHT_PADDLE_1",   // Upper or primary paddle, under your right hand (e.g. Xbox Elite paddle P1, DualSense Edge RB button, Right Joy-Con SR button)
+	"LEFT_PADDLE_1",    // Upper or primary paddle, under your left hand (e.g. Xbox Elite paddle P3, DualSense Edge LB button, Left Joy-Con SL button)
+	"RIGHT_PADDLE_2",   // Lower or secondary paddle, under your right hand (e.g. Xbox Elite paddle P2, DualSense Edge right Fn button, Right Joy-Con SR button)
+	"LEFT_PADDLE_2",    // Lower or secondary paddle, under your left hand (e.g. Xbox Elite paddle P4, DualSense Edge left Fn button, Left Joy-Con SL button)
 	"TOUCHPAD_BTN",     // PS4/PS5 touchpad button
 	"MISC2_BTN",
-	"MISC3_BTN",
-	"MISC4_BTN",
+	"MISC3_BTN",        // Additional button (e.g. Nintendo GameCube Left Trigger click)
+	"MISC4_BTN",        // Additional button (e.g. Nintendo GameCube Right Trigger click)
 	"MISC5_BTN",
 	"MISC6_BTN",
 	"BTN_26",
@@ -47,24 +47,24 @@ struct button_override {
 
 // Standard button overrides (shared across controllers)
 static const struct button_override glyph_standard[] = {
-	{  0, "A_BTN" },          // Bottom face button (A)
-	{  1, "B_BTN" },          // Right face button (B)
-	{  2, "X_BTN" },          // Left face button (X)
-	{  3, "Y_BTN" },          // Top face button (Y)
+	{  0, "A_BTN" },          // Bottom face button
+	{  1, "B_BTN" },          // Right face button
+	{  2, "X_BTN" },          // Left face button
+	{  3, "Y_BTN" },          // Top face button
 	{  7, "L3_STICK_CLICK" }, // Left stick press (L3)
 	{  8, "R3_STICK_CLICK" }, // Right stick press (R3)
 	{  9, "L1_SHOULDER" },    // Left shoulder (L1)
 	{ 10, "R1_SHOULDER" },    // Right shoulder (R1)
-	{ 15, "M1_BTN" },         // M1 button (MISC 1)
-	{ 16, "L4_BTN" },         // Left paddle (L4)
-	{ 17, "L5_BTN" },         // Left paddle (L5)
-	{ 18, "R4_BTN" },         // Right paddle (R4)
-	{ 19, "R5_BTN" },         // Right paddle (R5)
-	{ 21, "M2_BTN" },         // M2 button (MISC 2)
-	{ 22, "M3_BTN" },         // M3 button (MISC 3)
-	{ 23, "M4_BTN" },         // M4 button (MISC 4)
-	{ 30, "L2_TRIG" },        // Left trigger (L2)
-	{ 31, "R2_TRIG" },        // Right trigger (R2)
+	{ 15, "M1_BTN" },         // M1 button
+	{ 16, "L4_BTN" },         // Upper left paddle (L4)
+	{ 17, "L5_BTN" },         // Below left paddle (L5)
+	{ 18, "R4_BTN" },         // Upper right paddle (R4)
+	{ 19, "R5_BTN" },         // Below right paddle (R5)
+	{ 21, "M2_BTN" },         // M2 button
+	{ 22, "M3_BTN" },         // M3 button
+	{ 23, "M4_BTN" },         // M4 button
+	{ 30, "L2_TRIG" },        // Left trigger
+	{ 31, "R2_TRIG" },        // Right trigger
 };
 
 // Xbox-specific overrides
@@ -122,22 +122,22 @@ static const struct button_override ps5_overrides[] = {
 	{ 15, "MIC_BTN" },
 	{ 16, "RB_PADDLE" },          // DualSense Edge RB Button  
 	{ 17, "LB_PADDLE" },          // DualSense Edge LB Button
-	{ 18, "FN_RIGHT_BTN" },       // DualSense Edge right function button
-	{ 19, "FN_LEFT_BTN" },        // DualSense Edge left function button
+	{ 18, "FN_RIGHT_BTN" },       // DualSense Edge right Fn button
+	{ 19, "FN_LEFT_BTN" },        // DualSense Edge left Fn button
 };
 
 // Nintendo Switch-specific overrides
 static const struct button_override nintendoswitch_override[] = {
-	{ 4, "MINUS_BTN" },
-	{ 5, "HOME_BTN" },
-	{ 6, "PLUS_BTN" },
-	{ 9, "L_SHOULDER" },
+	{  4, "MINUS_BTN" },
+	{  5, "HOME_BTN" },
+	{  6, "PLUS_BTN" },
+	{  9, "L_SHOULDER" },
 	{ 10, "R_SHOULDER" },
-	{ 15, "CAPTURE_BTN" },  
-	{ 16, "SL_BTN" },       // Left Joy-Con SL
-	{ 17, "SR_BTN" },       // Left Joy-Con SR
-	{ 18, "SL_BTN" },       // Right Joy-Con SL
-	{ 19, "SR_BTN" },       // Right Joy-Con SR
+	{ 15, "CAPTURE_BTN" },
+	{ 16, "LEFT_SR_BTN" },    // Left Joy-Con SR
+	{ 17, "LEFT_SL_BTN" },    // Left Joy-Con SL
+	{ 18, "RIGHT_SL_BTN" },   // Right Joy-Con SL
+	{ 19, "RIGHT_SR_BTN" },   // Right Joy-Con SR
 	{ 30, "ZL_TRIG" },
 	{ 31, "ZR_TRIG" },
 };
@@ -152,8 +152,8 @@ static const struct button_override steamdeck_overrides[] = {
 // Steam Controller-specific overrides
 static const struct button_override steamcontroller_overrides[] = {
 	{ 5, "STEAM_BTN" },
-	{ 16, "RG_BTN" }, // Steam Controller left grip
-	{ 17, "LG_BTN" }, // Steam Controller right grip
+	{ 16, "RG_BTN" }, // Steam Controller right grip
+	{ 17, "LG_BTN" }, // Steam Controller left grip
 };
 
 // Nintendo 64-specific overrides (based on NSO N64 controller's button layout)
