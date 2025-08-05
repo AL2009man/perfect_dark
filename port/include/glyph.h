@@ -64,14 +64,17 @@ static inline int getSteamVirtualControllerDetection(SDL_GameController* ctrl, i
 	return SDLControllerType;
 }
 
-// Generic display names for controller buttons
+// Generic button names for glyphs 
+// this will cover generalized button names for glyphs based on SDL_GamepadButton
 extern const char *vkJoyDisplayNames[];
 
-// Function to get controller-specific button name with fallback to generic
+// Controller-specific button glyphs
+// this will grab the button glyphs based on the controller type and button index
 const char *glyphGetControllerButtonName(int controllerType, int buttonIndex);
 
-// Function to replace baked-in button text with dynamic controller bindings
-char* glyphInputBindingDetect(char* text, int textSize, const char* placeholder, 
+// Dynamic glyph input binding detection
+// TODO: replace all baked-in button localization text with a dynamic glyph system
+char* glyphInputBindingDetect(char* text, int textSize, const char* placeholder,
                                        int controllerIndex, int controlKey, int forceController);
 
 #endif

@@ -1,6 +1,8 @@
 #include <PR/ultratypes.h>
 #include "glyph.h"
 
+#define ARRAY_SIZE(arr) (sizeof(arr) / sizeof(arr[0]))
+
 // Generic display names for controller buttons (maps to same indices as vkJoyNames)
 const char *vkJoyDisplayNames[] = {
 	"SOUTH_BTN",        // A button (Bottom face button)
@@ -38,14 +40,14 @@ const char *vkJoyDisplayNames[] = {
 };
 
 // Controller-specific overrides
+// These are used to map specific controller buttons to Controller-specific glyphs
 
-// Common struct type for button overrides
 struct button_override {
 	int button_index;
 	const char *name;
 };
 
-// Standard button overrides (shared across controllers)
+// Standard glyph overrides (shared across controllers)
 static const struct button_override glyph_standard[] = {
 	{  0, "A_BTN" },          // Bottom face button
 	{  1, "B_BTN" },          // Right face button
@@ -68,7 +70,7 @@ static const struct button_override glyph_standard[] = {
 };
 
 // Xbox-specific overrides
-static const struct button_override xbox_specific[] = {
+static const struct button_override xbox_overrides[] = {
 	{ 5,  "XBOX_BTN" },
 	{ 9,  "LB_SHOULDER" },
 	{ 10, "RB_SHOULDER" },
@@ -76,7 +78,7 @@ static const struct button_override xbox_specific[] = {
 	{ 31, "RT_TRIG" },
 };
 
-// Xbox 360 specific button overrides
+// Xbox 360-specific button overrides
 static const struct button_override xbox360_overrides[] = {
 	{ 4, "BACK_BTN" },
 	{ 6, "START_BTN" },
@@ -94,7 +96,7 @@ static const struct button_override xboxone_overrides[] = {
 };
 
 // PlayStation-specific overrides
-static const struct button_override playstation_specific[] = {
+static const struct button_override playstation_overrides[] = {
 	{ 0, "CROSS_BTN" },
 	{ 1, "CIRCLE_BTN" },
 	{ 2, "SQUARE_BTN" },
@@ -127,7 +129,7 @@ static const struct button_override ps5_overrides[] = {
 };
 
 // Nintendo Switch-specific overrides
-static const struct button_override nintendoswitch_override[] = {
+static const struct button_override nintendoswitch_overrides[] = {
 	{  4, "MINUS_BTN" },
 	{  5, "HOME_BTN" },
 	{  6, "PLUS_BTN" },
@@ -168,17 +170,17 @@ static const struct button_override nintendo64_overrides[] = {
 	{ 31, "Z_BTN" },
 };
 
-// Function to search an override for a specific button index
+// Function to override a specific button index
 static const char* searchOverrides(const struct button_override* overrides, int count, int buttonIndex) {
-	for (int i = 0; i < count; i++) {
-		if (overrides[i].button_index == buttonIndex) {
-			return overrides[i].name;
+	for (const struct button_override* override = overrides; override < overrides + count; override++) {
+		if (override->button_index == buttonIndex) {
+			return override->name;
 		}
 	}
 	return NULL;
 }
 
-// Function to get controller-specific button names
+// Function to search and provide Controller-specific button types
 const char *glyphGetControllerButtonName(int controllerType, int buttonIndex)
 {
 	const char *result = NULL;
@@ -186,91 +188,91 @@ const char *glyphGetControllerButtonName(int controllerType, int buttonIndex)
 	switch (controllerType) {
 		case CONTROLLER_ICON_XBOX360:
 			// Xbox 360-specific overrides
-			result = searchOverrides(xbox360_overrides, sizeof(xbox360_overrides) / sizeof(xbox360_overrides[0]), buttonIndex);
+			result = searchOverrides(xbox360_overrides, ARRAY_SIZE(xbox360_overrides), buttonIndex);
 			if (result) return result;
 			// Xbox overrides
-			result = searchOverrides(xbox_specific, sizeof(xbox_specific) / sizeof(xbox_specific[0]), buttonIndex);
+			result = searchOverrides(xbox_overrides, ARRAY_SIZE(xbox_overrides), buttonIndex);
 			if (result) return result;
 			// Glyph standard (Face Button only)
 			if (buttonIndex >= 0 && buttonIndex <= 3) {
-				result = searchOverrides(glyph_standard, sizeof(glyph_standard) / sizeof(glyph_standard[0]), buttonIndex);
+				result = searchOverrides(glyph_standard, ARRAY_SIZE(glyph_standard), buttonIndex);
 				if (result) return result;
 			}
 			break;
 
 		case CONTROLLER_ICON_STEAM_CONTROLLER:
 			// Steam Controller-specific overrides
-			result = searchOverrides(steamcontroller_overrides, sizeof(steamcontroller_overrides) / sizeof(steamcontroller_overrides[0]), buttonIndex);
+			result = searchOverrides(steamcontroller_overrides, ARRAY_SIZE(steamcontroller_overrides), buttonIndex);
 			if (result) return result;
 			// Xbox overrides (Shoulders and triggers)
-			result = searchOverrides(xbox_specific, sizeof(xbox_specific) / sizeof(xbox_specific[0]), buttonIndex);
+			result = searchOverrides(xbox_overrides, ARRAY_SIZE(xbox_overrides), buttonIndex);
 			if (result) return result;
 			// Glyph standard (Face buttons)
 			if (buttonIndex >= 0 && buttonIndex <= 3) {
-				result = searchOverrides(glyph_standard, sizeof(glyph_standard) / sizeof(glyph_standard[0]), buttonIndex);
+				result = searchOverrides(glyph_standard, ARRAY_SIZE(glyph_standard), buttonIndex);
 				if (result) return result;
 			}
 			break;
 			
 		case CONTROLLER_ICON_XBOXONE:
 			// Xbox One/Series X|S-specific overrides
-			result = searchOverrides(xboxone_overrides, sizeof(xboxone_overrides) / sizeof(xboxone_overrides[0]), buttonIndex);
+			result = searchOverrides(xboxone_overrides, ARRAY_SIZE(xboxone_overrides), buttonIndex);
 			if (result) return result;
 			// Xbox overrides
-			result = searchOverrides(xbox_specific, sizeof(xbox_specific) / sizeof(xbox_specific[0]), buttonIndex);
+			result = searchOverrides(xbox_overrides, ARRAY_SIZE(xbox_overrides), buttonIndex);
 			if (result) return result;
 			// Glyph standard (Face Button only)
 			if (buttonIndex >= 0 && buttonIndex <= 3) {
-				result = searchOverrides(glyph_standard, sizeof(glyph_standard) / sizeof(glyph_standard[0]), buttonIndex);
+				result = searchOverrides(glyph_standard, ARRAY_SIZE(glyph_standard), buttonIndex);
 				if (result) return result;
 			}
 			break;
 			
 		case CONTROLLER_ICON_PS3:
 			// PS3-specific overrides
-			result = searchOverrides(ps3_overrides, sizeof(ps3_overrides) / sizeof(ps3_overrides[0]), buttonIndex);
+			result = searchOverrides(ps3_overrides, ARRAY_SIZE(ps3_overrides), buttonIndex);
 			if (result) return result;
 			// PlayStation overrides
-			result = searchOverrides(playstation_specific, sizeof(playstation_specific) / sizeof(playstation_specific[0]), buttonIndex);
+			result = searchOverrides(playstation_overrides, ARRAY_SIZE(playstation_overrides), buttonIndex);
 			if (result) return result;
 			// Glyph standard (Face, Shoulders, Triggers only)
 			if ((buttonIndex >= 0 && buttonIndex <= 10) || (buttonIndex >= 30 && buttonIndex <= 31)) {
-				result = searchOverrides(glyph_standard, sizeof(glyph_standard) / sizeof(glyph_standard[0]), buttonIndex);
+				result = searchOverrides(glyph_standard, ARRAY_SIZE(glyph_standard), buttonIndex);
 				if (result) return result;
 			}
 			break;
 			
 		case CONTROLLER_ICON_PS4:
 			// PS4-specific overrides
-			result = searchOverrides(ps4_overrides, sizeof(ps4_overrides) / sizeof(ps4_overrides[0]), buttonIndex);
+			result = searchOverrides(ps4_overrides, ARRAY_SIZE(ps4_overrides), buttonIndex);
 			if (result) return result;
 			// PlayStation overrides
-			result = searchOverrides(playstation_specific, sizeof(playstation_specific) / sizeof(playstation_specific[0]), buttonIndex);
+			result = searchOverrides(playstation_overrides, ARRAY_SIZE(playstation_overrides), buttonIndex);
 			if (result) return result;
 			// Glyph standard (Face, Shoulders, Triggers only)
 			if ((buttonIndex >= 0 && buttonIndex <= 10) || (buttonIndex >= 30 && buttonIndex <= 31)) {
-				result = searchOverrides(glyph_standard, sizeof(glyph_standard) / sizeof(glyph_standard[0]), buttonIndex);
+				result = searchOverrides(glyph_standard, ARRAY_SIZE(glyph_standard), buttonIndex);
 				if (result) return result;
 			}
 			break;
 			
 		case CONTROLLER_ICON_PS5:
 			// PS5-specific overrides
-			result = searchOverrides(ps5_overrides, sizeof(ps5_overrides) / sizeof(ps5_overrides[0]), buttonIndex);
+			result = searchOverrides(ps5_overrides, ARRAY_SIZE(ps5_overrides), buttonIndex);
 			if (result) return result;
 			// PlayStation overrides
-			result = searchOverrides(playstation_specific, sizeof(playstation_specific) / sizeof(playstation_specific[0]), buttonIndex);
+			result = searchOverrides(playstation_overrides, ARRAY_SIZE(playstation_overrides), buttonIndex);
 			if (result) return result;
 			// Glyph standard (Face, Shoulders, Triggers only)
 			if ((buttonIndex >= 0 && buttonIndex <= 10) || (buttonIndex >= 30 && buttonIndex <= 31)) {
-				result = searchOverrides(glyph_standard, sizeof(glyph_standard) / sizeof(glyph_standard[0]), buttonIndex);
+				result = searchOverrides(glyph_standard, ARRAY_SIZE(glyph_standard), buttonIndex);
 				if (result) return result;
 			}
 			break;
 			
 		case CONTROLLER_ICON_NINTENDO_SWITCH:
 			// Nintendo Switch specific overrides
-			result = searchOverrides(nintendoswitch_override, sizeof(nintendoswitch_override) / sizeof(nintendoswitch_override[0]), buttonIndex);
+			result = searchOverrides(nintendoswitch_overrides, ARRAY_SIZE(nintendoswitch_overrides), buttonIndex);
 			if (result) return result;
 			// Glyph standard (swapped Face Buttons positions)
 			if (buttonIndex >= 0 && buttonIndex <= 3) {
@@ -281,34 +283,34 @@ const char *glyphGetControllerButtonName(int controllerType, int buttonIndex)
 					case 2: mappedIndex = 3; break; // Y (Left face button)
 					case 3: mappedIndex = 2; break; // X (Top face button)
 				}
-				result = searchOverrides(glyph_standard, sizeof(glyph_standard) / sizeof(glyph_standard[0]), mappedIndex);
+				result = searchOverrides(glyph_standard, ARRAY_SIZE(glyph_standard), mappedIndex);
 				if (result) return result;
 			}
 			break;
 
 		case CONTROLLER_ICON_NINTENDO_64:
 			// Nintendo 64-specific overrides
-			result = searchOverrides(nintendo64_overrides, sizeof(nintendo64_overrides) / sizeof(nintendo64_overrides[0]), buttonIndex);
+			result = searchOverrides(nintendo64_overrides, ARRAY_SIZE(nintendo64_overrides), buttonIndex);
 			if (result) return result;
 			// Nintendo Switch specific overrides (for NSO N64 controller's Home and Capture buttons)
 			if (buttonIndex == 5 || buttonIndex == 15) {
-				result = searchOverrides(nintendoswitch_override, sizeof(nintendoswitch_override) / sizeof(nintendoswitch_override[0]), buttonIndex);
+				result = searchOverrides(nintendoswitch_overrides, ARRAY_SIZE(nintendoswitch_overrides), buttonIndex);
 				if (result) return result;
 			}
 			// Glyph standard (N64 face buttons)
 			if (buttonIndex >= 0 && buttonIndex <= 1) {
-				result = searchOverrides(glyph_standard, sizeof(glyph_standard) / sizeof(glyph_standard[0]), buttonIndex);
+				result = searchOverrides(glyph_standard, ARRAY_SIZE(glyph_standard), buttonIndex);
 				if (result) return result;
 			}
 			break;
 
 		case CONTROLLER_ICON_STEAM_DECK:
 			// Steam Deck-specific overrides
-			result = searchOverrides(steamdeck_overrides, sizeof(steamdeck_overrides) / sizeof(steamdeck_overrides[0]), buttonIndex);
+			result = searchOverrides(steamdeck_overrides, ARRAY_SIZE(steamdeck_overrides), buttonIndex);
 			if (result) return result;
 			// Glyph standard
 			if ((buttonIndex >= 0 && buttonIndex <= 19) || (buttonIndex >= 30 && buttonIndex <= 31)) {
-				result = searchOverrides(glyph_standard, sizeof(glyph_standard) / sizeof(glyph_standard[0]), buttonIndex);
+				result = searchOverrides(glyph_standard, ARRAY_SIZE(glyph_standard), buttonIndex);
 				if (result) return result;
 			}
 			break;
