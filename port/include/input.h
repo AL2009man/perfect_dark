@@ -156,6 +156,13 @@ typedef enum {
 	CALIBRATIONMODE_SENSORFUSION = 2
 } CalibrationMode;
 
+enum gyroautocalibration {
+	GYRO_AUTOCALIBRATION_OFF = 0,
+	GYRO_AUTOCALIBRATION_STATIONARY = 1,
+	GYRO_AUTOCALIBRATION_MENU = 2,
+	GYRO_AUTOCALIBRATION_ALWAYS = 3
+};
+
 // returns bitmask of connected controllers or -1 if failed
 s32 inputInit(void);
 

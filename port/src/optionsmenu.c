@@ -877,14 +877,27 @@ static MenuItemHandlerResult menuhandlerGyroDeadzone(s32 operation, struct menui
 
 static MenuItemHandlerResult menuhandlerGyroAutoCalibration(s32 operation, struct menuitem* item, union handlerdata *data)
 {
-		switch (operation) {
-		case MENUOP_GET:
-				return inputGyroGetAutoCalibration(g_ExtMenuPlayer);
-		case MENUOP_SET:
-				inputGyroSetAutoCalibration(g_ExtMenuPlayer, data->checkbox.value);
-				break;
-		}
-		return 0;
+	static const char* opts[] = {
+		"Disabled",
+		"While Stationary",
+		"In Menus Only",
+		"Always"
+	};
+
+	switch (operation) {
+	case MENUOP_GETOPTIONCOUNT:
+		data->dropdown.value = ARRAYCOUNT(opts);
+		break;
+	case MENUOP_GETOPTIONTEXT:
+		return (intptr_t)opts[data->dropdown.value];
+	case MENUOP_SET:
+		inputGyroSetAutoCalibration(g_ExtMenuPlayer, data->dropdown.value);
+		break;
+	case MENUOP_GETSELECTEDINDEX:
+		data->dropdown.value = inputGyroGetAutoCalibration(g_ExtMenuPlayer);
+		break;
+	}
+	return 0;
 }
 
 static const char *menutextGyroManualCalibration(struct menuitem *item)
@@ -999,10 +1012,10 @@ struct menuitem g_ExtendedGyroMenuItems[] = {
 		menuhandlerGyroAxisMode,
 	},
 	{
-		MENUITEMTYPE_CHECKBOX,
+		MENUITEMTYPE_DROPDOWN,
 		0,
 		MENUITEMFLAG_LITERAL_TEXT,
-		(uintptr_t)"Auto-Calibrate Gyro while Stationary",
+		(uintptr_t)"Gyro Auto-Calibration",
 		0,
 		menuhandlerGyroAutoCalibration,
 	},
