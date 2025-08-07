@@ -879,8 +879,8 @@ static MenuItemHandlerResult menuhandlerGyroAutoCalibration(s32 operation, struc
 {
 	static const char* opts[] = {
 		"Disabled",
+		"While In Menus",
 		"While Stationary",
-		"In Menus Only",
 		"Always"
 	};
 
@@ -1014,7 +1014,7 @@ struct menuitem g_ExtendedGyroMenuItems[] = {
 	{
 		MENUITEMTYPE_DROPDOWN,
 		0,
-		MENUITEMFLAG_LITERAL_TEXT,
+		MENUITEMFLAG_LITERAL_TEXT | MENUITEMFLAG_LIST_WIDE,
 		(uintptr_t)"Gyro Auto-Calibration",
 		0,
 		menuhandlerGyroAutoCalibration,
