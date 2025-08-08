@@ -2394,30 +2394,38 @@ void inputGyroSetAutoCalibration(s32 cidx, s32 enabled)
 
 static void inputUpdateGyroManualCalibration(s32 cidx)
 {
-	if (!pads[cidx] || !gpadMotion[cidx]) {
-		gyroCalibState[cidx].manualCalibActive = false;
-		return;
-	}
+    if (!pads[cidx] || !gpadMotion[cidx]) {
+        gyroCalibState[cidx].manualCalibActive = false;
+        return;
+    }
 
-	GyroCalibState *state = &gyroCalibState[cidx];
+    GyroCalibState *state = &gyroCalibState[cidx];
 
-	if (inputIsGyroCalibrationBlocked(cidx)) {
-		if (state->manualCalibActive) {
-			// If manual calibration was active, properly stop it
-			inputGyroManualCalibrationActivation(cidx, false);
-		}
-		state->manualCalibActive = false;
-		return;
-	}
+    if (inputIsGyroCalibrationBlocked(cidx)) {
+        if (state->manualCalibActive) {
+            inputGyroManualCalibrationActivation(cidx, false);
+        }
+        state->manualCalibActive = false;
+        return;
+    }
 
-	int pressed = inputBindPressed(cidx, CK_0100);
-
-	if (pressed && !state->manualCalibActive) {
-		inputGyroManualCalibrationActivation(cidx, true);
-	} else if (!pressed && state->manualCalibActive && 
-	           (SDL_GetTicks() - state->manualCalibStartTime) >= 500) {
-		inputGyroManualCalibrationActivation(cidx, false);
-	}
+    static bool prevPressed[INPUT_MAX_CONTROLLERS] = {false};
+    bool pressed = inputBindPressed(cidx, CK_0100);
+    
+    if (pressed && !prevPressed[cidx]) {
+        if (!state->manualCalibActive) {
+            // Start calibration
+            inputGyroManualCalibrationActivation(cidx, true);
+        }
+    }
+    
+    // Auto-finish after 500ms
+    if (state->manualCalibActive && 
+        (SDL_GetTicks() - state->manualCalibStartTime) >= 500) {
+        inputGyroManualCalibrationActivation(cidx, false);
+    }
+    
+    prevPressed[cidx] = pressed;
 }
 
 static void inputGyroManualCalibrationActivation(s32 cidx, bool start)
@@ -2474,30 +2482,30 @@ void inputGyroSetManualCalibration(s32 cidx)
 
 static void inputConfigureGyroCalibrationMode(s32 cidx)
 {
-	if (!gpadMotion[cidx]) return;
-	
-	// Set calibration mode based on auto-calibration setting
-	if (padsCfg[cidx].gyroAutoCalibration == GYRO_AUTOCALIBRATION_OFF) {
-		// OFF mode: Use same system as MENU mode to preserve calibration state
-		gmhSetCalibrationMode(gpadMotion[cidx], CALIBRATIONMODE_STILLNESS | CALIBRATIONMODE_SENSORFUSION);
-	} else {
-		// All auto-calibration modes use hybrid calibration system
-		gmhSetCalibrationMode(gpadMotion[cidx], CALIBRATIONMODE_STILLNESS | CALIBRATIONMODE_SENSORFUSION);
-		
-		// Reset calibration for STATIONARY and ALWAYS modes, preserve MENU mode state
-		if (padsCfg[cidx].gyroAutoCalibration != GYRO_AUTOCALIBRATION_MENU_ONLY) {
-			gmhResetContinuousCalibration(gpadMotion[cidx]);
-		}
-	}
-	
-	// Pause auto-calibration initially
-	inputGyroAutoCalibrationActivation(cidx, false);
-	
-	// Apply saved calibration offset for MENU and OFF modes
-	if (padsCfg[cidx].gyroAutoCalibration == GYRO_AUTOCALIBRATION_MENU_ONLY || 
-	    padsCfg[cidx].gyroAutoCalibration == GYRO_AUTOCALIBRATION_OFF) {
-		inputApplyGyroManualCalibrationOffset(cidx);
-	}
+    if (!gpadMotion[cidx]) return;
+    
+    // Set calibration mode based on auto-calibration setting
+    if (padsCfg[cidx].gyroAutoCalibration == GYRO_AUTOCALIBRATION_OFF) {
+        // OFF mode: Use same system as MENU mode to preserve calibration state
+        gmhSetCalibrationMode(gpadMotion[cidx], CALIBRATIONMODE_STILLNESS | CALIBRATIONMODE_SENSORFUSION);
+    } else {
+        // All auto-calibration modes use hybrid calibration system
+        gmhSetCalibrationMode(gpadMotion[cidx], CALIBRATIONMODE_STILLNESS | CALIBRATIONMODE_SENSORFUSION);
+        
+        // Reset calibration only for ALWAYS mode, preserve MENU and STATIONARY mode state
+        if (padsCfg[cidx].gyroAutoCalibration == GYRO_AUTOCALIBRATION_ALWAYS) {
+            gmhResetContinuousCalibration(gpadMotion[cidx]);
+        }
+    }
+    
+    // Pause auto-calibration initially
+    inputGyroAutoCalibrationActivation(cidx, false);
+    
+    // Apply saved calibration offset for MENU and OFF modes
+    if (padsCfg[cidx].gyroAutoCalibration == GYRO_AUTOCALIBRATION_MENU_ONLY || 
+        padsCfg[cidx].gyroAutoCalibration == GYRO_AUTOCALIBRATION_OFF) {
+        inputApplyGyroManualCalibrationOffset(cidx);
+    }
 }
 
 // Block gyro calibration if Gyro Calibration UI is active
