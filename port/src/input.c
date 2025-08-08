@@ -2185,14 +2185,14 @@ static bool inputGyroAutoCalibrationModes(s32 cidx)
 	s32 autoCalibMode = padsCfg[cidx].gyroAutoCalibration;
 	
 	switch (autoCalibMode) {
-		case GYRO_AUTOCALIBRATION_OFF:
+		case GYRO_AUTOCALIBRATION_OFF: 
 			return false;
-		case GYRO_AUTOCALIBRATION_STATIONARY:
-			return true;  // Always active when controller is stationary
 		case GYRO_AUTOCALIBRATION_MENU_ONLY:
-			return g_MenuData.isdialogopen;  // Only active when a menu dialog is open
+			return g_MenuData.isdialogopen;
+		case GYRO_AUTOCALIBRATION_STATIONARY:
+			return true;
 		case GYRO_AUTOCALIBRATION_ALWAYS:
-			return true;  // Always active - continuous calibration
+			return true;
 		default:
 			return false;
 	}
@@ -2244,21 +2244,21 @@ static void inputUpdateGyroAutoCalibration(s32 cidx)
 
 	GyroCalibState *state = &gyroCalibState[cidx];
 
-	// Don't interfere with manual calibration, unless it's blocked
+	// Allow Gyro Manual Calibration if MENU_ONLY Auto-Calibration mode is enabled, amongst others
 	if (state->manualCalibActive && !inputIsGyroCalibrationBlocked(cidx)) {
 		return;
 	}
 
 	if (inputIsMenuGyroCalibrationActive(cidx)) {
 		// Pause ALL auto-calibration modes when gyro calibration UI is active
-		// This only applies to ALWAYS, STATIONARY, and MENU_ONLY modes
+		// This prevents conflicts both Auto and Manual calibration during the countdown
 		gmhPauseContinuousCalibration(gpadMotion[cidx]);
 		return;
 	}
 	
 	// Check if auto-calibration should be active based on the current mode and game state
 	if (!inputGyroAutoCalibrationModes(cidx)) {
-		// Auto-calibration is not active in current context, pause but preserve progress
+		// Auto-calibration is not active, pause but preserve progress
 		gmhPauseContinuousCalibration(gpadMotion[cidx]);
 		return;
 	}
@@ -2275,10 +2275,9 @@ static void inputUpdateGyroAutoCalibration(s32 cidx)
 		bool isStable = gmhGetAutoCalibrationIsSteady(gpadMotion[cidx]);
 		
 		if (isStable) {
-			// Controller is stable - start calibration if confidence is low enough
+			// Controller is stable, start calibration if confidence is low enough
 			if (!state->wasStable) {
-				// Just placed down - start calibration after short delay
-				state->lastAutoCalibTime = now - 1000; // 2 second delay (2000ms - 1000ms)
+				state->lastAutoCalibTime = now - 1000; // 1 second delay
 			}
 			
 			// Start calibration every 3 seconds if confidence is low
@@ -2286,9 +2285,8 @@ static void inputUpdateGyroAutoCalibration(s32 cidx)
 				inputGyroAutoCalibrationActivation(cidx, true);
 				state->lastAutoCalibTime = now;
 			}
-			// Note: No confidence completion check - let GamepadMotionHelper handle continuous calibration
 		} else {
-			// Controller moving - pause calibration but preserve progress
+			// Controller moved or moving, pause calibration but preserve progress
 			if (state->wasStable) {
 				gmhPauseContinuousCalibration(gpadMotion[cidx]);
 			}
@@ -2299,10 +2297,10 @@ static void inputUpdateGyroAutoCalibration(s32 cidx)
 		return;
 	}
 
-	// Conservative event-based logic for STATIONARY and MENU modes
+	// Movement-based threshold system for STATIONARY and MENU Auto-calibration modes
+	// This system relies on detecting sustained stillness and motion sensor noise
 	bool isTrulyStable = gmhGetAutoCalibrationIsSteady(gpadMotion[cidx]) && inputIsControllerSensorNoiseThreshold(cidx);
 	
-	// Conservative timing settings for STATIONARY and MENU modes
 	Uint32 initialDelay = 10000; // 10 seconds initial delay
 	Uint32 calibrationInterval = 10000; // 10 seconds between calibration attempts
 	float requiredConfidenceHigh = 0.95f; // High confidence threshold for stable calibration
