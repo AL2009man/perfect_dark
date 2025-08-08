@@ -1787,7 +1787,7 @@ static void applyGyroAxisMapping(s32 cidx, float gyroData[3], float accelData[3]
     }
     case GYRO_PLAYER: {
         float playerX = 0.f, playerY = 0.f;
-        gmhGetPlayerSpaceGyro(gpadMotion[cidx], &playerX, &playerY, 2.0f);
+        gmhGetPlayerSpaceGyro(gpadMotion[cidx], &playerX, &playerY, 1.41f);
         
         *deltaX = -playerY;
         *deltaY = -playerX;
@@ -2384,7 +2384,7 @@ void inputGyroSetAutoCalibration(s32 cidx, s32 enabled)
 	if (wasEnabled != padsCfg[cidx].gyroAutoCalibration) {
 		const char* modeNames[] = {"Disabled", "While Stationary", "In Menus Only", "Always"};
 		const char* modeName = (enabled >= 0 && enabled < 4) ? modeNames[enabled] : "Unknown";
-		sysLogPrintf(LOG_NOTE, "Input: Gyro auto-calibration set to '%s' for Controller %d.", modeName, cidx);
+		sysLogPrintf(LOG_NOTE, "Input: Gyro auto-calibration set to '%s' for %d.", modeName, cidx);
 
 		if (!gpadMotion[cidx]) {
 			inputResetGyroCalibration(cidx);
