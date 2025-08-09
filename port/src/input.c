@@ -2413,7 +2413,7 @@ static void inputGyroManualCalibrationActivation(s32 cidx, bool start)
 	if (!gpadMotion[cidx]) return;
 
 	if (start) {
-		// Start manual calibration - temporarily switch to manual mode
+		// Start manual calibration
 		state->manualCalibActive = true;
 		state->manualCalibStartTime = SDL_GetTicks();
 
@@ -2438,7 +2438,6 @@ static void inputGyroManualCalibrationActivation(s32 cidx, bool start)
 
 		// for ALWAYS mode, let the manual gyro calibration effect persist until auto-calibration takes over
 		if (padsCfg[cidx].gyroAutoCalibration != GYRO_AUTOCALIBRATION_ALWAYS) {
-			// Restore the appropriate calibration mode for current setting (non-ALWAYS modes)
 			inputConfigureGyroCalibrationMode(cidx);
 		}
 		
@@ -2469,12 +2468,11 @@ static void inputConfigureGyroCalibrationMode(s32 cidx)
 	gmhSetCalibrationMode(gpadMotion[cidx], CALIBRATIONMODE_STILLNESS | CALIBRATIONMODE_SENSORFUSION);
 
 	if (padsCfg[cidx].gyroAutoCalibration == GYRO_AUTOCALIBRATION_ALWAYS) {
-		// For ALWAYS mode, only reset if we're not just finishing manual calibration
-		// This preserves the manual calibration effect temporarily
+		// For ALWAYS mode, only reset if we're not just finishing manual gyro calibration
+		// This preserves the manual gyro calibration effect temporarily
 		if (!gyroCalibState[cidx].justFinishedCalibrating) {
 			gmhResetContinuousCalibration(gpadMotion[cidx]);
 		}
-		// Don't pause - let auto-calibration continue/resume
 	} else {
 		inputGyroAutoCalibrationActivation(cidx, false);
 	}
@@ -2498,14 +2496,14 @@ static void inputGyroCalibrationFinished(s32 cidx, bool finished)
 	if (finished) {
 		state->lastCalibrationTime = SDL_GetTicks();
 
-		// Save auto-calibration result for both MENU and OFF modes (they share calibration offset)
+		// Save gyro calibration result for both MENU and OFF modes (they share calibration offset)
 		if (padsCfg[cidx].gyroAutoCalibration == GYRO_AUTOCALIBRATION_MENU_ONLY || 
 		    padsCfg[cidx].gyroAutoCalibration == GYRO_AUTOCALIBRATION_OFF) {
 			gmhGetCalibrationOffset(gpadMotion[cidx], 
 				&state->manualOffsetX,
 				&state->manualOffsetY,
 				&state->manualOffsetZ);
-			state->manualWeight = 100; // High confidence for completed auto-calibration
+			state->manualWeight = 100;
 		}
 	}
 }
