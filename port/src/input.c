@@ -457,8 +457,8 @@ static inline void inputInitController(const s32 cidx, const s32 jidx)
 		char guidStr[1024] = "";
 		SDL_JoystickGUID guid = SDL_JoystickGetGUID(joy);
 		SDL_JoystickGetGUIDString(guid, guidStr, sizeof(guidStr));
-        sysLogPrintf(LOG_NOTE, "input: GUID for controller %d: %s", jidx, guidStr);
-    }
+		sysLogPrintf(LOG_NOTE, "input: GUID for controller %d: %s", jidx, guidStr);
+	}
 
     // Initialize motion sensors
     padsCfg[cidx].gyroSensorActive = 0;
