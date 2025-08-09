@@ -102,9 +102,9 @@ enum contkey {
 	CK_STICK_YPOS,
 	CK_ACCEPT,
 	CK_CANCEL,
-	CK_0040,
-	CK_0080,
-	CK_0100,
+	CK_0040, // Reset Camera/Crosshair action
+	CK_0080, // Gyro Modifier action
+	CK_0100, // Gyro Calibration (Manual) action
 	CK_0200,
 	CK_0400,
 	CK_0800,
@@ -143,18 +143,25 @@ enum gyroaimmode {
 };
 
 typedef enum {
-	GYRO_CALIB_START, // start calibration
-	GYRO_CALIB_FINISH, // finish calibration
-	GYRO_CALIB_RESET, // reset calibration
-	GYRO_CALIB_QUERY, // query calibration status
-	GYRO_CALIB_AUTO // automatic calibration
+	GYRO_CALIB_START, // Start gyro calibration
+	GYRO_CALIB_FINISH, // Finish gyro calibration
+	GYRO_CALIB_RESET, // Reset gyro calibration
+	GYRO_CALIB_QUERY, // Query gyro calibration status
+	GYRO_CALIB_AUTO // Automatic gyro calibration
 } GyroCalibrationOp;
 
 typedef enum {
-	CALIBRATIONMODE_MANUAL = 0,
-	CALIBRATIONMODE_STILLNESS = 1,
-	CALIBRATIONMODE_SENSORFUSION = 2
+	CALIBRATIONMODE_MANUAL = 0, // Manual calibration mode
+	CALIBRATIONMODE_STILLNESS = 1, // Stillness calibration mode
+	CALIBRATIONMODE_SENSORFUSION = 2 // Sensor fusion calibration mode
 } CalibrationMode;
+
+enum gyroautocalibration {
+	GYRO_AUTOCALIBRATION_OFF = 0, // Disables Auto-Calibration
+	GYRO_AUTOCALIBRATION_MENU_ONLY = 1, // Enables Auto-Calibration only when a menu dialog is opened
+	GYRO_AUTOCALIBRATION_STATIONARY = 2, // Enables Auto-Calibration when controller is stationary (when placed on a flat surface)
+	GYRO_AUTOCALIBRATION_ALWAYS = 3 // Always active, calibration continuous.
+};
 
 // returns bitmask of connected controllers or -1 if failed
 s32 inputInit(void);
