@@ -2374,36 +2374,36 @@ void inputGyroSetAutoCalibration(s32 cidx, s32 enabled)
 
 static void inputUpdateGyroManualCalibration(s32 cidx)
 {
-    if (!pads[cidx] || !gpadMotion[cidx]) {
-        gyroCalibState[cidx].manualCalibActive = false;
-        return;
-    }
+	if (!pads[cidx] || !gpadMotion[cidx]) {
+		gyroCalibState[cidx].manualCalibActive = false;
+		return;
+	}
 
-    GyroCalibState *state = &gyroCalibState[cidx];
+	GyroCalibState *state = &gyroCalibState[cidx];
 
-    // Stop calibration if blocked
-    if (inputIsGyroCalibrationBlocked(cidx)) {
-        if (state->manualCalibActive) {
-            inputGyroManualCalibrationActivation(cidx, false);
-        }
-        return;
-    }
+	// Stop calibration if blocked
+	if (inputIsGyroCalibrationBlocked(cidx)) {
+		if (state->manualCalibActive) {
+			inputGyroManualCalibrationActivation(cidx, false);
+		}
+		return;
+	}
 
-    static bool prevPressed[INPUT_MAX_CONTROLLERS] = {false};
-    bool pressed = inputBindPressed(cidx, CK_0100);
-    
-    // Start manual calibration button
-    if (pressed && !prevPressed[cidx] && !state->manualCalibActive) {
-        inputGyroManualCalibrationActivation(cidx, true);
-    }
-    
-    // Auto-finish after 500ms
-    if (state->manualCalibActive && 
-        (SDL_GetTicks() - state->manualCalibStartTime) >= 500) {
-        inputGyroManualCalibrationActivation(cidx, false);
-    }
-    
-    prevPressed[cidx] = pressed;
+	static bool prevPressed[INPUT_MAX_CONTROLLERS] = {false};
+	bool pressed = inputBindPressed(cidx, CK_0100);
+	
+	// Start manual calibration button
+	if (pressed && !prevPressed[cidx] && !state->manualCalibActive) {
+		inputGyroManualCalibrationActivation(cidx, true);
+	}
+	
+	// Auto-finish after 500ms
+	if (state->manualCalibActive && 
+		(SDL_GetTicks() - state->manualCalibStartTime) >= 500) {
+		inputGyroManualCalibrationActivation(cidx, false);
+	}
+	
+	prevPressed[cidx] = pressed;
 }
 
 static void inputGyroManualCalibrationActivation(s32 cidx, bool start)
