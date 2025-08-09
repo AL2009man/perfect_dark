@@ -455,66 +455,37 @@ static inline void inputInitController(const s32 cidx, const s32 jidx)
 		char guidStr[1024] = "";
 		SDL_JoystickGUID guid = SDL_JoystickGetGUID(joy);
 		SDL_JoystickGetGUIDString(guid, guidStr, sizeof(guidStr));
-		sysLogPrintf(LOG_NOTE, "input: GUID for controller %d: %s", jidx, guidStr);
-	}
+        sysLogPrintf(LOG_NOTE, "input: GUID for controller %d: %s", jidx, guidStr);
+    }
 
-padsCfg[cidx].gyroSensorActive = 0;
+    // Initialize motion sensors
+    padsCfg[cidx].gyroSensorActive = 0;
 #if SDL_VERSION_ATLEAST(2, 0, 14)
-int sensorActive = 0;
-
-// Enable both gyro and accelerometer sensors
-const SDL_SensorType sensors[] = { SDL_SENSOR_GYRO, SDL_SENSOR_ACCEL };
-const char* sensorNames[] = { "Gyro", "Accelerometer" };
-
-for (int i = 0; i < 2; ++i) {
-	if (SDL_GameControllerHasSensor(pads[cidx], sensors[i])) {
-		if (SDL_GameControllerSetSensorEnabled(pads[cidx], sensors[i], SDL_TRUE) == 0) {
-			sensorActive = 1;
-			sysLogPrintf(LOG_NOTE, "input: %s sensor enabled for controller %d", sensorNames[i], cidx);
-			
-#if SDL_VERSION_ATLEAST(2, 0, 16)
-			float sensorRate = SDL_GameControllerGetSensorDataRate(pads[cidx], sensors[i]);
-			if (sensorRate > 0.0f) {
-				sysLogPrintf(LOG_NOTE, "input: %s sensor rate: %.1f Hz for controller %d", sensorNames[i], sensorRate, cidx);
-			}
-#endif
-		} else {
-			sysLogPrintf(LOG_WARNING, "input: Failed to enable %s sensor for controller %d", sensorNames[i], cidx);
-		}
-	} else {
-		sysLogPrintf(LOG_NOTE, "input: Controller %d does not support %s sensor", cidx, sensorNames[i]);
-	}
-}
-padsCfg[cidx].gyroSensorActive = sensorActive;
-
-// Initialize GamepadMotion instance for active sensors
-if (sensorActive) {
-	if (!gpadMotion[cidx]) {
-		gpadMotion[cidx] = gmhCreateGamepadMotion();
-		if (gpadMotion[cidx]) {
-			sysLogPrintf(LOG_NOTE, "input: GamepadMotion instance created for controller %d", cidx);
-			
-			inputConfigureGamepadMotionSettings(gpadMotion[cidx]);
-		} else {
-			sysLogPrintf(LOG_WARNING, "input: Failed to create GamepadMotion instance for controller %d", cidx);
-		}
-	} else {
-		// Reset existing instance for reassigned controller
-		gmhResetGamepadMotion(gpadMotion[cidx]);
-		sysLogPrintf(LOG_NOTE, "input: GamepadMotion instance reset for reassigned controller %d", cidx);
-		
-		inputConfigureGamepadMotionSettings(gpadMotion[cidx]);
-	}
-	
-	if (gpadMotion[cidx]) {
-		// Reset motion state on controller reconnection
-		gmhResetMotion(gpadMotion[cidx]);
-		
-		inputConfigureGyroCalibrationMode(cidx);
-		
-		sysLogPrintf(LOG_NOTE, "input: Motion state reset for controller %d reconnection", cidx);
-	}
-}
+    // Try to enable gyro and accelerometer sensors
+    if (SDL_GameControllerHasSensor(pads[cidx], SDL_SENSOR_GYRO) && 
+        SDL_GameControllerHasSensor(pads[cidx], SDL_SENSOR_ACCEL)) {
+        
+        if (SDL_GameControllerSetSensorEnabled(pads[cidx], SDL_SENSOR_GYRO, SDL_TRUE) == 0 &&
+            SDL_GameControllerSetSensorEnabled(pads[cidx], SDL_SENSOR_ACCEL, SDL_TRUE) == 0) {
+            
+            padsCfg[cidx].gyroSensorActive = 1;
+            sysLogPrintf(LOG_NOTE, "input: Motion sensors enabled for controller %d", cidx);
+            
+            // Initialize GamepadMotion instance
+            if (!gpadMotion[cidx]) {
+                gpadMotion[cidx] = gmhCreateGamepadMotion();
+            } else {
+                gmhResetGamepadMotion(gpadMotion[cidx]);
+            }
+            
+            if (gpadMotion[cidx]) {
+                inputConfigureGamepadMotionSettings(gpadMotion[cidx]);
+                gmhResetMotion(gpadMotion[cidx]);
+                inputConfigureGyroCalibrationMode(cidx);
+                sysLogPrintf(LOG_NOTE, "input: GamepadMotion initialized for controller %d", cidx);
+            }
+        }
+    }
 #endif
 }
 
@@ -2380,7 +2351,7 @@ void inputGyroSetAutoCalibration(s32 cidx, s32 enabled)
 	if (wasEnabled != padsCfg[cidx].gyroAutoCalibration) {
 		const char* modeNames[] = {"Disabled", "While Stationary", "In Menus Only", "Always"};
 		const char* modeName = (enabled >= 0 && enabled < 4) ? modeNames[enabled] : "Unknown";
-		sysLogPrintf(LOG_NOTE, "Input: Gyro auto-calibration set to '%s' for %d.", modeName, cidx);
+		sysLogPrintf(LOG_NOTE, "Input: Gyro auto-calibration set to '%s' for controller %d.", modeName, cidx);
 
 		if (!gpadMotion[cidx]) {
 			inputResetGyroCalibration(cidx);
