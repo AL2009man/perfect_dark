@@ -1809,24 +1809,24 @@ void inputGyroGetRawDelta(s32 cidx, s32* dx, s32* dy, s32* dz)
 
 void inputGyroGetScaledDelta(s32 cidx, f32* dx, f32* dy, f32* dz)
 {
-    if (!dx || !dy || !dz) return;
+	if (!dx || !dy || !dz) return;
 
-    f32 gdx = 0.f, gdy = 0.f, gdz = 0.f;
+	f32 gdx = 0.f, gdy = 0.f, gdz = 0.f;
 
-    if (padsCfg[cidx].gyroEnabled) {
-        if (!isnan(gyroDeltaYaw[cidx]) && !isnan(gyroDeltaPitch[cidx]) && !isnan(gyroDeltaRoll[cidx])) {
-            gdx = gyroDeltaYaw[cidx] * padsCfg[cidx].gyroSensX;
-            gdy = gyroDeltaPitch[cidx] * padsCfg[cidx].gyroSensY;
-            gdz = gyroDeltaRoll[cidx] * padsCfg[cidx].gyroSensY;
-        }
-    }
+	if (padsCfg[cidx].gyroEnabled) {
+		if (!isnan(gyroDeltaYaw[cidx]) && !isnan(gyroDeltaPitch[cidx]) && !isnan(gyroDeltaRoll[cidx])) {
+			gdx = gyroDeltaYaw[cidx] * padsCfg[cidx].gyroSensX;
+			gdy = gyroDeltaPitch[cidx] * padsCfg[cidx].gyroSensY;
+			gdz = gyroDeltaRoll[cidx] * padsCfg[cidx].gyroSensY;
+		}
+	}
 
-    *dx = gdx;
-    *dy = gdy;
-    *dz = gdz;
+	*dx = gdx;
+	*dy = gdy;
+	*dz = gdz;
 
-    applyGyroInvert(cidx, dx, dy, false);
-    applyGyroVHMixer(cidx, dx, dy);
+	applyGyroInvert(cidx, dx, dy, false);
+	applyGyroVHMixer(cidx, dx, dy);
 }
 
 void inputGyroGetSpeed(s32 cidx, f32* x, f32* y)
@@ -1843,20 +1843,20 @@ void inputGyroSetSpeed(s32 cidx, f32 x, f32 y)
 
 void inputGyroGetScaledDeltaCrosshair(s32 cidx, f32* dx, f32* dy)
 {
-    f32 gdx = 0.f, gdy = 0.f;
+	f32 gdx = 0.f, gdy = 0.f;
 
-    if (padsCfg[cidx].gyroEnabled) {
-        gdx = gyroDeltaYaw[cidx] * (0.022f / 2.0f) * padsCfg[cidx].gyroAimSensX;
-        gdy = gyroDeltaPitch[cidx] * (0.022f / 2.0f) * padsCfg[cidx].gyroAimSensY;
-    }
+	if (padsCfg[cidx].gyroEnabled) {
+		gdx = gyroDeltaYaw[cidx] * (0.022f / 2.0f) * padsCfg[cidx].gyroAimSensX;
+		gdy = gyroDeltaPitch[cidx] * (0.022f / 2.0f) * padsCfg[cidx].gyroAimSensY;
+	}
 
-    if (dx) *dx = gdx;
-    if (dy) *dy = gdy;
+	if (dx) *dx = gdx;
+	if (dy) *dy = gdy;
 
-    if (dx && dy) {
-        applyGyroInvert(cidx, dx, dy, true);
-        applyGyroVHMixer(cidx, dx, dy);
-    }
+	if (dx && dy) {
+		applyGyroInvert(cidx, dx, dy, true);
+		applyGyroVHMixer(cidx, dx, dy);
+	}
 }
 
 void inputGyroGetAimSpeed(s32 cidx, f32* x, f32* y)
