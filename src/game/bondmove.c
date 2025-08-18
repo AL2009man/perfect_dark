@@ -2546,17 +2546,16 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
             return;
         }
     }
-			// Mouse input is active, apply mouse movement
-			if (allowmcross) {
-				bmoveApplyCrosshairMovement(PLAYER_EXTCFG().mouseaimspeedx, PLAYER_EXTCFG().mouseaimspeedy,
-				                            movedata.freelookdx, movedata.freelookdy);
-				return;
-			}
+        if (allowmcross) {
+            // joystick is inactive, move crosshair using the mouse
+            f32 dx, dy;
+            inputMouseGetScaledDeltaCrosshair(&dx, &dy);
+            const f32 norm = g_Vars.lvupdate60freal;
+            bmoveApplyCrosshairMovement(PLAYER_EXTCFG().mouseaimsensx, PLAYER_EXTCFG().mouseaimsensy, dx, dy);
+            return;
+        }
 #endif
-
-	// Default joystick-based movement if neither mouse nor gyro crosshair movement is active
-	bgunSwivelWithoutDamp((movedata.c1stickxraw * 0.65f) / 80.0f,
-		(movedata.c1stickyraw * 0.65f) / 80.0f);
+		bgunSwivelWithoutDamp((movedata.c1stickxraw * 0.65f) / 80.0f, (movedata.c1stickyraw * 0.65f) / 80.0f);
 	}
 }
 
