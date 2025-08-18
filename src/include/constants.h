@@ -27,6 +27,7 @@
 #define MAX_ROOMPROPLISTCHUNKS 256
 #define MAX_SQUADRONS          16
 #define MAX_TEAMS              8
+#define MAX_EXPLOSIONS_DEFAULT 6
 
 #define NUM_BOTDIFFS          6
 #define NUM_CYCLEABLE_WEAPONS 45
@@ -4749,6 +4750,11 @@ enum weaponnum {
 #define CROUCHMODE_ANALOG 1 // analog crouch like on n64
 #define CROUCHMODE_TOGGLE 2 // press the crouch buttons to toggle stance
 #define CROUCHMODE_TOGGLE_ANALOG (CROUCHMODE_ANALOG | CROUCHMODE_TOGGLE)
+
+#define RESET_CAMERA CK_0040 // reset camera and/or crosshair to default position
+
+#define GYRO_MODIFIER         CK_0080 // press/hold or toggle gyro activation
+#define GYRO_CALIBRATION      CK_0100 // calibrate gyro manually
 
 #define CROSSHAIR_HEALTH_OFF 0
 #define CROSSHAIR_HEALTH_ON_GREEN 1
