@@ -438,7 +438,8 @@ void bmoveUpdateSpeedThetaControl(f32 value)
 
 /**
  * Apply camera/freelook movement with scaling
- * Supports both delta-based (analog stick) and angle-based (mouse/gyro/flick stick) modes
+ * Supports both delta-based (analog stick) and angle-based (mouse/flick stick) modes
+ * TODO: Add gyro support when available
  */
 static void bmoveApplyCameraMovement(struct movedata *data, f32 mlookscale, f32 *pitchValue, f32 *turnValue)
 {
@@ -460,14 +461,17 @@ static void bmoveApplyCameraMovement(struct movedata *data, f32 mlookscale, f32 
             if (hasMouseInput) {
                 f32 mouseSensX, mouseSensY;
                 inputMouseGetSpeed(&mouseSensX, &mouseSensY);
-                g_Vars.currentplayer->vv_theta += data->freelookdx * 0.011f * mouseSensX;
-            } else if (hasGyroInput) {
-                // TODO: Gyro-specific scaling system
-                g_Vars.currentplayer->vv_theta += data->freelookdx * 1.0f;
-            } else if (hasFlickStick) {
+                g_Vars.currentplayer->vv_theta += data->freelookdx * 0.022f * mouseSensX;
+            }
+            if (hasGyroInput) {
+                // TODO: Add gyro input handling when available
+                // g_Vars.currentplayer->vv_theta += data->gyrolookdx;
+            }
+            if (hasFlickStick) {
                 // TODO: Flick stick direct angle setting
                 g_Vars.currentplayer->vv_theta = data->freelookdx;
-            } else if (hasMouselikeJoystick) {
+            }
+            if (hasMouselikeJoystick) {
                 // TODO: Mouse-like joystick scaling system
                 g_Vars.currentplayer->vv_theta += data->freelookdx * 0.01f;
             }
@@ -487,16 +491,19 @@ static void bmoveApplyCameraMovement(struct movedata *data, f32 mlookscale, f32 
                 // Mouse-specific scaling: id Tech/Quake style, adjusted for Perfect Dark's coordinate system
                 f32 mouseSensX, mouseSensY;
                 inputMouseGetSpeed(&mouseSensX, &mouseSensY);
-                g_Vars.currentplayer->vv_verta -= data->freelookdy * 0.011f * mouseSensY;
-            } else if (hasGyroInput) {
-                // TODO: Gyro-specific scaling system
-                g_Vars.currentplayer->vv_verta -= data->freelookdy * 1.0f;
-            } else if (hasFlickStick) {
+                g_Vars.currentplayer->vv_verta -= data->freelookdy * 0.022f * mouseSensY;
+            }
+            if (hasGyroInput) {
+                // TODO: Add gyro input handling when available
+                // g_Vars.currentplayer->vv_verta -= data->gyrolookdy;
+            }
+            if (hasFlickStick) {
                 // Flick stick typically doesn't affect pitch - use traditional delta-based for pitch
                 if (pitchValue) {
                     *pitchValue += data->freelookdy * mlookscale;
                 }
-            } else if (hasMouselikeJoystick) {
+            }
+            if (hasMouselikeJoystick) {
                 // TODO: Mouse-like joystick scaling system (different from mouse)
                 g_Vars.currentplayer->vv_verta -= data->freelookdy * 0.01f;
             }
@@ -2167,8 +2174,15 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 					fVar25 *= -fVar25;
 				}
 
-				// Apply centralized camera movement (handles both angle-based and delta-based)
-				bmoveApplyCameraMovement(&movedata, mlookscale, &fVar25, NULL);
+#ifndef PLATFORM_N64
+				// Handle mouse input directly via centralized system (not analog stick)
+				if (movedata.freelookdy != 0.0f) {
+					// Use temporary movedata for centralized camera movement (mouse only)
+					struct movedata tempMoveData = {0};
+					tempMoveData.freelookdy = movedata.freelookdy;
+					bmoveApplyCameraMovement(&tempMoveData, mlookscale, NULL, NULL);
+				}
+#endif
 
 				g_Vars.currentplayer->speedverta = -fVar25 * tmp;
 			} else if (movedata.speedvertadown > 0) {
@@ -2207,8 +2221,15 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 			fVar25 *= -fVar25;
 		}
 
-		// Apply centralized camera movement (handles both angle-based and delta-based)
-		bmoveApplyCameraMovement(&movedata, mlookscale, NULL, &fVar25);
+#ifndef PLATFORM_N64
+	// Handle mouse input directly via centralized system (not analog stick)
+	if (movedata.freelookdx != 0.0f) {
+		// Use temporary movedata for centralized camera movement (mouse only)
+		struct movedata tempMoveData = {0};
+		tempMoveData.freelookdx = movedata.freelookdx;
+		bmoveApplyCameraMovement(&tempMoveData, mlookscale, NULL, NULL);
+	}
+#endif
 
 		g_Vars.currentplayer->speedthetacontrol = fVar25 * tmp;
 	} else if (movedata.aimturnleftspeed > 0) {
