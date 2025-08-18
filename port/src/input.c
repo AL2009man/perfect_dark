@@ -14,6 +14,7 @@
 #include "utils.h"
 #include "system.h"
 #include "fs.h"
+#include "data.h"
 #include "game/menu.h"
 #include "bss.h"
 
@@ -1643,6 +1644,29 @@ void inputMouseSetSpeed(f32 x, f32 y)
 {
 	mouseSensX = x;
 	mouseSensY = y;
+}
+
+void inputMouseGetScaledDeltaCrosshair(f32* dx, f32* dy)
+{
+	f32 mdx = 0.f, mdy = 0.f;
+	if (mouseLocked) {
+		mdx = mouseDX * (0.022f / 20.0f) * g_PlayerExtCfg[0].mouseaimsensx;
+		mdy = mouseDY * (0.022f / 20.0f) * g_PlayerExtCfg[0].mouseaimsensy;
+	}
+	if (dx) *dx = mdx;
+	if (dy) *dy = mdy;
+}
+
+void inputMouseGetAimSpeed(f32* x, f32* y)
+{
+	if (x) *x = g_PlayerExtCfg[0].mouseaimsensx;
+	if (y) *y = g_PlayerExtCfg[0].mouseaimsensy;
+}
+
+void inputMouseSetAimSpeed(f32 x, f32 y)
+{
+	g_PlayerExtCfg[0].mouseaimsensx = x;
+	g_PlayerExtCfg[0].mouseaimsensy = y;
 }
 
 s32 inputMouseIsEnabled(void)
