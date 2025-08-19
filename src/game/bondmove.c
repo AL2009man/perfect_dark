@@ -2325,15 +2325,28 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 			x = g_Vars.currentplayer->speedtheta * 0.3f + g_Vars.currentplayer->gunextraaimx;
 			y = -g_Vars.currentplayer->speedverta * 0.1f + g_Vars.currentplayer->gunextraaimy;
 #else
-			f32 xscale, yscale;
-			if (movedata.freelookdx || movedata.freelookdy) {
-				xscale = PLAYER_EXTCFG().crosshairsway * 0.20f;
-				yscale = PLAYER_EXTCFG().crosshairsway * 0.30f;
-			} else {
-				xscale = yscale = PLAYER_EXTCFG().crosshairsway;
+			{
+				float xscale, yscale;
+				float effective_speedtheta, effective_speedverta;
+				float fov_factor;
+				
+				if (movedata.freelookdx || movedata.freelookdy) {
+					fov_factor = viGetFovY() / PLAYER_DEFAULT_FOV;
+					effective_speedtheta = g_Vars.currentplayer->speedtheta + (movedata.freelookdx * mlookscale * fov_factor);
+					effective_speedverta = g_Vars.currentplayer->speedverta - (movedata.freelookdy * mlookscale * fov_factor);
+					// Use more balanced scaling for diagonal movement
+					xscale = PLAYER_EXTCFG().crosshairsway * 0.25f;
+					yscale = PLAYER_EXTCFG().crosshairsway * 0.25f;
+				} else {
+					// Analog stick: use existing speed values
+					effective_speedtheta = g_Vars.currentplayer->speedtheta;
+					effective_speedverta = g_Vars.currentplayer->speedverta;
+					xscale = yscale = PLAYER_EXTCFG().crosshairsway;
+				}
+				
+				x = effective_speedtheta * 0.3f * xscale + g_Vars.currentplayer->gunextraaimx;
+				y = -effective_speedverta * 0.1f * yscale + g_Vars.currentplayer->gunextraaimy;
 			}
-			x = g_Vars.currentplayer->speedtheta * 0.3f * xscale + g_Vars.currentplayer->gunextraaimx;
-			y = -g_Vars.currentplayer->speedverta * 0.1f * yscale + g_Vars.currentplayer->gunextraaimy;
 #endif
 
 			bgunSwivelWithDamp(x, y, PAL ? 0.955f : 0.963f);
