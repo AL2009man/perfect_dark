@@ -437,111 +437,68 @@ void bmoveUpdateSpeedThetaControl(f32 value)
 }
 
 /**
- * Apply camera/freelook movement with scaling
- * Supports both delta-based (analog stick) and angle-based (mouse/flick stick) modes
- * TODO: Add gyro support when available
+ * Apply camera movement with scaling based on input type
+ * Supports angle-based movement (mouse) and delta-based movement (analog stick)
  */
 static void bmoveApplyCameraMovement(struct movedata *data, f32 mlookscale, f32 *pitchValue, f32 *turnValue)
 {
 #ifndef PLATFORM_N64
-    // Determine input method and camera mode
-    bool hasMouseInput = (data->freelookdx != 0.0f || data->freelookdy != 0.0f);
-    bool hasGyroInput = false; // TODO: Add gyro detection when available
-    bool hasFlickStick = false; // TODO: Add flick stick detection when available
-    bool hasMouselikeJoystick = false; // TODO: Add mouse-like joystick detection when available
-    
-    // Use angle-based camera for modern input methods
-    bool useAngleBasedCamera = hasMouseInput || hasGyroInput || hasFlickStick || hasMouselikeJoystick;
-    
-    if (useAngleBasedCamera) {
-        // Angle-based camera movement for modern input methods
-        
-        // Apply horizontal movement (yaw/turn)
-        if (data->freelookdx != 0.0f) {
-            if (hasMouseInput) {
-                f32 mouseSensX, mouseSensY;
-                inputMouseGetSpeed(&mouseSensX, &mouseSensY);
-                g_Vars.currentplayer->vv_theta += data->freelookdx * 0.022f * mouseSensX;
-            }
-            if (hasGyroInput) {
-                // TODO: Add gyro input handling when available
-                // g_Vars.currentplayer->vv_theta += data->gyrolookdx;
-            }
-            if (hasFlickStick) {
-                // TODO: Flick stick direct angle setting
-                g_Vars.currentplayer->vv_theta = data->freelookdx;
-            }
-            if (hasMouselikeJoystick) {
-                // TODO: Mouse-like joystick scaling system
-                g_Vars.currentplayer->vv_theta += data->freelookdx * 0.01f;
-            }
-            
-            // Handle theta wrapping (0-360 degrees)
-            while (g_Vars.currentplayer->vv_theta < 0) {
-                g_Vars.currentplayer->vv_theta += 360.0f;
-            }
-            while (g_Vars.currentplayer->vv_theta >= 360.0f) {
-                g_Vars.currentplayer->vv_theta -= 360.0f;
-            }
-        }
-        
-        // Apply vertical movement (pitch)
-        if (data->freelookdy != 0.0f) {
-            if (hasMouseInput) {
-                // Mouse-specific scaling: id Tech/Quake style, adjusted for Perfect Dark's coordinate system
-                f32 mouseSensX, mouseSensY;
-                inputMouseGetSpeed(&mouseSensX, &mouseSensY);
-                g_Vars.currentplayer->vv_verta -= data->freelookdy * 0.022f * mouseSensY;
-            }
-            if (hasGyroInput) {
-                // TODO: Add gyro input handling when available
-                // g_Vars.currentplayer->vv_verta -= data->gyrolookdy;
-            }
-            if (hasFlickStick) {
-                // Flick stick typically doesn't affect pitch - use traditional delta-based for pitch
-                if (pitchValue) {
-                    *pitchValue += data->freelookdy * mlookscale;
-                }
-            }
-            if (hasMouselikeJoystick) {
-                // TODO: Mouse-like joystick scaling system (different from mouse)
-                g_Vars.currentplayer->vv_verta -= data->freelookdy * 0.01f;
-            }
-            
-            // Clamp pitch to prevent over-rotation (only for angle-based pitch)
-            if (!hasFlickStick) {
-                if (g_Vars.currentplayer->vv_verta > 90.0f) {
-                    g_Vars.currentplayer->vv_verta = 90.0f;
-                } else if (g_Vars.currentplayer->vv_verta < -90.0f) {
-                    g_Vars.currentplayer->vv_verta = -90.0f;
-                }
-            }
-        }
-    } else {
-        // Delta-based camera movement for traditional analog stick input (backwards compatibility)
-        if (turnValue && data->freelookdx != 0.0f) {
-            f32 mouseSensX, mouseSensY;
-            inputMouseGetSpeed(&mouseSensX, &mouseSensY);
-            *turnValue += data->freelookdx * mouseSensX * mlookscale;
-        }
-        if (pitchValue && data->freelookdy != 0.0f) {
-            f32 mouseSensX, mouseSensY;
-            inputMouseGetSpeed(&mouseSensX, &mouseSensY);
-            *pitchValue += data->freelookdy * mouseSensY * mlookscale;
-        }
-    }
+	// Check for input types
+	bool mouseActive = (data->freelookdx != 0.0f || data->freelookdy != 0.0f);
+	
+	// Use angle-based camera system for mouse
+	if (mouseActive) {
+		f32 mouseSensX, mouseSensY;
+		inputMouseGetSpeed(&mouseSensX, &mouseSensY);
+		
+		// horizontal movement
+		if (data->freelookdx != 0.0f) {
+			// Mouse scaling is derived from id Tech 2/Quake Engine's mouse multiplier (0.022)
+			g_Vars.currentplayer->vv_theta += data->freelookdx * 0.022f * mouseSensX;
+			
+			// Normalize theta to 0-360 degrees
+			while (g_Vars.currentplayer->vv_theta < 0) {
+				g_Vars.currentplayer->vv_theta += 360.0f;
+			}
+			while (g_Vars.currentplayer->vv_theta >= 360.0f) {
+				g_Vars.currentplayer->vv_theta -= 360.0f;
+			}
+		}
+
+		// vertical movement
+		if (data->freelookdy != 0.0f) {
+			g_Vars.currentplayer->vv_verta -= data->freelookdy * 0.022f * mouseSensY;
+			
+			// Clamp pitch to prevent over-rotation
+			if (g_Vars.currentplayer->vv_verta > 90.0f) {
+				g_Vars.currentplayer->vv_verta = 90.0f;
+			} else if (g_Vars.currentplayer->vv_verta < -90.0f) {
+				g_Vars.currentplayer->vv_verta = -90.0f;
+			}
+		}
+	} else {
+		// Delta-based movement (analog stick)
+		f32 mouseSensX, mouseSensY;
+		inputMouseGetSpeed(&mouseSensX, &mouseSensY);
+		
+		if (turnValue && data->freelookdx != 0.0f) {
+			*turnValue += data->freelookdx * mouseSensX * mlookscale;
+		}
+		if (pitchValue && data->freelookdy != 0.0f) {
+			*pitchValue += data->freelookdy * mouseSensY * mlookscale;
+		}
+	}
 #else
-    // N64 platform - only delta-based movement
-    if (turnValue && data->freelookdx != 0.0f) {
-        f32 mouseSensX, mouseSensY;
-        inputMouseGetSpeed(&mouseSensX, &mouseSensY);
-        *turnValue += data->freelookdx * mouseSensX * mlookscale;
-    }
-    if (pitchValue && data->freelookdy != 0.0f) {
-        f32 mouseSensX, mouseSensY;
-        inputMouseGetSpeed(&mouseSensX, &mouseSensY);
-        *pitchValue += data->freelookdy * mouseSensY * mlookscale;
-    }
+	// N64 platform - only delta-based movement (analog stick)
+	f32 mouseSensX, mouseSensY;
+	inputMouseGetSpeed(&mouseSensX, &mouseSensY);
+	
+	if (turnValue && data->freelookdx != 0.0f) {
+		*turnValue += data->freelookdx * mouseSensX * mlookscale;
+	}
+	if (pitchValue && data->freelookdy != 0.0f) {
+		*pitchValue += data->freelookdy * mouseSensY * mlookscale;
+	}
 #endif
 }
 
