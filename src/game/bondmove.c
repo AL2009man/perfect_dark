@@ -2283,21 +2283,33 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 			y = -g_Vars.currentplayer->speedverta * 0.1f + g_Vars.currentplayer->gunextraaimy;
 #else
 			{
-				float xscale, yscale;
-				float effective_speedtheta, effective_speedverta;
-				float fov_factor;
+				f32 inputSensX, inputSensY;
+				f32 xscale, yscale;
+				f32 effective_speedtheta, effective_speedverta;
+				bool hasPrecisionInputX, hasPrecisionInputY;
+				bool hasAnalogInput;
 				
-				if (movedata.freelookdx || movedata.freelookdy) {
-					fov_factor = viGetFovY() / PLAYER_DEFAULT_FOV;
-					effective_speedtheta = g_Vars.currentplayer->speedtheta + (movedata.freelookdx * mlookscale * fov_factor);
-					effective_speedverta = g_Vars.currentplayer->speedverta - (movedata.freelookdy * mlookscale * fov_factor);
-					// Use more balanced scaling for diagonal movement
-					xscale = PLAYER_EXTCFG().crosshairsway * 0.25f;
-					yscale = PLAYER_EXTCFG().crosshairsway * 0.25f;
+				inputMouseGetSpeed(&inputSensX, &inputSensY);
+				hasPrecisionInputX = (movedata.freelookdx != 0.0f && inputSensX > 0.0f);
+				hasPrecisionInputY = (movedata.freelookdy != 0.0f && inputSensY > 0.0f);
+				hasAnalogInput = (movedata.analogturn != 0 || movedata.analogpitch != 0);
+				
+				if (hasPrecisionInputX || hasPrecisionInputY) {
+					f32 fov_factor = viGetFovY() / PLAYER_DEFAULT_FOV;
+					
+					effective_speedtheta = hasPrecisionInputX ? 
+						g_Vars.currentplayer->speedtheta + (movedata.freelookdx * mlookscale * fov_factor) :
+						(hasAnalogInput ? g_Vars.currentplayer->speedtheta : 0.0f);
+					
+					effective_speedverta = hasPrecisionInputY ?
+						g_Vars.currentplayer->speedverta - (movedata.freelookdy * mlookscale * fov_factor) :
+						(hasAnalogInput ? g_Vars.currentplayer->speedverta : 0.0f);
+					
+					xscale = hasPrecisionInputX ? PLAYER_EXTCFG().crosshairsway * 0.20f : PLAYER_EXTCFG().crosshairsway;
+					yscale = hasPrecisionInputY ? PLAYER_EXTCFG().crosshairsway * 0.30f : PLAYER_EXTCFG().crosshairsway;
 				} else {
-					// Analog stick: use existing speed values
-					effective_speedtheta = g_Vars.currentplayer->speedtheta;
-					effective_speedverta = g_Vars.currentplayer->speedverta;
+					effective_speedtheta = hasAnalogInput ? g_Vars.currentplayer->speedtheta : 0.0f;
+					effective_speedverta = hasAnalogInput ? g_Vars.currentplayer->speedverta : 0.0f;
 					xscale = yscale = PLAYER_EXTCFG().crosshairsway;
 				}
 				
