@@ -507,40 +507,45 @@ static void bmoveApplyCameraMovement(struct movedata *data, f32 mlookscale, f32 
  */
 static void bmoveApplyCrosshairSwivel(struct movedata *movedata, f32 mlookscale, f32 *x, f32 *y)
 {
-	f32 inputSensX, inputSensY;
+	f32 mouseSwivelX, mouseSwivelY;
 	f32 xscale, yscale;
 	f32 effective_speedtheta, effective_speedverta;
-	bool hasPrecisionInputX, hasPrecisionInputY;
-	bool hasAnalogInput;
+	f32 fov_factor;
+
+	// Get input sensitivity for proper detection
+	inputMouseGetSpeed(&mouseSwivelX, &mouseSwivelY);
+
+	// Crosshair sway scaling for mouse and classic joystick input
+	int mouse_active = (movedata->freelookdx && mouseSwivelX > 0.0f) || (movedata->freelookdy && mouseSwivelY > 0.0f);
+	int joystick_active = (movedata->c1stickxraw != 0 || movedata->c1stickyraw != 0);
 	
-	/* Get input sensitivity and check for effective input */
-	inputMouseGetSpeed(&inputSensX, &inputSensY);
-	hasPrecisionInputX = (movedata->freelookdx != 0.0f && inputSensX > 0.0f);
-	hasPrecisionInputY = (movedata->freelookdy != 0.0f && inputSensY > 0.0f);
-	hasAnalogInput = (movedata->analogturn != 0 || movedata->analogpitch != 0);
-	
-	/* Calculate effective speeds and scales */
-	if (hasPrecisionInputX || hasPrecisionInputY) {
-		/* Precision input active - calculate FOV factor once */
-		f32 fov_factor = viGetFovY() / PLAYER_DEFAULT_FOV;
-		
-		effective_speedtheta = hasPrecisionInputX ? 
-			g_Vars.currentplayer->speedtheta + (movedata->freelookdx * mlookscale * fov_factor) :
-			(hasAnalogInput ? g_Vars.currentplayer->speedtheta : 0.0f);
-		
-		effective_speedverta = hasPrecisionInputY ?
-			g_Vars.currentplayer->speedverta - (movedata->freelookdy * mlookscale * fov_factor) :
-			(hasAnalogInput ? g_Vars.currentplayer->speedverta : 0.0f);
-		
-		xscale = hasPrecisionInputX ? PLAYER_EXTCFG().crosshairsway * 0.25f : PLAYER_EXTCFG().crosshairsway;
-		yscale = hasPrecisionInputY ? PLAYER_EXTCFG().crosshairsway * 0.30f : PLAYER_EXTCFG().crosshairsway;
+	if (mouse_active && joystick_active) {
+		// Mouse + joystick sway
+		xscale = PLAYER_EXTCFG().crosshairsway * 0.80f;  // 80% for precision+joystick sway
+		yscale = PLAYER_EXTCFG().crosshairsway * 0.80f;  // 80% for precision+joystick sway
+	} else if (mouse_active) {
+		// Mouse sway
+		xscale = PLAYER_EXTCFG().crosshairsway * 0.30f;  // 30% for mouse sway
+		yscale = PLAYER_EXTCFG().crosshairsway * 0.20f;  // 20% for mouse sway
 	} else {
-		/* Analog only or no input */
-		effective_speedtheta = hasAnalogInput ? g_Vars.currentplayer->speedtheta : 0.0f;
-		effective_speedverta = hasAnalogInput ? g_Vars.currentplayer->speedverta : 0.0f;
+		// Joystick only or no input - full sway
 		xscale = yscale = PLAYER_EXTCFG().crosshairsway;
 	}
-	
+
+	// Calculate effective speed values including mouse input
+	if (mouse_active) {
+		fov_factor = viGetFovY() / PLAYER_DEFAULT_FOV;
+		effective_speedtheta = g_Vars.currentplayer->speedtheta + 
+			(movedata->freelookdx && mouseSwivelX > 0.0f ? movedata->freelookdx * mlookscale * fov_factor : 0.0f);
+		effective_speedverta = g_Vars.currentplayer->speedverta - 
+			(movedata->freelookdy && mouseSwivelY > 0.0f ? movedata->freelookdy * mlookscale * fov_factor : 0.0f);
+	} else {
+		// Analog stick only: use existing speed values
+		effective_speedtheta = g_Vars.currentplayer->speedtheta;
+		effective_speedverta = g_Vars.currentplayer->speedverta;
+	}
+
+	// Joystick x/y scaling
 	*x = effective_speedtheta * 0.3f * xscale + g_Vars.currentplayer->gunextraaimx;
 	*y = -effective_speedverta * 0.1f * yscale + g_Vars.currentplayer->gunextraaimy;
 }
