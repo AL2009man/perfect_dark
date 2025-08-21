@@ -503,6 +503,49 @@ static void bmoveApplyCameraMovement(struct movedata *data, f32 mlookscale, f32 
 }
 
 /**
+ * Apply crosshair swivel based on camera movement with precision input detection
+ */
+static void bmoveApplyCrosshairSwivel(struct movedata *movedata, f32 mlookscale, f32 *x, f32 *y)
+{
+	f32 inputSensX, inputSensY;
+	f32 xscale, yscale;
+	f32 effective_speedtheta, effective_speedverta;
+	bool hasPrecisionInputX, hasPrecisionInputY;
+	bool hasAnalogInput;
+	
+	/* Get input sensitivity and check for effective input */
+	inputMouseGetSpeed(&inputSensX, &inputSensY);
+	hasPrecisionInputX = (movedata->freelookdx != 0.0f && inputSensX > 0.0f);
+	hasPrecisionInputY = (movedata->freelookdy != 0.0f && inputSensY > 0.0f);
+	hasAnalogInput = (movedata->analogturn != 0 || movedata->analogpitch != 0);
+	
+	/* Calculate effective speeds and scales */
+	if (hasPrecisionInputX || hasPrecisionInputY) {
+		/* Precision input active - calculate FOV factor once */
+		f32 fov_factor = viGetFovY() / PLAYER_DEFAULT_FOV;
+		
+		effective_speedtheta = hasPrecisionInputX ? 
+			g_Vars.currentplayer->speedtheta + (movedata->freelookdx * mlookscale * fov_factor) :
+			(hasAnalogInput ? g_Vars.currentplayer->speedtheta : 0.0f);
+		
+		effective_speedverta = hasPrecisionInputY ?
+			g_Vars.currentplayer->speedverta - (movedata->freelookdy * mlookscale * fov_factor) :
+			(hasAnalogInput ? g_Vars.currentplayer->speedverta : 0.0f);
+		
+		xscale = hasPrecisionInputX ? PLAYER_EXTCFG().crosshairsway * 0.25f : PLAYER_EXTCFG().crosshairsway;
+		yscale = hasPrecisionInputY ? PLAYER_EXTCFG().crosshairsway * 0.30f : PLAYER_EXTCFG().crosshairsway;
+	} else {
+		/* Analog only or no input */
+		effective_speedtheta = hasAnalogInput ? g_Vars.currentplayer->speedtheta : 0.0f;
+		effective_speedverta = hasAnalogInput ? g_Vars.currentplayer->speedverta : 0.0f;
+		xscale = yscale = PLAYER_EXTCFG().crosshairsway;
+	}
+	
+	*x = effective_speedtheta * 0.3f * xscale + g_Vars.currentplayer->gunextraaimx;
+	*y = -effective_speedverta * 0.1f * yscale + g_Vars.currentplayer->gunextraaimy;
+}
+
+/**
  * Apply crosshair movement with scaling and clamping
  */
 static void bmoveApplyCrosshairMovement(f32 aimspeedx, f32 aimspeedy, f32 dx, f32 dy)
@@ -2282,40 +2325,8 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 			x = g_Vars.currentplayer->speedtheta * 0.3f + g_Vars.currentplayer->gunextraaimx;
 			y = -g_Vars.currentplayer->speedverta * 0.1f + g_Vars.currentplayer->gunextraaimy;
 #else
-			{
-				f32 inputSensX, inputSensY;
-				f32 xscale, yscale;
-				f32 effective_speedtheta, effective_speedverta;
-				bool hasPrecisionInputX, hasPrecisionInputY;
-				bool hasAnalogInput;
-				
-				inputMouseGetSpeed(&inputSensX, &inputSensY);
-				hasPrecisionInputX = (movedata.freelookdx != 0.0f && inputSensX > 0.0f);
-				hasPrecisionInputY = (movedata.freelookdy != 0.0f && inputSensY > 0.0f);
-				hasAnalogInput = (movedata.analogturn != 0 || movedata.analogpitch != 0);
-				
-				if (hasPrecisionInputX || hasPrecisionInputY) {
-					f32 fov_factor = viGetFovY() / PLAYER_DEFAULT_FOV;
-					
-					effective_speedtheta = hasPrecisionInputX ? 
-						g_Vars.currentplayer->speedtheta + (movedata.freelookdx * mlookscale * fov_factor) :
-						(hasAnalogInput ? g_Vars.currentplayer->speedtheta : 0.0f);
-					
-					effective_speedverta = hasPrecisionInputY ?
-						g_Vars.currentplayer->speedverta - (movedata.freelookdy * mlookscale * fov_factor) :
-						(hasAnalogInput ? g_Vars.currentplayer->speedverta : 0.0f);
-					
-					xscale = hasPrecisionInputX ? PLAYER_EXTCFG().crosshairsway * 0.20f : PLAYER_EXTCFG().crosshairsway;
-					yscale = hasPrecisionInputY ? PLAYER_EXTCFG().crosshairsway * 0.30f : PLAYER_EXTCFG().crosshairsway;
-				} else {
-					effective_speedtheta = hasAnalogInput ? g_Vars.currentplayer->speedtheta : 0.0f;
-					effective_speedverta = hasAnalogInput ? g_Vars.currentplayer->speedverta : 0.0f;
-					xscale = yscale = PLAYER_EXTCFG().crosshairsway;
-				}
-				
-				x = effective_speedtheta * 0.3f * xscale + g_Vars.currentplayer->gunextraaimx;
-				y = -effective_speedverta * 0.1f * yscale + g_Vars.currentplayer->gunextraaimy;
-			}
+            // Crosshair swivel movement system
+			bmoveApplyCrosshairSwivel(&movedata, mlookscale, &x, &y);
 #endif
 
 			bgunSwivelWithDamp(x, y, PAL ? 0.955f : 0.963f);
