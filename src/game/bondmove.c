@@ -522,6 +522,63 @@ static void bmoveApplyCameraMovement(struct movedata *data, f32 mlookscale, f32 
 }
 
 /**
+ * Apply crosshair swivel based on camera movement with precision input detection
+ */
+static void bmoveApplyCrosshairSwivel(struct movedata *movedata, f32 mlookscale, f32 gyroscale, f32 *x, f32 *y)
+{
+	f32 mouseSwivelX, mouseSwivelY;
+	f32 gyroSwivelX, gyroSwivelY;
+	f32 xscale, yscale;
+	f32 effective_speedtheta, effective_speedverta;
+	f32 fov_factor;
+
+	// Get input sensitivity for proper detection
+	inputMouseGetSpeed(&mouseSwivelX, &mouseSwivelY);
+	inputGyroGetSpeed(g_Vars.currentplayernum, &gyroSwivelX, &gyroSwivelY);
+
+	// Crosshair sway scaling for mouse, gyro, and classic joystick input
+	int mouse_active = (movedata->freelookdx && mouseSwivelX > 0.0f) || (movedata->freelookdy && mouseSwivelY > 0.0f);
+	int gyro_active = (movedata->gyrolookdx && gyroSwivelX > 0.0f) || (movedata->gyrolookdy && gyroSwivelY > 0.0f);
+	int joystick_active = (movedata->c1stickxraw != 0 || movedata->c1stickyraw != 0);
+	
+	if ((mouse_active || gyro_active) && joystick_active) {
+		// Gyro/Mouse + joystick sway
+		xscale = PLAYER_EXTCFG().crosshairsway * 0.80f;  // 80% for precision+joystick sway
+		yscale = PLAYER_EXTCFG().crosshairsway * 0.80f;  // 80% for precision+joystick sway
+	} else if (mouse_active) {
+		// Mouse sway
+		xscale = PLAYER_EXTCFG().crosshairsway * 0.30f;  // 30% for mouse sway
+		yscale = PLAYER_EXTCFG().crosshairsway * 0.20f;  // 20% for mouse sway
+	} else if (gyro_active) {
+		// Gyro sway
+		xscale = PLAYER_EXTCFG().crosshairsway * 0.30f;  // 30% for gyro sway, mirroring mouse's
+		yscale = PLAYER_EXTCFG().crosshairsway * 0.20f;  // 20% for gyro sway, mirroring mouse's
+	} else {
+		// Joystick only or no input - full sway
+		xscale = yscale = PLAYER_EXTCFG().crosshairsway;
+	}
+
+	// Calculate effective speed values including mouse/gyro input
+	if (mouse_active || gyro_active) {
+		fov_factor = viGetFovY() / PLAYER_DEFAULT_FOV;
+		effective_speedtheta = g_Vars.currentplayer->speedtheta + 
+			(movedata->freelookdx && mouseSwivelX > 0.0f ? movedata->freelookdx * mlookscale * fov_factor : 0.0f) + 
+			(movedata->gyrolookdx && gyroSwivelX > 0.0f ? movedata->gyrolookdx * gyroscale * fov_factor : 0.0f);
+		effective_speedverta = g_Vars.currentplayer->speedverta - 
+			(movedata->freelookdy && mouseSwivelY > 0.0f ? movedata->freelookdy * mlookscale * fov_factor : 0.0f) - 
+			(movedata->gyrolookdy && gyroSwivelY > 0.0f ? movedata->gyrolookdy * gyroscale * fov_factor : 0.0f);
+	} else {
+		// Analog stick only: use existing speed values
+		effective_speedtheta = g_Vars.currentplayer->speedtheta;
+		effective_speedverta = g_Vars.currentplayer->speedverta;
+	}
+
+	// Joystick x/y scaling
+	*x = effective_speedtheta * 0.3f * xscale + g_Vars.currentplayer->gunextraaimx;
+	*y = -effective_speedverta * 0.1f * yscale + g_Vars.currentplayer->gunextraaimy;
+}
+
+/**
  * Apply crosshair movement with scaling and clamping
  */
 static void bmoveApplyCrosshairMovement(f32 aimspeedx, f32 aimspeedy, f32 dx, f32 dy)
@@ -2467,49 +2524,7 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 			x = g_Vars.currentplayer->speedtheta * 0.3f + g_Vars.currentplayer->gunextraaimx;
 			y = -g_Vars.currentplayer->speedverta * 0.1f + g_Vars.currentplayer->gunextraaimy;
 #else
-			{
-				float xscale, yscale;
-				float effective_speedtheta, effective_speedverta;
-				float fov_factor;
-				
-				// crosshair sway scaling for mouse, gyro, and joystick input
-				int mouse_active = (movedata.freelookdx || movedata.freelookdy);
-				int gyro_active = (movedata.gyrolookdx || movedata.gyrolookdy);
-				int joystick_active = (movedata.c1stickxraw != 0 || movedata.c1stickyraw != 0);
-				
-				if ((mouse_active || gyro_active) && joystick_active) {
-					// Gyro/Mouse + joystick sway
-					xscale = PLAYER_EXTCFG().crosshairsway * 0.80f;  // 80% for precision+joystick sway
-					yscale = PLAYER_EXTCFG().crosshairsway * 0.80f;  // 80% for precision+joystick sway
-				} else if (mouse_active) {
-					// Mouse sway
-					xscale = PLAYER_EXTCFG().crosshairsway * 0.25f;  // 25% for mouse sway
-					yscale = PLAYER_EXTCFG().crosshairsway * 0.25f;  // 25% for mouse sway
-				} else if (gyro_active) {
-					// Gyro sway
-					xscale = PLAYER_EXTCFG().crosshairsway * 0.25f;  // 25% for gyro sway, mirroring mouse's
-					yscale = PLAYER_EXTCFG().crosshairsway * 0.25f;  // 25% for gyro sway, mirroring mouse's
-				} else {
-					// Joystick only or no input - full sway
-					xscale = yscale = PLAYER_EXTCFG().crosshairsway;
-				}
-				
-				// Calculate effective speed values including mouse/gyro input (mirroring old system)
-				if (mouse_active || gyro_active) {
-					fov_factor = viGetFovY() / PLAYER_DEFAULT_FOV;
-					effective_speedtheta = g_Vars.currentplayer->speedtheta + (movedata.freelookdx * mlookscale * fov_factor) + (movedata.gyrolookdx * gyroscale * fov_factor);
-					effective_speedverta = g_Vars.currentplayer->speedverta - (movedata.freelookdy * mlookscale * fov_factor) - (movedata.gyrolookdy * gyroscale * fov_factor);
-				} else {
-					// Analog stick only: use existing speed values
-					effective_speedtheta = g_Vars.currentplayer->speedtheta;
-					effective_speedverta = g_Vars.currentplayer->speedverta;
-				}
-				
-				// Joystick x/y scaling
-				// 0.3f for x, 0.1f for y
-				x = effective_speedtheta * 0.3f * xscale + g_Vars.currentplayer->gunextraaimx;
-				y = -effective_speedverta * 0.1f * yscale + g_Vars.currentplayer->gunextraaimy;
-			}
+			bmoveApplyCrosshairSwivel(&movedata, mlookscale, gyroscale, &x, &y);
 #endif
 
 			bgunSwivelWithDamp(x, y, PAL ? 0.955f : 0.963f);
