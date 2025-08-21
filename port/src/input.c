@@ -514,6 +514,10 @@ static int inputEventFilter(void *data, SDL_Event *event)
 			lastKey = VK_MOUSE_BEGIN - 1 + event->button.button;
 			break;
 
+		case SDL_MOUSEMOTION:
+			// To prevent glyphs from flickering, mouse movements are ignored
+			break;
+
 		case SDL_KEYDOWN:
 			lastKey = VK_KEYBOARD_BEGIN + event->key.keysym.scancode;
 			break;
