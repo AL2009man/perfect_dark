@@ -437,6 +437,141 @@ void bmoveUpdateSpeedThetaControl(f32 value)
 }
 
 /**
+ * Apply camera movement with scaling based on input type
+ * Supports angle-based movement (mouse) and delta-based movement (analog stick)
+ */
+static void bmoveApplyCameraMovement(struct movedata *data, f32 mlookscale, f32 *pitchValue, f32 *turnValue)
+{
+#ifndef PLATFORM_N64
+	// Check for input types
+	bool mouseActive = (data->freelookdx != 0.0f || data->freelookdy != 0.0f);
+	
+	// Use angle-based camera system for mouse
+	if (mouseActive) {
+		f32 mouseSensX, mouseSensY;
+		inputMouseGetSpeed(&mouseSensX, &mouseSensY);
+		
+		// horizontal movement
+		if (data->freelookdx != 0.0f) {
+			// Mouse scaling is derived from id Tech 2/Quake Engine's mouse multiplier (0.022)
+			g_Vars.currentplayer->vv_theta += data->freelookdx * 0.022f * mouseSensX;
+			
+			// Normalize theta to 0-360 degrees
+			while (g_Vars.currentplayer->vv_theta < 0) {
+				g_Vars.currentplayer->vv_theta += 360.0f;
+			}
+			while (g_Vars.currentplayer->vv_theta >= 360.0f) {
+				g_Vars.currentplayer->vv_theta -= 360.0f;
+			}
+		}
+
+		// vertical movement
+		if (data->freelookdy != 0.0f) {
+			g_Vars.currentplayer->vv_verta -= data->freelookdy * 0.022f * mouseSensY;
+			
+			// Clamp pitch to prevent over-rotation
+			if (g_Vars.currentplayer->vv_verta > 90.0f) {
+				g_Vars.currentplayer->vv_verta = 90.0f;
+			} else if (g_Vars.currentplayer->vv_verta < -90.0f) {
+				g_Vars.currentplayer->vv_verta = -90.0f;
+			}
+		}
+	} else {
+		// Delta-based movement (analog stick)
+		f32 mouseSensX, mouseSensY;
+		inputMouseGetSpeed(&mouseSensX, &mouseSensY);
+		
+		if (turnValue && data->freelookdx != 0.0f) {
+			*turnValue += data->freelookdx * mouseSensX * mlookscale;
+		}
+		if (pitchValue && data->freelookdy != 0.0f) {
+			*pitchValue += data->freelookdy * mouseSensY * mlookscale;
+		}
+	}
+#else
+	// N64 platform - only delta-based movement (analog stick)
+	f32 mouseSensX, mouseSensY;
+	inputMouseGetSpeed(&mouseSensX, &mouseSensY);
+	
+	if (turnValue && data->freelookdx != 0.0f) {
+		*turnValue += data->freelookdx * mouseSensX * mlookscale;
+	}
+	if (pitchValue && data->freelookdy != 0.0f) {
+		*pitchValue += data->freelookdy * mouseSensY * mlookscale;
+	}
+#endif
+}
+
+/**
+ * Apply crosshair swivel based on camera movement with precision input detection
+ */
+static void bmoveApplyCrosshairSwivel(struct movedata *movedata, f32 mlookscale, f32 *x, f32 *y)
+{
+	f32 mouseSwivelX, mouseSwivelY;
+	f32 xscale, yscale;
+	f32 effective_speedtheta, effective_speedverta;
+	f32 fov_factor;
+
+	// Get input sensitivity for proper detection
+	inputMouseGetSpeed(&mouseSwivelX, &mouseSwivelY);
+
+	// Crosshair sway scaling for mouse and classic joystick input
+	int mouse_active = (movedata->freelookdx && mouseSwivelX > 0.0f) || (movedata->freelookdy && mouseSwivelY > 0.0f);
+	int joystick_active = (movedata->c1stickxraw != 0 || movedata->c1stickyraw != 0);
+	
+	if (mouse_active && joystick_active) {
+		// Mouse + joystick sway
+		xscale = PLAYER_EXTCFG().crosshairsway * 0.80f;  // 80% for precision+joystick sway
+		yscale = PLAYER_EXTCFG().crosshairsway * 0.80f;  // 80% for precision+joystick sway
+	} else if (mouse_active) {
+		// Mouse sway
+		xscale = PLAYER_EXTCFG().crosshairsway * 0.30f;  // 30% for mouse sway
+		yscale = PLAYER_EXTCFG().crosshairsway * 0.20f;  // 20% for mouse sway
+	} else {
+		// Joystick only or no input - full sway
+		xscale = yscale = PLAYER_EXTCFG().crosshairsway;
+	}
+
+	// Calculate effective speed values including mouse input
+	if (mouse_active) {
+		fov_factor = viGetFovY() / PLAYER_DEFAULT_FOV;
+		effective_speedtheta = g_Vars.currentplayer->speedtheta + 
+			(movedata->freelookdx && mouseSwivelX > 0.0f ? movedata->freelookdx * mlookscale * fov_factor : 0.0f);
+		effective_speedverta = g_Vars.currentplayer->speedverta - 
+			(movedata->freelookdy && mouseSwivelY > 0.0f ? movedata->freelookdy * mlookscale * fov_factor : 0.0f);
+	} else {
+		// Analog stick only: use existing speed values
+		effective_speedtheta = g_Vars.currentplayer->speedtheta;
+		effective_speedverta = g_Vars.currentplayer->speedverta;
+	}
+
+	// Joystick x/y scaling
+	*x = effective_speedtheta * 0.3f * xscale + g_Vars.currentplayer->gunextraaimx;
+	*y = -effective_speedverta * 0.1f * yscale + g_Vars.currentplayer->gunextraaimy;
+}
+
+/**
+ * Apply crosshair movement with scaling and clamping
+ */
+static void bmoveApplyCrosshairAimingMovement(f32 aimspeedx, f32 aimspeedy, f32 dx, f32 dy)
+{
+	// Resolution/Aspect Ratio-based scaling coefficients
+	const f32 xscale = (aimspeedx * 320.f / 1080.f) / g_Vars.currentplayer->aspect;
+	const f32 yscale = aimspeedy * 240.f / 1080.f;
+
+	// Calculate new positions with input directly
+	const f32 x = g_Vars.currentplayer->swivelpos[0] + (dx * xscale);
+	const f32 y = g_Vars.currentplayer->swivelpos[1] + (dy * yscale);
+	
+	// Clamping
+	g_Vars.currentplayer->swivelpos[0] = (x < -1.f) ? -1.f : (x > 1.f) ? 1.f : x;
+	g_Vars.currentplayer->swivelpos[1] = (y < -1.f) ? -1.f : (y > 1.f) ? 1.f : y;
+
+	// Applying to gun swivel system
+	bgunSwivelWithDamp(g_Vars.currentplayer->swivelpos[0], g_Vars.currentplayer->swivelpos[1], 0.01f);
+}
+
+/**
  * Calculate the lookahead angle.
  *
  * The return value is the intended vertical angle to look at.
@@ -712,7 +847,7 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 	f32 increment2;
 	f32 newverta;
 #ifndef PLATFORM_N64
-	const f32 mlookscale = g_Vars.lvupdate240 ? (4.f / (f32)g_Vars.lvupdate240) : 4.f;
+	const f32 mlookscale = g_Vars.lvupdate240 ? (0.1f / (f32)g_Vars.lvupdate240) : 0.1f;
 	const bool allowmlook = (g_Vars.currentplayernum == 0) && (allowc1x || allowc1y);
 	bool allowmcross = false;
 #endif
@@ -2048,7 +2183,13 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 				}
 
 #ifndef PLATFORM_N64
-				fVar25 += movedata.freelookdy * mlookscale;
+				// Handle mouse input directly via centralized system (not analog stick)
+				if (movedata.freelookdy != 0.0f) {
+					// Use temporary movedata for centralized camera movement (mouse only)
+					struct movedata tempMoveData = {0};
+					tempMoveData.freelookdy = movedata.freelookdy;
+					bmoveApplyCameraMovement(&tempMoveData, mlookscale, NULL, NULL);
+				}
 #endif
 
 				g_Vars.currentplayer->speedverta = -fVar25 * tmp;
@@ -2089,7 +2230,13 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 		}
 
 #ifndef PLATFORM_N64
-		fVar25 += movedata.freelookdx * mlookscale;
+	// Handle mouse input directly via centralized system (not analog stick)
+	if (movedata.freelookdx != 0.0f) {
+		// Use temporary movedata for centralized camera movement (mouse only)
+		struct movedata tempMoveData = {0};
+		tempMoveData.freelookdx = movedata.freelookdx;
+		bmoveApplyCameraMovement(&tempMoveData, mlookscale, NULL, NULL);
+	}
 #endif
 
 		g_Vars.currentplayer->speedthetacontrol = fVar25 * tmp;
@@ -2186,15 +2333,8 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 			x = g_Vars.currentplayer->speedtheta * 0.3f + g_Vars.currentplayer->gunextraaimx;
 			y = -g_Vars.currentplayer->speedverta * 0.1f + g_Vars.currentplayer->gunextraaimy;
 #else
-			f32 xscale, yscale;
-			if (movedata.freelookdx || movedata.freelookdy) {
-				xscale = PLAYER_EXTCFG().crosshairsway * 0.20f;
-				yscale = PLAYER_EXTCFG().crosshairsway * 0.30f;
-			} else {
-				xscale = yscale = PLAYER_EXTCFG().crosshairsway;
-			}
-			x = g_Vars.currentplayer->speedtheta * 0.3f * xscale + g_Vars.currentplayer->gunextraaimx;
-			y = -g_Vars.currentplayer->speedverta * 0.1f * yscale + g_Vars.currentplayer->gunextraaimy;
+            // Crosshair swivel movement system
+			bmoveApplyCrosshairSwivel(&movedata, mlookscale, &x, &y);
 #endif
 
 			bgunSwivelWithDamp(x, y, PAL ? 0.955f : 0.963f);
@@ -2204,21 +2344,14 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 		// when holding aim and moving stick
 		bgunSetAimType(0);
 #ifndef PLATFORM_N64
-		if (allowmcross) {
-			// joystick is inactive, move crosshair using the mouse
-			const f32 xcoeff = 320.f / 1080.f;
-			const f32 ycoeff = 240.f / 1080.f;
-			const f32 xscale = (PLAYER_EXTCFG().mouseaimspeedx * xcoeff) / g_Vars.currentplayer->aspect;
-			const f32 yscale = PLAYER_EXTCFG().mouseaimspeedy * ycoeff;
-			f32 x = g_Vars.currentplayer->swivelpos[0] + movedata.freelookdx * xscale;
-			f32 y = g_Vars.currentplayer->swivelpos[1] + movedata.freelookdy * yscale;
-			x = (x < -1.f) ? -1.f : ((x > 1.f) ? 1.f : x);
-			y = (y < -1.f) ? -1.f : ((y > 1.f) ? 1.f : y);
-			g_Vars.currentplayer->swivelpos[0] = x;
-			g_Vars.currentplayer->swivelpos[1] = y;
-			bgunSwivelWithDamp(x, y, 0.01f);
-			return;
-		}
+        if (allowmcross) {
+            // joystick is inactive, move crosshair using the mouse
+            f32 dx, dy;
+            inputMouseGetScaledDeltaCrosshair(&dx, &dy);
+            const f32 norm = g_Vars.lvupdate60freal;
+            bmoveApplyCrosshairAimingMovement(PLAYER_EXTCFG().mouseaimsensx, PLAYER_EXTCFG().mouseaimsensy, dx, dy);
+            return;
+        }
 #endif
 		bgunSwivelWithoutDamp((movedata.c1stickxraw * 0.65f) / 80.0f, (movedata.c1stickyraw * 0.65f) / 80.0f);
 	}
