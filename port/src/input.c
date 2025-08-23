@@ -711,14 +711,14 @@ s32 inputInit(void)
 	}
 
 	if (usePositionalFaceButtonLayout) {
-        // when using positional layout: the Face Button layout will be based upon modern controller's button positions.
-        // enabled by default for the PC Port
-        SDL_SetHint(SDL_HINT_GAMECONTROLLER_USE_BUTTON_LABELS, "0"); // uses positional face buttons (SOUTH/EAST/WEST/NORTH)
-    } else {
-        // when using specific controllers like Nintendo controllers: the Face Button layout will be based upon button labels.
-        // originally enabled by default as per SDL_Hints docs, but will be disabled for the PC Port
-        SDL_SetHint(SDL_HINT_GAMECONTROLLER_USE_BUTTON_LABELS, "1"); // uses button labels (A/B/X/Y)  
-    }
+		// when using positional layout: the Face Button layout will be based upon modern controller's button positions.
+		// enabled by default for the PC Port
+		SDL_SetHint(SDL_HINT_GAMECONTROLLER_USE_BUTTON_LABELS, "0"); // uses positional face buttons (SOUTH/EAST/WEST/NORTH)
+	} else {
+		// when using specific controllers like Nintendo controllers: the Face Button layout will be based upon button labels.
+		// originally enabled by default as per SDL_Hints docs, but will be disabled for the PC Port
+		SDL_SetHint(SDL_HINT_GAMECONTROLLER_USE_BUTTON_LABELS, "1"); // uses button labels (A/B/X/Y)
+	}
 
 	if (!SDL_WasInit(SDL_INIT_GAMECONTROLLER | SDL_INIT_HAPTIC)) {
 		SDL_InitSubSystem(SDL_INIT_GAMECONTROLLER | SDL_INIT_HAPTIC);
