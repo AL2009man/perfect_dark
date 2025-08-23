@@ -525,7 +525,7 @@ static void bmoveApplyCrosshairSwivel(struct movedata *movedata, f32 mlookscale,
 		yscale = PLAYER_EXTCFG().crosshairsway * 0.80f;  // 80% for precision+joystick sway
 	} else if (mouse_active) {
 		// Mouse sway
-		xscale = PLAYER_EXTCFG().crosshairsway * 0.30f;  // 30% for mouse sway
+		xscale = PLAYER_EXTCFG().crosshairsway * 0.20f;  // 20% for mouse sway
 		yscale = PLAYER_EXTCFG().crosshairsway * 0.20f;  // 20% for mouse sway
 	} else {
 		// Joystick only or no input - full sway
