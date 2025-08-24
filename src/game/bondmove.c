@@ -453,8 +453,7 @@ static void bmoveApplyCameraMovement(struct movedata *data, f32 mlookscale, f32 
 		
 		// horizontal movement
 		if (data->freelookdx != 0.0f) {
-			// Mouse scaling is derived from id Tech 2/Quake Engine's mouse multiplier (0.022)
-			g_Vars.currentplayer->vv_theta += data->freelookdx * 0.022f * mouseSensX;
+			g_Vars.currentplayer->vv_theta += data->freelookdx;
 			
 			// Normalize theta to 0-360 degrees
 			while (g_Vars.currentplayer->vv_theta < 0) {
@@ -467,7 +466,7 @@ static void bmoveApplyCameraMovement(struct movedata *data, f32 mlookscale, f32 
 
 		// vertical movement
 		if (data->freelookdy != 0.0f) {
-			g_Vars.currentplayer->vv_verta -= data->freelookdy * 0.022f * mouseSensY;
+			g_Vars.currentplayer->vv_verta -= data->freelookdy;
 			
 			// Clamp pitch to prevent over-rotation
 			if (g_Vars.currentplayer->vv_verta > 90.0f) {
@@ -1450,6 +1449,10 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 								movedata.analogstrafe = 0;
 								movedata.analogwalk = 0;
 								movedata.analoglean = 0.f;
+							}
+							if (movedata.freelookdx != 0.0f || movedata.freelookdy != 0.0f) {
+								movedata.cannaturalpitch = movedata.cannaturalpitch || (movedata.freelookdy != 0.0f);
+								movedata.cannaturalturn = movedata.cannaturalturn || (movedata.freelookdx != 0.0f);
 							}
 							if (PLAYER_EXTCFG().mouseaimmode == MOUSEAIM_LOCKED || bgunGetWeaponNum(HAND_RIGHT) == WEAPON_HORIZONSCANNER) {
 								movedata.cannaturalpitch = movedata.cannaturalpitch || (movedata.freelookdy != 0.0f);
