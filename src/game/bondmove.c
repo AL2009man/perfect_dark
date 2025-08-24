@@ -1450,10 +1450,6 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 								movedata.analogwalk = 0;
 								movedata.analoglean = 0.f;
 							}
-							if (movedata.freelookdx != 0.0f || movedata.freelookdy != 0.0f) {
-								movedata.cannaturalpitch = movedata.cannaturalpitch || (movedata.freelookdy != 0.0f);
-								movedata.cannaturalturn = movedata.cannaturalturn || (movedata.freelookdx != 0.0f);
-							}
 							if (PLAYER_EXTCFG().mouseaimmode == MOUSEAIM_LOCKED || bgunGetWeaponNum(HAND_RIGHT) == WEAPON_HORIZONSCANNER) {
 								movedata.cannaturalpitch = movedata.cannaturalpitch || (movedata.freelookdy != 0.0f);
 								movedata.cannaturalturn = movedata.cannaturalturn  || (movedata.freelookdx != 0.0f);
@@ -2240,6 +2236,11 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 		tempMoveData.freelookdx = movedata.freelookdx;
 		bmoveApplyCameraMovement(&tempMoveData, mlookscale, NULL, NULL);
 	}
+	// Also add mouse input to vehicle turning (use movedata which already has proper scaling)
+	// Double sensitivity for vehicle mode (bike) to compensate for scaling differences
+	bool offbike = g_Vars.currentplayer->bondmovemode == MOVEMODE_WALK || g_Vars.currentplayer->bondmovemode == MOVEMODE_GRAB;
+	f32 vehicleTurningSensitivity = offbike ? 0.0f : 11.0f;
+	fVar25 += movedata.freelookdx * mlookscale * vehicleTurningSensitivity;
 #endif
 
 		g_Vars.currentplayer->speedthetacontrol = fVar25 * tmp;
@@ -2350,10 +2351,7 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
         if (allowmcross) {
             // joystick is inactive, move crosshair using the mouse
             f32 dx, dy;
-            inputMouseGetScaledDelta(&dx, &dy);
-            // Mouse-specific sensitivity scaling
-            dx *= (0.022f / 90.0f) * PLAYER_EXTCFG().mouseaimsensx;
-            dy *= (0.022f / 90.0f) * PLAYER_EXTCFG().mouseaimsensy;
+            inputMouseGetScaledDeltaCrosshair(&dx, &dy);
             const f32 norm = g_Vars.lvupdate60freal;
             bmoveApplyCrosshairAimingMovement(PLAYER_EXTCFG().mouseaimsensx, PLAYER_EXTCFG().mouseaimsensy, dx, dy);
             return;

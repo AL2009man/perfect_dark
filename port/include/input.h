@@ -222,6 +222,9 @@ void inputMouseGetRawDelta(s32 *dx, s32 *dy);
 // returns 0, 0 when the mouse is not locked into the window
 void inputMouseGetScaledDelta(f32 *dx, f32 *dy);
 
+// returns changes in mouse position since last frame, scaled by sensitivity and crosshair size
+void inputMouseGetScaledDeltaCrosshair(f32* dx, f32* dy);
+
 // returns changes in mouse position since last frame, scaled by absolute sensitivity
 // returns 0, 0 when the mouse is not locked into the window
 void inputMouseGetAbsScaledDelta(f32 *dx, f32 *dy);
