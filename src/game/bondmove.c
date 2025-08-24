@@ -689,8 +689,6 @@ bool bmoveIsRecenteringActive(s32 cidx)
 #endif
 
 /**
-
-/**
  * Calculate the lookahead angle.
  *
  * The return value is the intended vertical angle to look at.
