@@ -1248,8 +1248,8 @@ void inputMouseGetScaledDelta(f32* dx, f32* dy)
 {
 	f32 mdx = 0.f, mdy = 0.f;
 	if (mouseLocked) {
-		mdx = mouseDX;
-		mdy = mouseDY;
+		mdx = mouseDX * 0.022f * mouseSensX;
+		mdy = mouseDY * 0.022f * mouseSensY;
 	}
 	if (dx) *dx = mdx;
 	if (dy) *dy = mdy;
@@ -1276,6 +1276,17 @@ void inputMouseSetSpeed(f32 x, f32 y)
 {
 	mouseSensX = x;
 	mouseSensY = y;
+}
+
+void inputMouseGetScaledDeltaCrosshair(f32* dx, f32* dy)
+{
+	f32 mdx = 0.f, mdy = 0.f;
+	if (mouseLocked) {
+		mdx = mouseDX * (0.022f / 90.0f) * g_PlayerExtCfg[0].mouseaimsensx;
+		mdy = mouseDY * (0.022f / 90.0f) * g_PlayerExtCfg[0].mouseaimsensy;
+	}
+	if (dx) *dx = mdx;
+	if (dy) *dy = mdy;
 }
 
 void inputMouseGetAimSpeed(f32* x, f32* y)

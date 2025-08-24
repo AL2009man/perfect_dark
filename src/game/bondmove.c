@@ -453,8 +453,7 @@ static void bmoveApplyCameraMovement(struct movedata *data, f32 mlookscale, f32 
 		
 		// horizontal movement
 		if (data->freelookdx != 0.0f) {
-			// Mouse scaling is derived from id Tech 2/Quake Engine's mouse multiplier (0.022)
-			g_Vars.currentplayer->vv_theta += data->freelookdx * 0.022f * mouseSensX;
+			g_Vars.currentplayer->vv_theta += data->freelookdx;
 			
 			// Normalize theta to 0-360 degrees
 			while (g_Vars.currentplayer->vv_theta < 0) {
@@ -467,7 +466,7 @@ static void bmoveApplyCameraMovement(struct movedata *data, f32 mlookscale, f32 
 
 		// vertical movement
 		if (data->freelookdy != 0.0f) {
-			g_Vars.currentplayer->vv_verta -= data->freelookdy * 0.022f * mouseSensY;
+			g_Vars.currentplayer->vv_verta -= data->freelookdy;
 			
 			// Clamp pitch to prevent over-rotation
 			if (g_Vars.currentplayer->vv_verta > 90.0f) {
@@ -909,8 +908,7 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 #ifndef PLATFORM_N64
 	if (allowmlook) {
 		inputMouseGetScaledDelta(&movedata.freelookdx, &movedata.freelookdy);
-		allowmcross = (PLAYER_EXTCFG().mouseaimmode == MOUSEAIM_CLASSIC) &&
-			(movedata.freelookdx || movedata.freelookdy || g_Vars.currentplayer->swivelpos[0] || g_Vars.currentplayer->swivelpos[1]);
+		allowmcross = (PLAYER_EXTCFG().mouseaimmode == MOUSEAIM_CLASSIC);
 		if (movedata.invertpitch) {
 			movedata.freelookdy = -movedata.freelookdy;
 		}
@@ -2237,6 +2235,10 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 		tempMoveData.freelookdx = movedata.freelookdx;
 		bmoveApplyCameraMovement(&tempMoveData, mlookscale, NULL, NULL);
 	}
+	// handles Vehicle turning scaling
+	bool offbike = g_Vars.currentplayer->bondmovemode == MOVEMODE_WALK || g_Vars.currentplayer->bondmovemode == MOVEMODE_GRAB;
+	f32 vehicleTurningSensitivity = offbike ? 0.0f : 11.0f;
+	fVar25 += movedata.freelookdx * mlookscale * vehicleTurningSensitivity;
 #endif
 
 		g_Vars.currentplayer->speedthetacontrol = fVar25 * tmp;
@@ -2347,10 +2349,7 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
         if (allowmcross) {
             // joystick is inactive, move crosshair using the mouse
             f32 dx, dy;
-            inputMouseGetScaledDelta(&dx, &dy);
-            // Mouse-specific sensitivity scaling
-            dx *= (0.022f / 90.0f) * PLAYER_EXTCFG().mouseaimsensx;
-            dy *= (0.022f / 90.0f) * PLAYER_EXTCFG().mouseaimsensy;
+            inputMouseGetScaledDeltaCrosshair(&dx, &dy);
             const f32 norm = g_Vars.lvupdate60freal;
             bmoveApplyCrosshairAimingMovement(PLAYER_EXTCFG().mouseaimsensx, PLAYER_EXTCFG().mouseaimsensy, dx, dy);
             return;
