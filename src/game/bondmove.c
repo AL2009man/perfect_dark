@@ -462,9 +462,8 @@ static void bmoveApplyCameraMovement(struct movedata *data, f32 mlookscale, f32 
 		
 		// horizontal movement
 		if (data->freelookdx != 0.0f || data->gyrolookdx != 0.0f) {
-			// Mouse scaling is derived from id Tech 2/Quake Engine's mouse multiplier (0.022)
 			if (mouseActive) {
-				g_Vars.currentplayer->vv_theta += data->freelookdx * 0.022f * mouseSensX;
+			g_Vars.currentplayer->vv_theta += data->freelookdx;
 			}
 			if (gyroActive) {
 				g_Vars.currentplayer->vv_theta += data->gyrolookdx;
@@ -482,7 +481,7 @@ static void bmoveApplyCameraMovement(struct movedata *data, f32 mlookscale, f32 
 		// vertical movement
 		if (data->freelookdy != 0.0f || data->gyrolookdy != 0.0f) {
 			if (mouseActive) {
-				g_Vars.currentplayer->vv_verta -= data->freelookdy * 0.022f * mouseSensY;
+			g_Vars.currentplayer->vv_verta -= data->freelookdy;
 			}
 			if (gyroActive) {
 				g_Vars.currentplayer->vv_verta -= data->gyrolookdy;
@@ -2430,6 +2429,12 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 		tempMoveData.gyrolookdx = movedata.gyrolookdx;
 		bmoveApplyCameraMovement(&tempMoveData, mlookscale, gyroscale, NULL, NULL);
 	}
+	// handles Vehicle turning scaling
+    bool offbike = g_Vars.currentplayer->bondmovemode == MOVEMODE_WALK || g_Vars.currentplayer->bondmovemode == MOVEMODE_GRAB;
+    f32 vehicleMouseTurningSensitivity = offbike ? 0.0f : 11.0f;
+    f32 vehicleGyroTurningSensitivity = offbike ? 0.0f : 1.9f;
+    fVar25 += movedata.freelookdx * mlookscale * vehicleMouseTurningSensitivity;
+    fVar25 += movedata.gyrolookdx * gyroscale * vehicleGyroTurningSensitivity;
 #endif
 
 		g_Vars.currentplayer->speedthetacontrol = fVar25 * tmp;
@@ -2522,6 +2527,16 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 				g_Vars.currentplayer->autoaimdamp = (PAL ? 0.974f : 0.979f);
 			}
 
+#ifdef PLATFORM_N64
+			x = g_Vars.currentplayer->speedtheta * 0.3f + g_Vars.currentplayer->gunextraaimx;
+			y = -g_Vars.currentplayer->speedverta * 0.1f + g_Vars.currentplayer->gunextraaimy;
+#else
+            // Crosshair swivel movement system
+			bmoveApplyCrosshairSwivel(&movedata, mlookscale, gyroscale, &x, &y);
+#endif
+
+			bgunSwivelWithDamp(x, y, PAL ? 0.955f : 0.963f);
+		}
 	} else if (movedata.canmanualaim) {
 		// Adjust crosshair's position on screen
 		// when holding aim and moving stick
@@ -2539,8 +2554,7 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
         if (allowmcross) {
             // joystick is inactive, move crosshair using the mouse
             f32 dx, dy;
-            inputMouseGetScaledDelta(&dx, &dy);
-            // Apply crosshair-specific scaling
+            inputMouseGetScaledDeltaCrosshair(&dx, &dy);
             dx *= (0.022f / 90.0f) * PLAYER_EXTCFG().mouseaimsensx;
             dy *= (0.022f / 90.0f) * PLAYER_EXTCFG().mouseaimsensy;
             const f32 norm = g_Vars.lvupdate60freal;
