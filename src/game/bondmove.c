@@ -2236,8 +2236,7 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 		tempMoveData.freelookdx = movedata.freelookdx;
 		bmoveApplyCameraMovement(&tempMoveData, mlookscale, NULL, NULL);
 	}
-	// Also add mouse input to vehicle turning (use movedata which already has proper scaling)
-	// Double sensitivity for vehicle mode (bike) to compensate for scaling differences
+	// handles Vehicle turning scaling
 	bool offbike = g_Vars.currentplayer->bondmovemode == MOVEMODE_WALK || g_Vars.currentplayer->bondmovemode == MOVEMODE_GRAB;
 	f32 vehicleTurningSensitivity = offbike ? 0.0f : 11.0f;
 	fVar25 += movedata.freelookdx * mlookscale * vehicleTurningSensitivity;
