@@ -1722,29 +1722,28 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 					}
 
 #ifndef PLATFORM_N64
-					// Handle turning and looking up/down via mouselook or gyro when aiming
-					bool allowcross = allowmcross || allowgcross;
+					// Handle turning and looking (x/y) via mouselook when aiming
+					bool allowcross = allowmcross;
 					if (g_Vars.currentplayer->insightaimmode && allowcross && bgunGetWeaponNum(HAND_RIGHT) != WEAPON_HORIZONSCANNER) {
-						if (g_Vars.currentplayer->swivelpos[0] > 0.9f) {
-							movedata.aimturnrightspeed = (g_Vars.currentplayer->swivelpos[0] - 0.9f) / 0.1f;
-							movedata.aimturnleftspeed = 0.f;
-						} else if (g_Vars.currentplayer->swivelpos[0] < -0.9f) {
-							movedata.aimturnleftspeed = (g_Vars.currentplayer->swivelpos[0] - -0.9f) / -0.1f;
-							movedata.aimturnrightspeed = 0.f;
+						float edge_boundary = PLAYER_EXTCFG().crosshairedgeboundary;
+						if (g_Vars.currentplayer->swivelpos[0] > edge_boundary) {
+							movedata.aimturnrightspeed += (g_Vars.currentplayer->swivelpos[0] - edge_boundary) / (1.0f - edge_boundary);
+						} else if (g_Vars.currentplayer->swivelpos[0] < -edge_boundary) {
+							movedata.aimturnleftspeed += (g_Vars.currentplayer->swivelpos[0] + edge_boundary) / -(1.0f - edge_boundary);
 						}
 						f32 vertaup = 0.f, vertadown = 0.f;
-						if (g_Vars.currentplayer->swivelpos[1] > 0.9f) {
-							vertaup = (g_Vars.currentplayer->swivelpos[1] - 0.9f) / 0.1f;
-						} else if (g_Vars.currentplayer->swivelpos[1] < -0.9f) {
-							vertadown = (g_Vars.currentplayer->swivelpos[1] - -0.9f) / -0.1f;
+						if (g_Vars.currentplayer->swivelpos[1] > edge_boundary) {
+							vertaup = (g_Vars.currentplayer->swivelpos[1] - edge_boundary) / (1.0f - edge_boundary);
+						} else if (g_Vars.currentplayer->swivelpos[1] < -edge_boundary) {
+							vertadown = (g_Vars.currentplayer->swivelpos[1] + edge_boundary) / -(1.0f - edge_boundary);
 						}
 						// Uninvert pitch if needed
 						if (movedata.invertpitch) {
-							movedata.speedvertaup = vertadown;
-							movedata.speedvertadown = vertaup;
+							movedata.speedvertaup += vertadown;
+							movedata.speedvertadown += vertaup;
 						} else {
-							movedata.speedvertaup = vertaup;
-							movedata.speedvertadown = vertadown;
+							movedata.speedvertaup += vertaup;
+							movedata.speedvertadown += vertadown;
 						}
 					} else {
 						// Reset mouse/gyro aim position when not aiming
@@ -2332,7 +2331,7 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 				// Calculate new verta
 				newverta = g_Vars.currentplayer->vv_verta + (g_Vars.currentplayer->speedverta * g_Vars.lvupdate60freal + g_Vars.currentplayer->speedverta * g_Vars.lvupdate60freal);
 
-				if (g_Vars.currentplayer->vv_verta > lookahead && newverta > lookahead) {
+				if (g_Vars.currentplayer->vv_verta > lookahead && newverta > lookahead) { 
 					g_Vars.currentplayer->vv_verta = newverta;
 				} else if (g_Vars.currentplayer->vv_verta < lookahead && newverta < lookahead) {
 					g_Vars.currentplayer->vv_verta = newverta;
@@ -2523,15 +2522,6 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 				g_Vars.currentplayer->autoaimdamp = (PAL ? 0.974f : 0.979f);
 			}
 
-#ifdef PLATFORM_N64
-			x = g_Vars.currentplayer->speedtheta * 0.3f + g_Vars.currentplayer->gunextraaimx;
-			y = -g_Vars.currentplayer->speedverta * 0.1f + g_Vars.currentplayer->gunextraaimy;
-#else
-			bmoveApplyCrosshairSwivel(&movedata, mlookscale, gyroscale, &x, &y);
-#endif
-
-			bgunSwivelWithDamp(x, y, PAL ? 0.955f : 0.963f);
-		}
 	} else if (movedata.canmanualaim) {
 		// Adjust crosshair's position on screen
 		// when holding aim and moving stick

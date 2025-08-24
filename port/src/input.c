@@ -1646,7 +1646,6 @@ void inputMouseSetSpeed(f32 x, f32 y)
 	mouseSensY = y;
 }
 
-
 void inputMouseGetAimSpeed(f32* x, f32* y)
 {
 	if (x) *x = g_PlayerExtCfg[0].mouseaimsensx;
