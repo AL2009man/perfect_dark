@@ -555,6 +555,14 @@ static void bmoveApplyCrosshairSwivel(struct movedata *movedata, f32 mlookscale,
         effective_speedverta -= movedata->gyrolookdy * gyroSensY * mlookscale * 5.0f;
     }
     
+    // Clamp effective movement to prevent excessive crosshair sway at high sensitivity for all inputs
+    const f32 max_effective_movement = 4.5f;
+    if (effective_speedtheta > max_effective_movement) effective_speedtheta = max_effective_movement;
+    else if (effective_speedtheta < -max_effective_movement) effective_speedtheta = -max_effective_movement;
+    
+    if (effective_speedverta > max_effective_movement) effective_speedverta = max_effective_movement;
+    else if (effective_speedverta < -max_effective_movement) effective_speedverta = -max_effective_movement;
+    
     // Determine crosshair sway scaling based on input types
     if (joystick_active && (mouse_active || gyro_active)) {
         // combined joystick and mouse/gyro sway
