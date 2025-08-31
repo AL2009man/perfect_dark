@@ -502,7 +502,7 @@ static void bmoveApplyCameraMovement(struct movedata *data, f32 mlookscale, f32 
 }
 
 /**
- * Apply crosshair swivel based on camera movement with precision input detection
+ * Apply crosshair swivel based on camera movement with input detection
  */
 static void bmoveApplyCrosshairSwivel(struct movedata *movedata, f32 mlookscale, f32 *x, f32 *y)
 {
@@ -520,25 +520,34 @@ static void bmoveApplyCrosshairSwivel(struct movedata *movedata, f32 mlookscale,
     bool joystick_active = (movedata->c1stickxraw != 0 || movedata->c1stickyraw != 0);
     bool mouse_active = (movedata->freelookdx != 0.0f || movedata->freelookdy != 0.0f);
     
-    if (joystick_active) {
-        // Joystick is active - use full sway and ignore mouse for swivel
-        xscale = yscale = PLAYER_EXTCFG().crosshairsway;
-        effective_speedtheta = g_Vars.currentplayer->speedtheta;
-        effective_speedverta = g_Vars.currentplayer->speedverta;
-    } else if (mouse_active) {
-        // Mouse active - uses reduced sway for precision input
-        xscale = PLAYER_EXTCFG().crosshairsway * 0.25f;
-        yscale = PLAYER_EXTCFG().crosshairsway * 0.25f;
-        
-        effective_speedtheta = g_Vars.currentplayer->speedtheta;
-        effective_speedverta = g_Vars.currentplayer->speedverta;
-        
+    effective_speedtheta = g_Vars.currentplayer->speedtheta;
+    effective_speedverta = g_Vars.currentplayer->speedverta;
+    
+    if (mouse_active) {
         effective_speedtheta += movedata->freelookdx * mouseSensX * mlookscale * 5.0f;
         effective_speedverta -= movedata->freelookdy * mouseSensY * mlookscale * 5.0f;
+    }
+    
+    // Clamp effective movement to prevent excessive crosshair swaying at high sensitivity for all inputs
+    const f32 max_effective_movement = 4.5f;
+    if (effective_speedtheta > max_effective_movement) effective_speedtheta = max_effective_movement;
+    else if (effective_speedtheta < -max_effective_movement) effective_speedtheta = -max_effective_movement;
+    
+    if (effective_speedverta > max_effective_movement) effective_speedverta = max_effective_movement;
+    else if (effective_speedverta < -max_effective_movement) effective_speedverta = -max_effective_movement;
+    
+    // Determine crosshair sway scaling based on input types
+    if (joystick_active && (mouse_active)) {
+        // combined joystick and mouse sway
+        xscale = PLAYER_EXTCFG().crosshairsway * 0.8f;
+        yscale = PLAYER_EXTCFG().crosshairsway * 0.8f;
+    } else if (mouse_active) {
+        // mouse sway
+        xscale = PLAYER_EXTCFG().crosshairsway * 0.25f;
+        yscale = PLAYER_EXTCFG().crosshairsway * 0.25f;
     } else {
+        // Only joystick or no input - use full sway
         xscale = yscale = PLAYER_EXTCFG().crosshairsway;
-        effective_speedtheta = g_Vars.currentplayer->speedtheta;
-        effective_speedverta = g_Vars.currentplayer->speedverta;
     }
     
     *x = effective_speedtheta * 0.3f * xscale + g_Vars.currentplayer->gunextraaimx;
