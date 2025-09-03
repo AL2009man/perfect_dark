@@ -452,23 +452,19 @@ static void bmoveApplyCameraMovement(struct movedata *data, f32 mlookscale, f32 
 {
 #ifndef PLATFORM_N64
 	// Check for input types
-	bool mouseActive = (data->freelookdx != 0.0f || data->freelookdy != 0.0f);
-	bool gyroActive = (data->gyrolookdx != 0.0f || data->gyrolookdy != 0.0f);
-	
-	// Use angle-based camera system
+	const bool mouseActive = (data->freelookdx != 0.0f || data->freelookdy != 0.0f);
+	const bool gyroActive = (data->gyrolookdx != 0.0f || data->gyrolookdy != 0.0f);
+
 	if (mouseActive || gyroActive) {
-		f32 mouseSensX, mouseSensY;
-		inputMouseGetSpeed(&mouseSensX, &mouseSensY);
-		
-		// horizontal movement
+		// Horizontal camera movement
 		if (data->freelookdx != 0.0f || data->gyrolookdx != 0.0f) {
 			if (mouseActive) {
-			g_Vars.currentplayer->vv_theta += data->freelookdx;
+				g_Vars.currentplayer->vv_theta += data->freelookdx;
 			}
 			if (gyroActive) {
 				g_Vars.currentplayer->vv_theta += data->gyrolookdx;
 			}
-			
+
 			// Normalize theta to 0-360 degrees
 			while (g_Vars.currentplayer->vv_theta < 0) {
 				g_Vars.currentplayer->vv_theta += 360.0f;
@@ -478,15 +474,15 @@ static void bmoveApplyCameraMovement(struct movedata *data, f32 mlookscale, f32 
 			}
 		}
 
-		// vertical movement
+		// Vertical camera movement
 		if (data->freelookdy != 0.0f || data->gyrolookdy != 0.0f) {
 			if (mouseActive) {
-			g_Vars.currentplayer->vv_verta -= data->freelookdy;
+				g_Vars.currentplayer->vv_verta -= data->freelookdy;
 			}
 			if (gyroActive) {
 				g_Vars.currentplayer->vv_verta -= data->gyrolookdy;
 			}
-			
+
 			// Clamp pitch to prevent over-rotation
 			if (g_Vars.currentplayer->vv_verta > 90.0f) {
 				g_Vars.currentplayer->vv_verta = 90.0f;
@@ -498,7 +494,7 @@ static void bmoveApplyCameraMovement(struct movedata *data, f32 mlookscale, f32 
 		// Delta-based movement (analog stick)
 		f32 mouseSensX, mouseSensY;
 		inputMouseGetSpeed(&mouseSensX, &mouseSensY);
-		
+
 		if (turnValue && data->freelookdx != 0.0f) {
 			*turnValue += data->freelookdx * mouseSensX * mlookscale;
 		}
@@ -507,10 +503,9 @@ static void bmoveApplyCameraMovement(struct movedata *data, f32 mlookscale, f32 
 		}
 	}
 #else
-	// N64 platform - only delta-based movement (analog stick)
 	f32 mouseSensX, mouseSensY;
 	inputMouseGetSpeed(&mouseSensX, &mouseSensY);
-	
+
 	if (turnValue && data->freelookdx != 0.0f) {
 		*turnValue += data->freelookdx * mouseSensX * mlookscale;
 	}
