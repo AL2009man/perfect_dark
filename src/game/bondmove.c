@@ -456,6 +456,10 @@ static void bmoveApplyCameraMovement(struct movedata *data, f32 mlookscale, f32 
 	const bool gyroActive = (data->gyrolookdx != 0.0f || data->gyrolookdy != 0.0f);
 
 	if (mouseActive || gyroActive) {
+		// Store original angles for delta calculation
+		f32 originalTheta = g_Vars.currentplayer->vv_theta;
+		f32 originalVerta = g_Vars.currentplayer->vv_verta;
+
 		// Horizontal camera movement
 		if (data->freelookdx != 0.0f || data->gyrolookdx != 0.0f) {
 			if (mouseActive) {
@@ -489,6 +493,17 @@ static void bmoveApplyCameraMovement(struct movedata *data, f32 mlookscale, f32 
 			} else if (g_Vars.currentplayer->vv_verta < -90.0f) {
 				g_Vars.currentplayer->vv_verta = -90.0f;
 			}
+		}
+
+		// Calculate deltas for compatibility (network/demos/cutscenes)
+		if (turnValue) {
+			f32 deltaTheta = g_Vars.currentplayer->vv_theta - originalTheta;
+			if (deltaTheta > 180.0f) deltaTheta -= 360.0f;
+			else if (deltaTheta < -180.0f) deltaTheta += 360.0f;
+			*turnValue += deltaTheta;
+		}
+		if (pitchValue) {
+			*pitchValue += g_Vars.currentplayer->vv_verta - originalVerta;
 		}
 	} else {
 		// Delta-based movement (analog stick)
