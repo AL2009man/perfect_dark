@@ -163,35 +163,6 @@ enum gyroautocalibration {
 	GYRO_AUTOCALIBRATION_ALWAYS = 3 // Always active, calibration continuous.
 };
 
-// Combined gyro calibration configuration and state structure
-typedef struct {
-	// Auto-calibration configuration parameters
-	unsigned int calibInterval;      // Time between calibration attempts
-	unsigned int initialDelay;       // Initial delay when becoming stable
-	float confidenceTarget;          // Target confidence for completion
-	float confidenceMin;             // Minimum confidence before restart
-	float startThreshold;            // Start calibration threshold
-	float stopThreshold;             // Stop calibration threshold
-	int stableRequired;              // Sustained stability checks required
-	int saveOffset;                  // Whether to save calibration offset
-	
-	// Manual calibration state
-	int manualCalibActive;           // Is manual calibration currently active
-	unsigned int manualCalibStartTime; // When manual calibration started
-	f32 manualOffsetX, manualOffsetY, manualOffsetZ; // Manual calibration offsets
-	s32 manualWeight;                // Weight for manual calibration
-	
-	// Auto-calibration runtime state
-	int wasStable;                   // Was the controller stable during auto-calibration 
-	unsigned int lastAutoCalibTime; // When controller last moved (for cooldown)
-	unsigned int lastCalibrationTime; // When calibration finished (for resume logic)
-	f32 lastConfidence;              // Last confidence level
-	s32 stableCount;                 // Sustained stability counter for STATIONARY mode
-
-	// General state
-	int justFinishedCalibrating;     // Has the controller just finished calibrating 
-} GyroCalibConfig;
-
 // returns bitmask of connected controllers or -1 if failed
 s32 inputInit(void);
 
