@@ -695,14 +695,6 @@ static int inputEventFilter(void *data, SDL_Event *event)
 			}
 			break;
 
-		case SDL_WINDOWEVENT:
-			if (event->window.event == SDL_WINDOWEVENT_FOCUS_GAINED) {
-				// Window gained focus - no immediate action needed
-			} else if (event->window.event == SDL_WINDOWEVENT_FOCUS_LOST) {
-				// Window lost focus - input functions will handle their own state resets
-			}
-			break;
-
 		default:
 			break;
 	}
