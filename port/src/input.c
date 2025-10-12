@@ -127,7 +127,7 @@ static s32 inputWindowHasFocus = 1;
 static s32 numJoysticks = 0;
 
 static s32 useHIDAPI = 1;
-static s32 useRawInput = 1;
+static s32 useRawInput = 0;
 
 static s32 mouseEnabled = 1;
 static s32 mouseX, mouseY;
