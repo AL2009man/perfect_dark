@@ -318,7 +318,7 @@ void inputSetDefaultKeyBinds(s32 cidx, s32 n64mode)
 		{ CK_A,      SDL_CONTROLLER_BUTTON_A             },
 		{ CK_X,      SDL_CONTROLLER_BUTTON_X             },
 		{ CK_Y,      SDL_CONTROLLER_BUTTON_Y             },
-		{ CK_DPAD_L, SDL_CONTROLLER_BUTTON_B,            },
+		{ CK_DPAD_L, SDL_CONTROLLER_BUTTON_B             },
 		{ CK_DPAD_D, SDL_CONTROLLER_BUTTON_LEFTSHOULDER  },
 		{ CK_LTRIG,  SDL_CONTROLLER_BUTTON_RIGHTSHOULDER },
 		{ CK_RTRIG,  VK_JOY1_LTRIG - VK_JOY1_BEGIN       },
@@ -331,7 +331,7 @@ void inputSetDefaultKeyBinds(s32 cidx, s32 n64mode)
 		{ CK_ACCEPT, SDL_CONTROLLER_BUTTON_A             },
 		{ CK_CANCEL, SDL_CONTROLLER_BUTTON_B             },
 		{ CK_0040,   SDL_CONTROLLER_BUTTON_RIGHTSTICK    },
-		{ CK_0100,   SDL_CONTROLLER_BUTTON_MISC1         },
+		{ CK_0100,   SDL_CONTROLLER_BUTTON_BACK          },
 		{ CK_8000,   SDL_CONTROLLER_BUTTON_LEFTSTICK     },
 	};
 
@@ -368,7 +368,7 @@ void inputSetDefaultKeyBinds(s32 cidx, s32 n64mode)
 		{ CK_DPAD_U, SDL_CONTROLLER_BUTTON_DPAD_UP       },
 		{ CK_DPAD_L, SDL_CONTROLLER_BUTTON_DPAD_LEFT     },
 		{ CK_DPAD_R, SDL_CONTROLLER_BUTTON_DPAD_RIGHT    },
-		{ CK_0100,   SDL_CONTROLLER_BUTTON_MISC1         },
+		{ CK_0100,   SDL_CONTROLLER_BUTTON_BACK          },
 	};
 
 	memset(binds[cidx], 0, sizeof(binds[cidx]));
@@ -704,14 +704,6 @@ static int inputEventFilter(void *data, SDL_Event *event)
 		case SDL_TEXTINPUT:
 			if (!lastChar && event->text.text[0] && (u8)event->text.text[0] < 0x80) {
 				lastChar = event->text.text[0];
-			}
-			break;
-
-		case SDL_WINDOWEVENT:
-			if (event->window.event == SDL_WINDOWEVENT_FOCUS_GAINED) {
-				// Window gained focus - no immediate action needed
-			} else if (event->window.event == SDL_WINDOWEVENT_FOCUS_LOST) {
-				// Window lost focus - input functions will handle their own state resets
 			}
 			break;
 
@@ -1128,51 +1120,19 @@ static bool inputGetControllerSensorData(s32 cidx, float gyroData[3], float acce
 	
 	float gyroRaw[3], accelRaw[3];
 	
-	// SDL gyro data is already in radians/second
 	SDL_GameControllerGetSensorData(pads[cidx], SDL_SENSOR_GYRO, gyroRaw, 3);
-	
-	// SDL accelerometer data is in SI units (m/s^2)
 	SDL_GameControllerGetSensorData(pads[cidx], SDL_SENSOR_ACCEL, accelRaw, 3);
 	
-	// Transform to GamepadMotionHelper's Y-up coordinate system
 	gyroData[0] = gyroRaw[0];
 	gyroData[1] = gyroRaw[1];
 	gyroData[2] = gyroRaw[2];
 	
-	// Convert accelerometer to g-force units
+	// Convert accelerometer from m/s^2 to g-force
 	accelData[0] = accelRaw[0] / SDL_STANDARD_GRAVITY;
 	accelData[1] = accelRaw[1] / SDL_STANDARD_GRAVITY;
 	accelData[2] = accelRaw[2] / SDL_STANDARD_GRAVITY;
 
 	return true;
-}
-
-static float inputCalculateGyroDeltaTime(s32 cidx)
-{
-	static uint64_t lastUpdateTime[INPUT_MAX_CONTROLLERS] = {0};
-	uint64_t now = sysGetMicroseconds();
-	float deltaTime = 1.0f / 60.0f; // Default to 60fps baseline
-	
-#if SDL_VERSION_ATLEAST(2, 0, 16)
-	// Use actual sensor data rate for more accurate baseline timing if available
-	if (pads[cidx]) {
-		float gyroRate = SDL_GameControllerGetSensorDataRate(pads[cidx], SDL_SENSOR_GYRO);
-		if (gyroRate > 0.0f) {
-			deltaTime = 1.0f / gyroRate; // Use actual sensor rate as baseline
-		}
-	}
-#endif
-	
-	if (lastUpdateTime[cidx] != 0) {
-		float actualDeltaTime = (now - lastUpdateTime[cidx]) / 1000000.0f;
-		if (actualDeltaTime > 0.0f && actualDeltaTime <= 0.1f) {
-			// Use the actual deltaTime to ensure GamepadMotionHelper gets proper timing
-			deltaTime = actualDeltaTime;
-		}
-	}
-	lastUpdateTime[cidx] = now;
-	
-	return deltaTime;
 }
 
 static void inputProcessMotionSensorData(s32 cidx, float deltaTime, f32* deltaX, f32* deltaY, f32* deltaZ)
@@ -1194,7 +1154,7 @@ static void inputProcessMotionSensorData(s32 cidx, float deltaTime, f32* deltaX,
 		gmhSetCalibrationMode(gpadMotion[cidx], CALIBRATIONMODE_MANUAL);
 	}
 
-	// Feed data to GamepadMotionHelper (accel data is already in units of gravity)
+	// Feed data to GamepadMotionHelper
 	gmhProcessMotion(gpadMotion[cidx],
 		gyroData[0], gyroData[1], gyroData[2],
 		accelData[0], accelData[1], accelData[2],
@@ -1226,15 +1186,8 @@ static void inputApplyGyroProcessing(s32 cidx, f32* deltaX, f32* deltaY, f32* de
 
 void inputUpdateGyro(s32 cidx)
 {
-	// Check window focus 
-	if (!inputHasWindowFocus()) {
-		// Pause gyro state when window is out of focus
-		inputPauseGyro(cidx);
-		return;
-	}
-
-	// Calculate deltaTime
-	float deltaTime = inputCalculateGyroDeltaTime(cidx);
+	// Calculate frame time 
+	float deltaTime = g_Vars.diffframe60f / 60.0f;
 
 	// Process sensor data
 	f32 deltaX = 0.f, deltaY = 0.f, deltaZ = 0.f;
@@ -1242,13 +1195,13 @@ void inputUpdateGyro(s32 cidx)
 
 	// Monitor auto-calibration status (if enabled)
 	if (gpadMotion[cidx] && padsCfg[cidx].gyroAutoCalibration != GYRO_AUTOCALIBRATION_OFF) {
-		float confidence = gmhGetAutoCalibrationConfidence(gpadMotion[cidx]);
+		float Confidence = gmhGetAutoCalibrationConfidence(gpadMotion[cidx]);
 		bool isSteady = gmhGetAutoCalibrationIsSteady(gpadMotion[cidx]);
 		bool isBelowNoiseThreshold = inputIsControllerSensorNoiseThreshold(cidx);
 		bool isTrulyStable = isSteady && isBelowNoiseThreshold;
 		
 		// Store for use in auto-calibration monitoring
-		gyroCalibState[cidx].lastConfidence = confidence;
+		gyroCalibState[cidx].lastConfidence = Confidence;
 	}
 	
 	// Apply gyro processing pipeline
@@ -2172,7 +2125,6 @@ static bool inputIsControllerSensorNoiseThreshold(s32 cidx)
 	
 	float accelThreshold = 0.08f;
 	for (s32 i = 0; i < 3; ++i) {
-		// accelData is already in units of gravity (g), so 1.0f = 1g
 		float expectedGravity = (i == 1) ? 1.0f : 0.0f;
 		if (fabsf(accelData[i] - expectedGravity) > accelThreshold) return false;
 	}
@@ -2249,7 +2201,7 @@ static void inputUpdateGyroAutoCalibration(s32 cidx)
 	}
 
 	Uint32 now = SDL_GetTicks();
-	float confidence = gmhGetAutoCalibrationConfidence(gpadMotion[cidx]);
+	float Confidence = gmhGetAutoCalibrationConfidence(gpadMotion[cidx]);
 	bool Stillness = gmhGetAutoCalibrationIsSteady(gpadMotion[cidx]);
 	s32 mode = padsCfg[cidx].gyroAutoCalibration;
 	
@@ -2266,7 +2218,7 @@ static void inputUpdateGyroAutoCalibration(s32 cidx)
 			}
 			
 			Uint32 elapsed = now - state->lastAutoCalibTime;
-			if (elapsed > ALWAYS_CALIBRATE_INTERVAL && confidence < ALWAYS_CONFIDENCE_THRESHOLD) {
+			if (elapsed > ALWAYS_CALIBRATE_INTERVAL && Confidence < ALWAYS_CONFIDENCE_THRESHOLD) {
 				gmhStartContinuousCalibration(gpadMotion[cidx]);
 				state->lastAutoCalibTime = now;
 			}
@@ -2277,7 +2229,7 @@ static void inputUpdateGyroAutoCalibration(s32 cidx)
 		}
 		
 		state->wasStill = Stillness;
-		state->lastConfidence = confidence;
+		state->lastConfidence = Confidence;
 		return;
 	}
 	
@@ -2300,8 +2252,8 @@ static void inputUpdateGyroAutoCalibration(s32 cidx)
 		}
 		
 		Uint32 elapsed = now - state->lastAutoCalibTime;
-		
-		if (elapsed > STATIONARY_CALIBRATE_INTERVAL && confidence < STATIONARY_START_CONFIDENCE) {
+
+		if (elapsed > STATIONARY_CALIBRATE_INTERVAL && Confidence < STATIONARY_START_CONFIDENCE) {
 			stableFrameCount[cidx]++;
 			
 			if (stableFrameCount[cidx] >= STATIONARY_STABLE_FRAMES_REQUIRED) {
@@ -2311,7 +2263,7 @@ static void inputUpdateGyroAutoCalibration(s32 cidx)
 			}
 		}
 		
-		if (!state->justFinishedCalibrating && confidence > STATIONARY_FINISH_CONFIDENCE) {
+		if (!state->justFinishedCalibrating && Confidence > STATIONARY_FINISH_CONFIDENCE) {
 			inputGyroCalibrationFinished(cidx, true);
 			gmhPauseContinuousCalibration(gpadMotion[cidx]);
 			state->lastAutoCalibTime = now;
@@ -2325,7 +2277,7 @@ static void inputUpdateGyroAutoCalibration(s32 cidx)
 	}
 	
 	state->wasStill = isFullyStationary;
-	state->lastConfidence = confidence;
+	state->lastConfidence = Confidence;
 }
 
 s32 inputGyroGetAutoCalibration(s32 cidx)

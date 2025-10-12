@@ -102,9 +102,7 @@ Note that the mouse only controls player 1.
 > [!TIP]
 > Gyro Drift may become a occurence during regular gameplay, but far more frequent when using a first-party Nintendo Switch controllers. To remedy this issue: `Gyro Calibration` (under `Player [Number] Controller Options`'s `Gyro Settings`) offers various modes for you to choose from, from `While In Menus` (default), `While Stationary` to `Always`. Depending on what Calibration mode you choose from: just place the controller on the flat surface, and it will automatically calibrate gyro after a few seconds.
 >
-> If the Autocalibration fails or you don't want the gyro to auto-calibrate during regular gameplay: you have the ability to manually calibrate the gyro. You can head over to "`Gyro Settings...`" menu, either select `Initiate Gyro Calibration...`, pressing the `SHARE` button on your Xbox pad (Xbox Series X|S model-onwards) or `F10` key (Player 1 only) at anytime during both gameplay and menus, (it also complements Gyro Autocalibration process!)
->
-> > To clarify: "SHARE" button on Xbox gamepad is a closer equivalent to `Microphone Mute button` (DualSense) or `Capture Button` (Nintendo Switch) button. (under the hood: it's actually the `MISC1` button)
+> If the Autocalibration fails or you don't want the gyro to auto-calibrate during regular gameplay: you have the ability to manually calibrate the gyro. You can head over to "`Gyro Settings...`" menu, either select `Initiate Gyro Calibration...`, pressing the `VIEW` button on your Xbox pad or `F10` key (Player 1 only) at anytime during both gameplay and menus, (it also complements Gyro Autocalibration process!)
 >
 > "`Gyro Calibration (Manual)`" can be rebinded within `pd.ini` or Extended Options' `Key Binding` menu.
 >
@@ -128,7 +126,7 @@ Controls can be rebound in `pd.ini`. Default control scheme is as follows:
 | Alt-fire oneshot | `F + LMB` or `E + LMB` | `A + RT` or  `RB + RT`   | `A + Z`     or `L + Z`    |
 | Quick-detonate   | `E + Q`   or `E + R`   | `A + B`  or  `A + X`     | `A + D-Left`or `A + X`    |
 | Reset Camera / Crosshair   | C            | RS CLICK                 | N/A                       |
-| Gyro Calibration (Manual)  | F10          | SHARE                    | N/A                       |
+| Gyro Calibration (Manual)  | F10          | VIEW                     | N/A                       |
 
 ## Building
 
