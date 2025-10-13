@@ -437,67 +437,66 @@ void bmoveUpdateSpeedThetaControl(f32 value)
 }
 
 /**
- * Apply camera movement with scaling based on input type
+ * Apply camera movement
  * Supports angle-based movement (mouse) and delta-based movement (analog stick)
  */
 static void bmoveApplyCameraMovement(struct movedata *data, f32 mlookscale, f32 *pitchValue, f32 *turnValue)
 {
 #ifndef PLATFORM_N64
-	// Check for input types
-	bool mouseActive = (data->freelookdx != 0.0f || data->freelookdy != 0.0f);
-	
-	// Use angle-based camera system for mouse
-	if (mouseActive) {
-		f32 mouseSensX, mouseSensY;
-		inputMouseGetSpeed(&mouseSensX, &mouseSensY);
-		
-		// horizontal movement
-		if (data->freelookdx != 0.0f) {
-			g_Vars.currentplayer->vv_theta += data->freelookdx;
-			
-			// Normalize theta to 0-360 degrees
-			while (g_Vars.currentplayer->vv_theta < 0) {
-				g_Vars.currentplayer->vv_theta += 360.0f;
-			}
-			while (g_Vars.currentplayer->vv_theta >= 360.0f) {
-				g_Vars.currentplayer->vv_theta -= 360.0f;
-			}
-		}
+	// Combine camera angles into input values
+	const f32 combinedYaw = data->freelookdx;
+	const f32 combinedPitch = data->freelookdy;
 
-		// vertical movement
-		if (data->freelookdy != 0.0f) {
-			g_Vars.currentplayer->vv_verta -= data->freelookdy;
-			
-			// Clamp pitch to prevent over-rotation
-			if (g_Vars.currentplayer->vv_verta > 90.0f) {
-				g_Vars.currentplayer->vv_verta = 90.0f;
-			} else if (g_Vars.currentplayer->vv_verta < -90.0f) {
-				g_Vars.currentplayer->vv_verta = -90.0f;
-			}
+	if (combinedYaw != 0.0f || combinedPitch != 0.0f) {
+		// Angle-based movement
+		const f32 originalTheta = g_Vars.currentplayer->vv_theta;
+		const f32 originalVerta = g_Vars.currentplayer->vv_verta;
+
+		// Apply rotation
+		g_Vars.currentplayer->vv_theta += combinedYaw;
+		g_Vars.currentplayer->vv_verta -= combinedPitch;
+
+		// Normalize yaw to 0-360
+		while (g_Vars.currentplayer->vv_theta < 0.0f)
+			g_Vars.currentplayer->vv_theta += 360.0f;
+		while (g_Vars.currentplayer->vv_theta >= 360.0f)
+			g_Vars.currentplayer->vv_theta -= 360.0f;
+
+		// Clamp pitch to ±90
+		if (g_Vars.currentplayer->vv_verta > 90.0f)
+			g_Vars.currentplayer->vv_verta = 90.0f;
+		else if (g_Vars.currentplayer->vv_verta < -90.0f)
+			g_Vars.currentplayer->vv_verta = -90.0f;
+
+		// Calculate deltas for netplay/demos/cutscenes compatibility
+		if (turnValue) {
+			f32 deltaTheta = g_Vars.currentplayer->vv_theta - originalTheta;
+			if (deltaTheta > 180.0f) deltaTheta -= 360.0f;
+			else if (deltaTheta < -180.0f) deltaTheta += 360.0f;
+			*turnValue += deltaTheta;
+		}
+		if (pitchValue) {
+			*pitchValue += g_Vars.currentplayer->vv_verta - originalVerta;
 		}
 	} else {
 		// Delta-based movement (analog stick)
 		f32 mouseSensX, mouseSensY;
 		inputMouseGetSpeed(&mouseSensX, &mouseSensY);
-		
-		if (turnValue && data->freelookdx != 0.0f) {
+
+		if (turnValue && data->freelookdx != 0.0f)
 			*turnValue += data->freelookdx * mouseSensX * mlookscale;
-		}
-		if (pitchValue && data->freelookdy != 0.0f) {
+		if (pitchValue && data->freelookdy != 0.0f)
 			*pitchValue += data->freelookdy * mouseSensY * mlookscale;
-		}
 	}
 #else
 	// N64 platform - only delta-based movement (analog stick)
-	f32 mouseSensX, mouseSensY;
+f32 mouseSensX, mouseSensY;
 	inputMouseGetSpeed(&mouseSensX, &mouseSensY);
-	
-	if (turnValue && data->freelookdx != 0.0f) {
+
+	if (turnValue && data->freelookdx != 0.0f)
 		*turnValue += data->freelookdx * mouseSensX * mlookscale;
-	}
-	if (pitchValue && data->freelookdy != 0.0f) {
+	if (pitchValue && data->freelookdy != 0.0f)
 		*pitchValue += data->freelookdy * mouseSensY * mlookscale;
-	}
 #endif
 }
 
