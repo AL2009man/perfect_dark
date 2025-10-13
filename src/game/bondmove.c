@@ -451,7 +451,7 @@ void bmoveUpdateSpeedThetaControl(f32 value)
 static void bmoveApplyCameraMovement(struct movedata *data, f32 mlookscale, f32 gyroscale, f32 *pitchValue, f32 *turnValue)
 {
 #ifndef PLATFORM_N64
-	// Combine mouse and gyro inputs (Quake-style)
+	// Combine camera angles into input values
 	const f32 combinedYaw = data->freelookdx + data->gyrolookdx;
 	const f32 combinedPitch = data->freelookdy + data->gyrolookdy;
 
@@ -497,6 +497,7 @@ static void bmoveApplyCameraMovement(struct movedata *data, f32 mlookscale, f32 
 			*pitchValue += data->freelookdy * mouseSensY * mlookscale;
 	}
 #else
+    // N64 platform - only delta-based movement (analog stick)
 	f32 mouseSensX, mouseSensY;
 	inputMouseGetSpeed(&mouseSensX, &mouseSensY);
 
