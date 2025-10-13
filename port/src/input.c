@@ -148,6 +148,12 @@ static bool inputGetControllerSensorData(s32 cidx, float gyroData[3], float acce
 static GamepadMotionHandle gpadMotion[INPUT_MAX_CONTROLLERS] = { NULL };
 static f32 gyroDeltaYaw[INPUT_MAX_CONTROLLERS], gyroDeltaPitch[INPUT_MAX_CONTROLLERS], gyroDeltaRoll[INPUT_MAX_CONTROLLERS];
 
+// Sensor sample accumulation
+static struct {
+	float gyro[3], accel[3];
+	u32 gyroCount, accelCount;
+} sensorAccum[INPUT_MAX_CONTROLLERS] = {0};
+
 static s32 lastKey = 0;
 static char lastChar = 0;
 static s32 textInput = 0;
@@ -521,7 +527,10 @@ static inline void inputCloseController(const s32 cidx)
 		sysLogPrintf(LOG_NOTE, "input: GamepadMotion instance cleaned up for controller %d", cidx);
 	}
 
-    inputPauseGyro(cidx);
+	// Reset sensor accumulator
+	memset(&sensorAccum[cidx], 0, sizeof(sensorAccum[cidx]));
+
+	inputPauseGyro(cidx);
 
 	if (cidx) {
 		connectedMask &= ~(1 << cidx);
@@ -707,7 +716,23 @@ static int inputEventFilter(void *data, SDL_Event *event)
 			}
 			break;
 
-		default:
+	case SDL_CONTROLLERSENSORUPDATE: {
+		const s32 idx = inputControllerGetIndex(SDL_GameControllerFromInstanceID(event->csensor.which));
+		if (idx < 0 || idx >= INPUT_MAX_CONTROLLERS) break;
+		
+		if (event->csensor.sensor == SDL_SENSOR_GYRO) {
+			for (int i = 0; i < 3; i++) {
+				sensorAccum[idx].gyro[i] += event->csensor.data[i];
+			}
+			sensorAccum[idx].gyroCount++;
+		} else if (event->csensor.sensor == SDL_SENSOR_ACCEL) {
+			for (int i = 0; i < 3; i++) {
+				sensorAccum[idx].accel[i] += event->csensor.data[i] / SDL_STANDARD_GRAVITY;
+			}
+			sensorAccum[idx].accelCount++;
+		}
+		break;
+	}		default:
 			break;
 	}
 
@@ -1118,19 +1143,27 @@ static bool inputGetControllerSensorData(s32 cidx, float gyroData[3], float acce
 		return false;
 	}
 	
-	float gyroRaw[3], accelRaw[3];
+	// Use accumulated event samples if available
+	if (sensorAccum[cidx].gyroCount > 0 && sensorAccum[cidx].accelCount > 0) {
+		for (int i = 0; i < 3; i++) {
+			gyroData[i] = sensorAccum[cidx].gyro[i] / sensorAccum[cidx].gyroCount;
+			accelData[i] = sensorAccum[cidx].accel[i] / sensorAccum[cidx].accelCount;
+			sensorAccum[cidx].gyro[i] = 0.0f;
+			sensorAccum[cidx].accel[i] = 0.0f;
+		}
+		sensorAccum[cidx].gyroCount = sensorAccum[cidx].accelCount = 0;
+		return true;
+	}
 	
+	// Fallback to polling
+	float gyroRaw[3], accelRaw[3];
 	SDL_GameControllerGetSensorData(pads[cidx], SDL_SENSOR_GYRO, gyroRaw, 3);
 	SDL_GameControllerGetSensorData(pads[cidx], SDL_SENSOR_ACCEL, accelRaw, 3);
 	
-	gyroData[0] = gyroRaw[0];
-	gyroData[1] = gyroRaw[1];
-	gyroData[2] = gyroRaw[2];
-	
-	// Convert accelerometer from m/s^2 to g-force
-	accelData[0] = accelRaw[0] / SDL_STANDARD_GRAVITY;
-	accelData[1] = accelRaw[1] / SDL_STANDARD_GRAVITY;
-	accelData[2] = accelRaw[2] / SDL_STANDARD_GRAVITY;
+	for (int i = 0; i < 3; i++) {
+		gyroData[i] = gyroRaw[i];
+		accelData[i] = accelRaw[i] / SDL_STANDARD_GRAVITY;
+	}
 
 	return true;
 }

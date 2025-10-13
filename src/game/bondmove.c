@@ -445,57 +445,38 @@ void bmoveUpdateSpeedThetaControl(f32 value)
 }
 
 /**
- * Apply camera movement with scaling based on input type
+ * Apply camera movement
  * Supports angle-based movement (mouse/gyro) and delta-based movement (analog stick)
  */
 static void bmoveApplyCameraMovement(struct movedata *data, f32 mlookscale, f32 gyroscale, f32 *pitchValue, f32 *turnValue)
 {
 #ifndef PLATFORM_N64
-	// Check for input types
-	const bool mouseActive = (data->freelookdx != 0.0f || data->freelookdy != 0.0f);
-	const bool gyroActive = (data->gyrolookdx != 0.0f || data->gyrolookdy != 0.0f);
+	// Combine mouse and gyro inputs (Quake-style)
+	const f32 combinedYaw = data->freelookdx + data->gyrolookdx;
+	const f32 combinedPitch = data->freelookdy + data->gyrolookdy;
 
-	if (mouseActive || gyroActive) {
-		// Store original angles for delta calculation
-		f32 originalTheta = g_Vars.currentplayer->vv_theta;
-		f32 originalVerta = g_Vars.currentplayer->vv_verta;
+	if (combinedYaw != 0.0f || combinedPitch != 0.0f) {
+		// Angle-based movement
+		const f32 originalTheta = g_Vars.currentplayer->vv_theta;
+		const f32 originalVerta = g_Vars.currentplayer->vv_verta;
 
-		// Horizontal camera movement
-		if (data->freelookdx != 0.0f || data->gyrolookdx != 0.0f) {
-			if (mouseActive) {
-				g_Vars.currentplayer->vv_theta += data->freelookdx;
-			}
-			if (gyroActive) {
-				g_Vars.currentplayer->vv_theta += data->gyrolookdx;
-			}
+		// Apply rotation
+		g_Vars.currentplayer->vv_theta += combinedYaw;
+		g_Vars.currentplayer->vv_verta -= combinedPitch;
 
-			// Normalize theta to 0-360 degrees
-			while (g_Vars.currentplayer->vv_theta < 0) {
-				g_Vars.currentplayer->vv_theta += 360.0f;
-			}
-			while (g_Vars.currentplayer->vv_theta >= 360.0f) {
-				g_Vars.currentplayer->vv_theta -= 360.0f;
-			}
-		}
+		// Normalize yaw to 0-360
+		while (g_Vars.currentplayer->vv_theta < 0.0f)
+			g_Vars.currentplayer->vv_theta += 360.0f;
+		while (g_Vars.currentplayer->vv_theta >= 360.0f)
+			g_Vars.currentplayer->vv_theta -= 360.0f;
 
-		// Vertical camera movement
-		if (data->freelookdy != 0.0f || data->gyrolookdy != 0.0f) {
-			if (mouseActive) {
-				g_Vars.currentplayer->vv_verta -= data->freelookdy;
-			}
-			if (gyroActive) {
-				g_Vars.currentplayer->vv_verta -= data->gyrolookdy;
-			}
+		// Clamp pitch to ±90
+		if (g_Vars.currentplayer->vv_verta > 90.0f)
+			g_Vars.currentplayer->vv_verta = 90.0f;
+		else if (g_Vars.currentplayer->vv_verta < -90.0f)
+			g_Vars.currentplayer->vv_verta = -90.0f;
 
-			// Clamp pitch to prevent over-rotation
-			if (g_Vars.currentplayer->vv_verta > 90.0f) {
-				g_Vars.currentplayer->vv_verta = 90.0f;
-			} else if (g_Vars.currentplayer->vv_verta < -90.0f) {
-				g_Vars.currentplayer->vv_verta = -90.0f;
-			}
-		}
-
-		// Calculate deltas for compatibility (network/demos/cutscenes)
+		// Calculate deltas for netplay/demos/cutscenes compatibility
 		if (turnValue) {
 			f32 deltaTheta = g_Vars.currentplayer->vv_theta - originalTheta;
 			if (deltaTheta > 180.0f) deltaTheta -= 360.0f;
@@ -510,23 +491,19 @@ static void bmoveApplyCameraMovement(struct movedata *data, f32 mlookscale, f32 
 		f32 mouseSensX, mouseSensY;
 		inputMouseGetSpeed(&mouseSensX, &mouseSensY);
 
-		if (turnValue && data->freelookdx != 0.0f) {
+		if (turnValue && data->freelookdx != 0.0f)
 			*turnValue += data->freelookdx * mouseSensX * mlookscale;
-		}
-		if (pitchValue && data->freelookdy != 0.0f) {
+		if (pitchValue && data->freelookdy != 0.0f)
 			*pitchValue += data->freelookdy * mouseSensY * mlookscale;
-		}
 	}
 #else
 	f32 mouseSensX, mouseSensY;
 	inputMouseGetSpeed(&mouseSensX, &mouseSensY);
 
-	if (turnValue && data->freelookdx != 0.0f) {
+	if (turnValue && data->freelookdx != 0.0f)
 		*turnValue += data->freelookdx * mouseSensX * mlookscale;
-	}
-	if (pitchValue && data->freelookdy != 0.0f) {
+	if (pitchValue && data->freelookdy != 0.0f)
 		*pitchValue += data->freelookdy * mouseSensY * mlookscale;
-	}
 #endif
 }
 
