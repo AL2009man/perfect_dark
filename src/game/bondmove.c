@@ -489,8 +489,8 @@ static void bmoveApplyCameraMovement(struct movedata *data, f32 mlookscale, f32 
 			*pitchValue += data->freelookdy * mouseSensY * mlookscale;
 	}
 #else
-	// N64 platform - only delta-based movement (analog stick)
-f32 mouseSensX, mouseSensY;
+    // N64 platform - only delta-based movement (analog stick)
+	f32 mouseSensX, mouseSensY;
 	inputMouseGetSpeed(&mouseSensX, &mouseSensY);
 
 	if (turnValue && data->freelookdx != 0.0f)
