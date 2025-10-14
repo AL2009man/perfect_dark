@@ -1219,6 +1219,13 @@ static void inputApplyGyroProcessing(s32 cidx, f32* deltaX, f32* deltaY, f32* de
 
 void inputUpdateGyro(s32 cidx)
 {
+	// Check window focus 
+	if (!inputHasWindowFocus()) {
+		// Pause gyro state when window is out of focus
+		inputPauseGyro(cidx);
+		return;
+	}
+
 	// Calculate frame time 
 	float deltaTime = g_Vars.diffframe60f / 60.0f;
 
