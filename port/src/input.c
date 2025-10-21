@@ -192,7 +192,7 @@ typedef struct {
 	bool wasStill;                   // Was the controller still during auto-calibration
 	Uint32 lastAutoCalibTime;        // When controller last moved (for cooldown)
 	Uint32 autoCalibStartTime;       // When auto-calibration started (for minimum duration check)
-	f32 lastConfidence;              // Last confidence level
+	bool isCalibrating;              // Is auto-calibration actively running
 
 	// General state
 	bool justFinishedCalibrating;    // Has the controller just finished calibrating
@@ -2167,43 +2167,57 @@ void inputGyroCalibration(s32 cidx, GyroCalibrationOp op, float* out_confidence,
 
 static void inputUpdateGyroAutoCalibration(s32 cidx)
 {
-	if (!gpadMotion[cidx] || padsCfg[cidx].gyroAutoCalibration == GYRO_AUTOCALIBRATION_OFF) return;
-	if (gyroCalibState[cidx].manualCalibActive && !inputIsGyroCalibrationBlocked(cidx)) return;
+	if (!gpadMotion[cidx] || padsCfg[cidx].gyroAutoCalibration == GYRO_AUTOCALIBRATION_OFF) {
+		return;
+	}
+	
+	if (gyroCalibState[cidx].manualCalibActive && !inputIsGyroCalibrationBlocked(cidx)) {
+		return;
+	}
+	
 	if (inputIsMenuGyroCalibrationActive(cidx)) {
 		gmhPauseContinuousCalibration(gpadMotion[cidx]);
 		return;
 	}
-
+	
 	if (!inputGyroAutoCalibrationModes(cidx)) {
 		gmhPauseContinuousCalibration(gpadMotion[cidx]);
 		return;
 	}
-
+	
 	GyroCalibState *state = &gyroCalibState[cidx];
-	Uint32 now = SDL_GetTicks();
-	float confidence = gmhGetAutoCalibrationConfidence(gpadMotion[cidx]);
-	bool stillness = gmhGetAutoCalibrationIsSteady(gpadMotion[cidx]);
-	s32 mode = padsCfg[cidx].gyroAutoCalibration;
+	const Uint32 now = SDL_GetTicks();
+	const float confidence = gmhGetAutoCalibrationConfidence(gpadMotion[cidx]);
+	const bool stillness = gmhGetAutoCalibrationIsSteady(gpadMotion[cidx]);
+	const s32 mode = padsCfg[cidx].gyroAutoCalibration;
 	
 	static s32 previousMode[INPUT_MAX_CONTROLLERS] = {-1, -1, -1, -1};
 	static bool alwaysModeActive[INPUT_MAX_CONTROLLERS] = {false};
 	static bool stationaryModeActive[INPUT_MAX_CONTROLLERS] = {false};
 	
+	// Reset state if mode changed
 	if (previousMode[cidx] != mode) {
 		previousMode[cidx] = mode;
 		gmhPauseContinuousCalibration(gpadMotion[cidx]);
 		alwaysModeActive[cidx] = false;
 		stationaryModeActive[cidx] = false;
+		state->isCalibrating = false;
+		state->wasStill = false;
+		state->lastAutoCalibTime = 0;
+		state->autoCalibStartTime = 0;
+		state->justFinishedCalibrating = false;
 	}
-
+	
+	// ALWAYS MODE: Will attempt to calibrate continuously whenever possible
 	if (mode == GYRO_AUTOCALIBRATION_ALWAYS) {
-		const Uint32 STARTUP_DELAY = 500;
-		const Uint32 INTERVAL = 1500;
-		const float THRESHOLD = 0.85f;
+		const Uint32 STARTUP_DELAY = 120;          	 // Grace period after becoming still
+		const Uint32 INTERVAL = 700;                 // How often to retry calibration
+		const float CONFIDENCE_THRESHOLD = 0.50f;    // Only recalibrate if below 50%
 		
 		if (!alwaysModeActive[cidx]) {
 			state->wasStill = false;
 			state->lastAutoCalibTime = 0;
+			state->isCalibrating = false;
 			alwaysModeActive[cidx] = true;
 		}
 		
@@ -2212,37 +2226,41 @@ static void inputUpdateGyroAutoCalibration(s32 cidx)
 				state->lastAutoCalibTime = now - STARTUP_DELAY;
 			}
 			
-			if (now - state->lastAutoCalibTime > INTERVAL && confidence < THRESHOLD) {
+			if (now - state->lastAutoCalibTime >= INTERVAL && confidence < CONFIDENCE_THRESHOLD && !state->isCalibrating) {
 				gmhStartContinuousCalibration(gpadMotion[cidx]);
 				state->lastAutoCalibTime = now;
+				state->isCalibrating = true;
 			}
-		} else if (state->wasStill) {
-			gmhPauseContinuousCalibration(gpadMotion[cidx]);
+		}
+		else {
+			if (state->wasStill) {
+				gmhPauseContinuousCalibration(gpadMotion[cidx]);
+				state->isCalibrating = false;
+			}
 		}
 		
 		state->wasStill = stillness;
-		state->lastConfidence = confidence;
 		return;
 	}
 	
+	// STATIONARY/MENU_ONLY MODE: Will try to calibrate when controller is placed on a flat surface
 	if (mode == GYRO_AUTOCALIBRATION_STATIONARY || mode == GYRO_AUTOCALIBRATION_MENU_ONLY) {
-		const Uint32 STARTUP_DELAY = 2500;
-		const Uint32 INTERVAL = 10000;
-		const Uint32 MIN_DURATION = 3500;
-		const float FINISH_CONFIDENCE = 0.93f;
-		const int STABLE_FRAMES = 4;
+		const Uint32 STARTUP_DELAY = 2500;        // Grace period for controller placement
+		const Uint32 INTERVAL = 10000;            // Cooldown between calibration attempts
+		const Uint32 MIN_DURATION = 2500;         // Minimum calibration time
+		const float FINISH_CONFIDENCE = 0.90f;    // Stop when confidence exceeds 90%
+		const int STABLE_FRAMES = 16;             // Frames of stability before starting
 		
 		static int stableFrames[INPUT_MAX_CONTROLLERS] = {0};
-		static bool calibrating[INPUT_MAX_CONTROLLERS] = {false};
 		
 		if (!stationaryModeActive[cidx]) {
 			stableFrames[cidx] = 0;
-			calibrating[cidx] = false;
+			state->isCalibrating = false;
 			stationaryModeActive[cidx] = true;
 		}
 		
-		bool isStationary = stillness && inputIsControllerSensorNoiseThreshold(cidx);
-		Uint32 elapsed = now - state->lastAutoCalibTime;
+		const bool isStationary = stillness && inputIsControllerSensorNoiseThreshold(cidx);
+		const Uint32 elapsed = now - state->lastAutoCalibTime;
 		
 		if (isStationary) {
 			if (!state->wasStill) {
@@ -2250,43 +2268,44 @@ static void inputUpdateGyroAutoCalibration(s32 cidx)
 				stableFrames[cidx] = 0;
 			}
 			
-			if (elapsed > INTERVAL && !calibrating[cidx]) {
+			if (elapsed >= INTERVAL && !state->isCalibrating && !state->justFinishedCalibrating) {
 				if (++stableFrames[cidx] >= STABLE_FRAMES) {
 					gmhStartContinuousCalibration(gpadMotion[cidx]);
 					state->autoCalibStartTime = now;
-					state->lastAutoCalibTime = now;
 					stableFrames[cidx] = 0;
-					calibrating[cidx] = true;
+					state->isCalibrating = true;
 				}
-			} else if (elapsed <= INTERVAL) {
-				stableFrames[cidx] = 0;
 			}
 			
-			if (calibrating[cidx] && !state->justFinishedCalibrating) {
-				Uint32 duration = now - state->autoCalibStartTime;
+			if (state->isCalibrating && !state->justFinishedCalibrating) {
+				const Uint32 duration = now - state->autoCalibStartTime;
+				
 				if (confidence > FINISH_CONFIDENCE && duration >= MIN_DURATION) {
 					inputGyroCalibrationFinished(cidx, true);
 					gmhPauseContinuousCalibration(gpadMotion[cidx]);
 					state->lastAutoCalibTime = now;
 					stableFrames[cidx] = 0;
-					calibrating[cidx] = false;
+					state->isCalibrating = false;
 				}
 			}
-		} else {
+		}
+		else {
 			stableFrames[cidx] = 0;
-			if (calibrating[cidx]) {
+			
+			if (state->isCalibrating) {
 				gmhResetContinuousCalibration(gpadMotion[cidx]);
 				gmhPauseContinuousCalibration(gpadMotion[cidx]);
-				calibrating[cidx] = false;
+				state->isCalibrating = false;
 			}
+			
 			if (state->wasStill) {
 				gmhPauseContinuousCalibration(gpadMotion[cidx]);
 				state->lastAutoCalibTime = now;
+				state->justFinishedCalibrating = false;
 			}
 		}
 		
 		state->wasStill = isStationary;
-		state->lastConfidence = confidence;
 	}
 }
 
@@ -2311,16 +2330,10 @@ void inputGyroSetAutoCalibration(s32 cidx, s32 enabled)
 		state->wasStill = false;
 		state->lastAutoCalibTime = 0;
 		state->autoCalibStartTime = 0;
-		state->lastConfidence = 0.0f;
 		
 		// Pause any ongoing calibration when switching modes
 		if (gpadMotion[cidx]) {
 			gmhPauseContinuousCalibration(gpadMotion[cidx]);
-		}
-
-		if (!gpadMotion[cidx]) {
-			inputResetGyroCalibration(cidx);
-		} else {
 			inputConfigureGyroCalibrationMode(cidx);
 		}
 	}
