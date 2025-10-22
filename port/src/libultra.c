@@ -248,7 +248,7 @@ s32 __osMotorAccess(OSPfs *pfs, s32 cmd)
 		return PFS_ERR_NOPACK;
 	}
 
-	s32 filterSetting = inputRumbleGetFilter(pfs->channel);
+	s32 filterSetting = inputRumbleGetFilter(pfs->channel); // filters rumble strength
 	f32 strength = (f32)(cmd == MOTOR_START);
 	
 	if (filterSetting == 1 || (filterSetting == -1 && inputGyroIsEnabled(pfs->channel) && g_GyroActive[pfs->channel])) {
