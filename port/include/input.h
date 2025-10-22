@@ -250,6 +250,9 @@ void inputRumble(s32 idx, f32 strength, f32 time);
 f32 inputRumbleGetStrength(s32 cidx);
 void inputRumbleSetStrength(s32 cidx, f32 val);
 
+s32 inputRumbleGetFilter(s32 cidx);
+void inputRumbleSetFilter(s32 cidx, s32 val);
+
 // locks the mouse cursor in the window and makes it invisible if argument is true
 void inputLockMouse(s32 lock);
 
@@ -296,6 +299,10 @@ void inputGyroGetRawDelta(s32 cidx, s32* dx, s32* dy, s32* dz);
 // Motion Sensor detection
 // returns 1 if the controller has motion sensors, 0 otherwise disables Gyro Aiming functionality for the controller.
 s32 inputControllerMotionSensorsSupported(s32 cidx);
+
+// Track if gyro is actively providing input
+// best use to track active gyro input for rumble filtering
+extern s32 g_GyroActive[INPUT_MAX_CONTROLLERS];
 
 // Gyro Enable/Disable
 s32 inputGyroIsEnabled(s32 cidx);

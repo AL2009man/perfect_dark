@@ -1068,6 +1068,21 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 			allowmcross = true;
 		}
 
+		// Track if gyro is actively providing input (context-aware for rumble filtering)
+		// Only set active if gyro mode matches current aiming context
+		s32 gyroIsActive = 0;
+		s32 isInSightAim = g_Vars.currentplayer->insightaimmode;
+		s32 hasGyroInput = (gyroCamDx != 0.f || gyroCamDy != 0.f || gyroCrossDx != 0.f || gyroCrossDy != 0.f);
+		
+		if (gyroAimMode == GYRO_AIM_BOTH) {
+			gyroIsActive = hasGyroInput;
+		} else if (gyroAimMode == GYRO_AIM_CAMERA && !isInSightAim) {
+			gyroIsActive = (gyroCamDx != 0.f || gyroCamDy != 0.f);
+		} else if (gyroAimMode == GYRO_AIM_CROSSHAIR && isInSightAim) {
+			gyroIsActive = (gyroCrossDx != 0.f || gyroCrossDy != 0.f);
+		}
+		g_GyroActive[cidx] = gyroIsActive;
+
 		if (movedata.invertpitch) {
 			movedata.gyrolookdy = -movedata.gyrolookdy;
 		}
@@ -1077,6 +1092,9 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 		if (movedata.gyrolookdx > 10.0f)  movedata.gyrolookdx = 10.0f;
 		if (movedata.gyrolookdy < -10.0f) movedata.gyrolookdy = -10.0f;
 		if (movedata.gyrolookdy > 10.0f)  movedata.gyrolookdy = 10.0f;
+	} else {
+		// Gyro not active this frame
+		g_GyroActive[cidx] = 0;
 	}
 #endif
 
