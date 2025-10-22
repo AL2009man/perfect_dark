@@ -205,6 +205,9 @@ void inputRumble(s32 idx, f32 strength, f32 time);
 f32 inputRumbleGetStrength(s32 cidx);
 void inputRumbleSetStrength(s32 cidx, f32 val);
 
+s32 inputRumbleGetFilter(s32 cidx);
+void inputRumbleSetFilter(s32 cidx, s32 val);
+
 // locks the mouse cursor in the window and makes it invisible if argument is true
 void inputLockMouse(s32 lock);
 

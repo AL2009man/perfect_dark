@@ -36,6 +36,7 @@ static SDL_GameController *pads[INPUT_MAX_CONTROLLERS];
 #define CONTROLLERCFG_DEFAULT { \
 	.rumbleOn = 0, \
 	.rumbleScale = 0.5f, \
+	.rumbleFilter = -1, \
 	.axisMap = { \
 		{ SDL_CONTROLLER_AXIS_LEFTX,  SDL_CONTROLLER_AXIS_LEFTY  }, \
 		{ SDL_CONTROLLER_AXIS_RIGHTX, SDL_CONTROLLER_AXIS_RIGHTY }, \
@@ -51,6 +52,7 @@ static SDL_GameController *pads[INPUT_MAX_CONTROLLERS];
 static struct controllercfg {
 	s32 rumbleOn;
 	f32 rumbleScale;
+	s32 rumbleFilter;
 	u32 axisMap[2][2];
 	f32 sens[4];
 	s32 deadzone[4];
@@ -966,6 +968,16 @@ void inputRumbleSetStrength(s32 cidx, f32 val)
 	padsCfg[cidx].rumbleScale = val;
 }
 
+s32 inputRumbleGetFilter(s32 cidx)
+{
+	return padsCfg[cidx].rumbleFilter;
+}
+
+void inputRumbleSetFilter(s32 cidx, s32 val)
+{
+	padsCfg[cidx].rumbleFilter = val;
+}
+
 s32 inputControllerMask(void)
 {
 	return connectedMask;
@@ -1524,6 +1536,7 @@ PD_CONSTRUCTOR static void inputConfigInit(void)
 		secname[12] = '1' + c;
 		secname[13] = '\0';
 		configRegisterFloat(strFmt("%s.RumbleScale", secname), &padsCfg[c].rumbleScale, 0.f, 1.f);
+		configRegisterInt(strFmt("%s.RumbleFilter", secname), &padsCfg[c].rumbleFilter, -1, 1);
 		configRegisterInt(strFmt("%s.LStickDeadzoneX", secname), &padsCfg[c].deadzone[0], 0, 32767);
 		configRegisterInt(strFmt("%s.LStickDeadzoneY", secname), &padsCfg[c].deadzone[1], 0, 32767);
 		configRegisterInt(strFmt("%s.RStickDeadzoneX", secname), &padsCfg[c].deadzone[2], 0, 32767);
