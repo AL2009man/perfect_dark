@@ -160,7 +160,7 @@ enum gyroautocalibration {
 	GYRO_AUTOCALIBRATION_OFF = 0, // Disables Auto-Calibration
 	GYRO_AUTOCALIBRATION_MENU_ONLY = 1, // Enables Auto-Calibration only when a menu dialog is opened
 	GYRO_AUTOCALIBRATION_STATIONARY = 2, // Enables Auto-Calibration when controller is stationary (when placed on a flat surface)
-	GYRO_AUTOCALIBRATION_ALWAYS = 3 // Always active, calibration continuous.
+	GYRO_AUTOCALIBRATION_ALWAYS = 3 // Enables continuous Auto-Calibration whenever possible.
 };
 
 // returns bitmask of connected controllers or -1 if failed
