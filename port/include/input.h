@@ -122,45 +122,45 @@ enum mouselockmode {
 };
 
 enum gyroactivation {
-	GYRO_ALWAYS_ON = 0, // Gyro is always enabled
-	GYRO_TOGGLE = 1, // Gyro is enabled/disabled by a button press
-	GYRO_ENABLE_HELD = 2, // Gyro is enabled while a button is held down
-	GYRO_DISABLE_HELD = 3 // Gyro is disabled while a button is held down
+	GYRO_ALWAYS_ON = 0,     // Gyro is always enabled
+	GYRO_TOGGLE = 1,        // Gyro is enabled/disabled by a button press
+	GYRO_ENABLE_HELD = 2,   // Gyro is enabled while a button is held down
+	GYRO_DISABLE_HELD = 3   // Gyro is disabled while a button is held down
 };
 
 enum gyroaxismode {
-	GYRO_YAW = 0, // Gyro controls yaw axis (turn)
-	GYRO_ROLL = 1, // Gyro controls roll axis (lean)
-	GYRO_LOCAL = 2, // Gyro controls local space orientation 
-	GYRO_PLAYER = 3, // Gyro controls player space orientation
-	GYRO_WORLD = 4  // Gyro controls world space orientation
+	GYRO_YAW = 0,           // Gyro controls yaw axis (turn)
+	GYRO_ROLL = 1,          // Gyro controls roll axis (lean)
+	GYRO_LOCAL = 2,         // Gyro controls local space orientation
+	GYRO_PLAYER = 3,        // Gyro controls player space orientation
+	GYRO_WORLD = 4          // Gyro controls world space orientation
 };
 
 enum gyroaimmode {
-	GYRO_AIM_CAMERA = 0, // Gyro controls camera movement
+	GYRO_AIM_CAMERA = 0,    // Gyro controls camera movement
 	GYRO_AIM_CROSSHAIR = 1, // Gyro controls crosshair movement
-	GYRO_AIM_BOTH = 2 // Gyro controls both camera and crosshair movement
+	GYRO_AIM_BOTH = 2       // Gyro controls both camera and crosshair movement
 };
 
 typedef enum {
-	GYRO_CALIB_START, // Start gyro calibration
-	GYRO_CALIB_FINISH, // Finish gyro calibration
-	GYRO_CALIB_RESET, // Reset gyro calibration
-	GYRO_CALIB_QUERY, // Query gyro calibration status
-	GYRO_CALIB_AUTO // Automatic gyro calibration
+	GYRO_CALIB_START,       // Start gyro calibration
+	GYRO_CALIB_FINISH,      // Finish gyro calibration
+	GYRO_CALIB_RESET,       // Reset gyro calibration
+	GYRO_CALIB_QUERY,       // Query gyro calibration status
+	GYRO_CALIB_AUTO         // Automatic gyro calibration
 } GyroCalibrationOp;
 
 typedef enum {
-	CALIBRATIONMODE_MANUAL = 0, // Manual calibration mode
-	CALIBRATIONMODE_STILLNESS = 1, // Stillness calibration mode
-	CALIBRATIONMODE_SENSORFUSION = 2 // Sensor fusion calibration mode
+	CALIBRATIONMODE_MANUAL = 0,       // Manual calibration mode
+	CALIBRATIONMODE_STILLNESS = 1,    // Stillness calibration mode
+	CALIBRATIONMODE_SENSORFUSION = 2  // Sensor fusion calibration mode
 } CalibrationMode;
 
 enum gyroautocalibration {
-	GYRO_AUTOCALIBRATION_OFF = 0, // Disables Auto-Calibration
-	GYRO_AUTOCALIBRATION_MENU_ONLY = 1, // Enables Auto-Calibration only when a menu dialog is opened
-	GYRO_AUTOCALIBRATION_STATIONARY = 2, // Enables Auto-Calibration when controller is stationary (when placed on a flat surface)
-	GYRO_AUTOCALIBRATION_ALWAYS = 3 // Enables continuous Auto-Calibration whenever possible.
+	GYRO_AUTOCALIBRATION_OFF = 0,         // Disables Auto-Calibration
+	GYRO_AUTOCALIBRATION_MENU_ONLY = 1,   // Enables Auto-Calibration only when a menu dialog is opened
+	GYRO_AUTOCALIBRATION_STATIONARY = 2,  // Enables Auto-Calibration when controller is stationary (when placed on a flat surface)
+	GYRO_AUTOCALIBRATION_ALWAYS = 3       // Enables continuous Auto-Calibration whenever possible.
 };
 
 // returns bitmask of connected controllers or -1 if failed

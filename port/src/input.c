@@ -467,34 +467,34 @@ static inline void inputInitController(const s32 cidx, const s32 jidx)
 		sysLogPrintf(LOG_NOTE, "input: GUID for controller %d: %s", jidx, guidStr);
 	}
 
-    // Initialize motion sensors
-    padsCfg[cidx].gyroSensorActive = 0;
 #if SDL_VERSION_ATLEAST(2, 0, 14)
-    // Try to enable gyro and accelerometer sensors
-    if (SDL_GameControllerHasSensor(pads[cidx], SDL_SENSOR_GYRO) && 
-        SDL_GameControllerHasSensor(pads[cidx], SDL_SENSOR_ACCEL)) {
-        
-        if (SDL_GameControllerSetSensorEnabled(pads[cidx], SDL_SENSOR_GYRO, SDL_TRUE) == 0 &&
-            SDL_GameControllerSetSensorEnabled(pads[cidx], SDL_SENSOR_ACCEL, SDL_TRUE) == 0) {
-            
-            padsCfg[cidx].gyroSensorActive = 1;
-            sysLogPrintf(LOG_NOTE, "input: Motion sensors enabled for controller %d", cidx);
-            
-            // Initialize GamepadMotion instance
-            if (!gpadMotion[cidx]) {
-                gpadMotion[cidx] = gmhCreateGamepadMotion();
-            } else {
-                gmhResetGamepadMotion(gpadMotion[cidx]);
-            }
-            
-            if (gpadMotion[cidx]) {
-                inputConfigureGamepadMotionSettings(gpadMotion[cidx]);
-                gmhResetMotion(gpadMotion[cidx]);
-                inputConfigureGyroCalibrationMode(cidx);
-                sysLogPrintf(LOG_NOTE, "input: GamepadMotion initialized for controller %d", cidx);
-            }
-        }
-    }
+	// Try to initialize motion sensors (gyro + accelerometer)
+	padsCfg[cidx].gyroSensorActive = 0;
+
+	if (SDL_GameControllerHasSensor(pads[cidx], SDL_SENSOR_GYRO) && 
+	    SDL_GameControllerHasSensor(pads[cidx], SDL_SENSOR_ACCEL)) {
+		sysLogPrintf(LOG_NOTE, "input: detects assigned controller's motion sensors for player %d", cidx);
+
+		if (SDL_GameControllerSetSensorEnabled(pads[cidx], SDL_SENSOR_GYRO, SDL_TRUE) == 0 &&
+		    SDL_GameControllerSetSensorEnabled(pads[cidx], SDL_SENSOR_ACCEL, SDL_TRUE) == 0) {
+
+			padsCfg[cidx].gyroSensorActive = 1;
+
+			// Create or reset GamepadMotionHelper instance
+			if (!gpadMotion[cidx]) {
+				gpadMotion[cidx] = gmhCreateGamepadMotion();
+			} else {
+				gmhResetGamepadMotion(gpadMotion[cidx]);
+			}
+
+			// Configure GamepadMotionHelper settings and calibration
+			if (gpadMotion[cidx]) {
+				inputConfigureGamepadMotionSettings(gpadMotion[cidx]);
+				gmhResetMotion(gpadMotion[cidx]);
+				inputConfigureGyroCalibrationMode(cidx);
+			}
+		}
+	}
 #endif
 }
 
@@ -532,11 +532,7 @@ static inline void inputCloseController(const s32 cidx)
 	if (gpadMotion[cidx]) {
 		gmhDeleteGamepadMotion(gpadMotion[cidx]);
 		gpadMotion[cidx] = NULL;
-		sysLogPrintf(LOG_NOTE, "input: GamepadMotion instance cleaned up for controller %d", cidx);
 	}
-
-	// Reset sensor accumulator
-	memset(&sensorAccum[cidx], 0, sizeof(sensorAccum[cidx]));
 
 	inputPauseGyro(cidx);
 
@@ -2448,9 +2444,8 @@ void inputGyroSetAutoCalibration(s32 cidx, s32 enabled)
 		state->lastAutoCalibTime = 0;
 		state->autoCalibStartTime = 0;
 		
-		// Pause any ongoing calibration when switching modes
 		if (gpadMotion[cidx]) {
-			gmhPauseContinuousCalibration(gpadMotion[cidx]);
+			inputSaveGyroCalibrationOffset(cidx);  // Save or clear offset based on the selected modes
 			inputConfigureGyroCalibrationMode(cidx);
 		}
 	}
@@ -2547,11 +2542,11 @@ static void inputConfigureGyroCalibrationMode(s32 cidx)
 		// Other modes: Pause calibration and clear finished flag
 		gmhPauseContinuousCalibration(gpadMotion[cidx]);
 		gyroCalibState[cidx].justFinishedCalibrating = false;
-	}
-	
-	// MENU_ONLY and OFF modes: Apply manual calibration offset
-	if (mode == GYRO_AUTOCALIBRATION_MENU_ONLY || mode == GYRO_AUTOCALIBRATION_OFF) {
-		inputApplyGyroManualCalibrationOffset(cidx);
+		
+		// MENU_ONLY and OFF modes: Always apply saved manual calibration offset
+		if (mode == GYRO_AUTOCALIBRATION_MENU_ONLY || mode == GYRO_AUTOCALIBRATION_OFF) {
+			inputApplyGyroManualCalibrationOffset(cidx);
+		}
 	}
 }
 
@@ -2581,11 +2576,7 @@ static void inputApplyGyroManualCalibrationOffset(s32 cidx)
 	const bool useManualOffset = (mode == GYRO_AUTOCALIBRATION_OFF || mode == GYRO_AUTOCALIBRATION_MENU_ONLY);
 	
 	if (useManualOffset && state->manualWeight > 0) {
-		gmhSetCalibrationOffset(gpadMotion[cidx], 
-			state->manualOffsetX, 
-			state->manualOffsetY, 
-			state->manualOffsetZ, 
-			state->manualWeight);
+		gmhSetCalibrationOffset(gpadMotion[cidx], state->manualOffsetX, state->manualOffsetY, state->manualOffsetZ, state->manualWeight);
 	}
 }
 
@@ -2594,16 +2585,18 @@ static void inputSaveGyroCalibrationOffset(s32 cidx)
 	if (!gpadMotion[cidx]) return;
 	
 	const s32 mode = padsCfg[cidx].gyroAutoCalibration;
+	GyroCalibState *state = &gyroCalibState[cidx];
+
+	// ALWAYS mode: Clear saved offset so it starts fresh each time
+	if (mode == GYRO_AUTOCALIBRATION_ALWAYS) {
+		state->manualOffsetX = state->manualOffsetY = state->manualOffsetZ = 0.0f;
+		state->manualWeight = 0;
+		return;
+	}
 	
-	// Only save offset for modes that use persistent manual calibration
-	const bool savePersistent = (mode == GYRO_AUTOCALIBRATION_OFF || mode == GYRO_AUTOCALIBRATION_MENU_ONLY);
-	
-	if (savePersistent) {
-		GyroCalibState *state = &gyroCalibState[cidx];
-		gmhGetCalibrationOffset(gpadMotion[cidx], 
-			&state->manualOffsetX, 
-			&state->manualOffsetY, 
-			&state->manualOffsetZ);
+	// OFF/MENU_ONLY modes: Save current calibration offset for persistence
+	if (mode == GYRO_AUTOCALIBRATION_OFF || mode == GYRO_AUTOCALIBRATION_MENU_ONLY) {
+		gmhGetCalibrationOffset(gpadMotion[cidx], &state->manualOffsetX, &state->manualOffsetY, &state->manualOffsetZ);
 		state->manualWeight = 100;
 	}
 }
@@ -2834,22 +2827,22 @@ PD_CONSTRUCTOR static void inputConfigInit(void)
 		configRegisterFloat(strFmt("%s.RStickScaleX", secname), &padsCfg[c].sens[2], -10.f, 10.f);
 		configRegisterFloat(strFmt("%s.RStickScaleY", secname), &padsCfg[c].sens[3], -10.f, 10.f);
 		configRegisterInt(strFmt("%s.GyroEnabled", secname), &padsCfg[c].gyroEnabled, 0, 1);
-		configRegisterInt(strFmt("%s.GyroAxisMode", secname), &padsCfg[c].gyroAxisMode, GYRO_YAW, GYRO_WORLD);
 		configRegisterInt(strFmt("%s.GyroAimMode", secname), &padsCfg[c].gyroAimMode, GYRO_AIM_CAMERA, GYRO_AIM_BOTH);
 		configRegisterInt(strFmt("%s.GyroModifier", secname), &padsCfg[c].gyroModifier, GYRO_ALWAYS_ON, GYRO_DISABLE_HELD);
+		configRegisterInt(strFmt("%s.GyroAxisMode", secname), &padsCfg[c].gyroAxisMode, GYRO_YAW, GYRO_WORLD);
+		configRegisterInt(strFmt("%s.GyroAutoCalibration", secname), &padsCfg[c].gyroAutoCalibration, GYRO_AUTOCALIBRATION_OFF, GYRO_AUTOCALIBRATION_ALWAYS);
 		configRegisterFloat(strFmt("%s.GyroSpeedX", secname), &padsCfg[c].gyroSensX, -30.f, 30.f);
 		configRegisterFloat(strFmt("%s.GyroSpeedY", secname), &padsCfg[c].gyroSensY, -30.f, 30.f);
 		configRegisterFloat(strFmt("%s.GyroAimSensX", secname), &padsCfg[c].gyroAimSensX, -10.f, 10.f);
 		configRegisterFloat(strFmt("%s.GyroAimSensY", secname), &padsCfg[c].gyroAimSensY, -10.f, 10.f);
-		configRegisterFloat(strFmt("%s.GyroVHMixer", secname), &padsCfg[c].gyroVHMixer, -1.0f, 1.0f);
 		configRegisterInt(strFmt("%s.GyroInvertX", secname), &padsCfg[c].gyroInvertX, 0, 1);
 		configRegisterInt(strFmt("%s.GyroInvertY", secname), &padsCfg[c].gyroInvertY, 0, 1);
 		configRegisterInt(strFmt("%s.GyroAimInvertX", secname), &padsCfg[c].gyroAimInvertX, 0, 1);
 		configRegisterInt(strFmt("%s.GyroAimInvertY", secname), &padsCfg[c].gyroAimInvertY, 0, 1);
-		configRegisterFloat(strFmt("%s.GyroDeadzone", secname), &padsCfg[c].gyroDeadzone, 0.f, 1.f);
-		configRegisterFloat(strFmt("%s.GyroTightening", secname), &padsCfg[c].gyroTightening, 0.f, 10.f);
+		configRegisterFloat(strFmt("%s.GyroVHMixer", secname), &padsCfg[c].gyroVHMixer, -1.0f, 1.0f);
 		configRegisterFloat(strFmt("%s.GyroSmoothing", secname), &padsCfg[c].gyroSmoothing, 0.f, 1.f);
-		configRegisterInt(strFmt("%s.GyroAutoCalibration", secname), &padsCfg[c].gyroAutoCalibration, GYRO_AUTOCALIBRATION_OFF, GYRO_AUTOCALIBRATION_ALWAYS);
+		configRegisterFloat(strFmt("%s.GyroTightening", secname), &padsCfg[c].gyroTightening, 0.f, 10.f);
+		configRegisterFloat(strFmt("%s.GyroDeadzone", secname), &padsCfg[c].gyroDeadzone, 0.f, 1.f);
 		configRegisterInt(strFmt("%s.StickCButtons", secname), &padsCfg[c].stickCButtons, 0, 1);
 		configRegisterInt(strFmt("%s.CancelCButtons", secname), &padsCfg[c].cancelCButtons, 0, 1);
 		configRegisterInt(strFmt("%s.SwapSticks", secname), &padsCfg[c].swapSticks, 0, 1);
