@@ -46,10 +46,10 @@
 #define GMH_MAX_STILLNESS_ERROR 1.5f       // Maximum sensor error allowed during stillness detection
 
 // Motion sensor noise threshold constants
-#define GYRO_NOISE_THRESHOLD 1.75f              // Absolute gyro threshold (degrees/second)
-#define GYRO_RATE_THRESHOLD 1.0f                // Frame-to-frame gyro change threshold (degrees/second)
-#define ACCEL_GRAVITY_TOLERANCE 0.01f           // Gravity magnitude tolerance
-#define ACCEL_DELTA_THRESHOLD 0.075f            // Accelerometer movement threshold in G units
+#define GYRO_NOISE_THRESHOLD 0.5f             // Absolute gyro threshold (degrees/second)
+#define GYRO_RATE_THRESHOLD 0.3f              // Frame-to-frame gyro change threshold (degrees/second)
+#define ACCEL_GRAVITY_TOLERANCE 0.02f         // Gravity magnitude tolerance
+#define ACCEL_DELTA_THRESHOLD 0.01f          // Accelerometer movement threshold in G units
 
 static SDL_GameController *pads[INPUT_MAX_CONTROLLERS];
 
