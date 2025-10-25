@@ -2370,16 +2370,19 @@ static void inputUpdateGyroAutoCalibration(s32 cidx)
 		}
 		
 		const bool isStationary = stillness && inputIsControllerSensorNoiseThreshold(cidx);
-		const Uint32 timeSinceLastCalib = now - state->lastAutoCalibTime;
+		const Uint32 timeSinceLastEvent = now - state->lastAutoCalibTime;
 		
 		if (isStationary) {
-			// Start calibration when: controller becomes stationary AND interval has passed
-			if (!state->wasStill && timeSinceLastCalib >= INTERVAL) {
-				gmhStartContinuousCalibration(gpadMotion[cidx]);
+			// When controller becomes stationary, record the time
+			if (!state->wasStill) {
 				state->lastAutoCalibTime = now;
+			}
+			
+			// Start calibration after interval passes (only once per cycle)
+			if (!state->isCalibrating && timeSinceLastEvent >= INTERVAL) {
+				gmhStartContinuousCalibration(gpadMotion[cidx]);
 				state->autoCalibStartTime = now;
 				state->isCalibrating = true;
-				sysLogPrintf(LOG_NOTE, "input: gyro calibration started for player %d", cidx);
 			}
 			
 			// Finish calibration when duration passes
@@ -2387,17 +2390,7 @@ static void inputUpdateGyroAutoCalibration(s32 cidx)
 				gmhPauseContinuousCalibration(gpadMotion[cidx]);
 				inputGyroCalibrationFinished(cidx, true);
 				state->isCalibrating = false;
-				state->lastAutoCalibTime = now;
-				sysLogPrintf(LOG_NOTE, "input: gyro calibration finished for player %d (next cycle in %dms)", cidx, INTERVAL);
-			}
-			
-			// Start next cycle if: controller was still AND interval has passed
-			if (!state->isCalibrating && state->wasStill && timeSinceLastCalib >= INTERVAL) {
-				gmhStartContinuousCalibration(gpadMotion[cidx]);
-				state->autoCalibStartTime = now;
-				state->lastAutoCalibTime = now;
-				state->isCalibrating = true;
-				sysLogPrintf(LOG_NOTE, "input: gyro calibration started for player %d", cidx);
+				state->lastAutoCalibTime = now;  // Reset for next cycle
 			}
 		}
 		else {
@@ -2406,7 +2399,6 @@ static void inputUpdateGyroAutoCalibration(s32 cidx)
 				gmhPauseContinuousCalibration(gpadMotion[cidx]);
 				gmhResetContinuousCalibration(gpadMotion[cidx]);
 				state->isCalibrating = false;
-				sysLogPrintf(LOG_NOTE, "input: gyro calibration aborted for player %d (controller moved)", cidx);
 			}
 		}
 		
