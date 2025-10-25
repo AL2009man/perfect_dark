@@ -2358,10 +2358,8 @@ static void inputUpdateGyroAutoCalibration(s32 cidx)
 	
 	// STATIONARY/MENU_ONLY MODE: Calibrate when controller is placed on flat surface
 	if (mode == GYRO_AUTOCALIBRATION_STATIONARY || mode == GYRO_AUTOCALIBRATION_MENU_ONLY) {
-		const Uint32 STARTUP_DELAY = 2500;           // Grace period after becoming still
-		const Uint32 INTERVAL = 10000;               // How often to retry calibration
-		const Uint32 MIN_DURATION = 2500;            // Minimum calibration duration
-		const float CONFIDENCE_THRESHOLD = 0.90f;    // Finish when confidence reaches 90%
+		const Uint32 CALIBRATION_DURATION = 1200;    // How long to run calibration
+		const Uint32 INTERVAL = 10000;               // How often to repeat calibration
 		
 		if (!stationaryModeActive[cidx]) {
 			state->wasStill = false;
@@ -2371,43 +2369,46 @@ static void inputUpdateGyroAutoCalibration(s32 cidx)
 			stationaryModeActive[cidx] = true;
 		}
 		
-		const bool isStationary = stillness;
+		const bool isStationary = stillness && inputIsControllerSensorNoiseThreshold(cidx);
+		const Uint32 timeSinceLastCalib = now - state->lastAutoCalibTime;
+		const bool waitingToStart = timeSinceLastCalib >= CALIBRATION_DURATION && timeSinceLastCalib < INTERVAL;
 		
 		if (isStationary) {
-			// Log only when transitioning from moving to stationary
-			if (!state->wasStill) {
-				state->lastAutoCalibTime = now - STARTUP_DELAY;
-				sysLogPrintf(LOG_NOTE, "input: controller stationary for player %d, calibration available in %dms", cidx, STARTUP_DELAY);
+			// Transitioning from moving to stationary - only start if interval allows
+			if (!state->wasStill && timeSinceLastCalib >= INTERVAL) {
+				gmhStartContinuousCalibration(gpadMotion[cidx]);
+				state->lastAutoCalibTime = now;
+				state->autoCalibStartTime = now;
+				state->isCalibrating = true;
+				sysLogPrintf(LOG_NOTE, "input: controller stationary for player %d, gyro calibration started", cidx);
 			}
 			
-			// Start calibration if interval has passed and not already calibrating
-			if (now - state->lastAutoCalibTime >= INTERVAL && !state->isCalibrating) {
+			// Check if calibration duration has passed
+			if (state->isCalibrating && (now - state->autoCalibStartTime >= CALIBRATION_DURATION)) {
+				gmhPauseContinuousCalibration(gpadMotion[cidx]);
+				inputGyroCalibrationFinished(cidx, true);
+				state->isCalibrating = false;
+				state->lastAutoCalibTime = now;  // Update time when calibration finishes
+				sysLogPrintf(LOG_NOTE, "input: gyro calibration finished for player %d, next cycle in %dms", cidx, INTERVAL);
+			}
+			
+			// Start next cycle if interval has passed and not currently calibrating
+			if (timeSinceLastCalib >= INTERVAL && !state->isCalibrating && state->wasStill) {
 				gmhStartContinuousCalibration(gpadMotion[cidx]);
 				state->autoCalibStartTime = now;
 				state->lastAutoCalibTime = now;
 				state->isCalibrating = true;
-				sysLogPrintf(LOG_NOTE, "input: gyro calibration begins for player %d (confidence: %.2f)", cidx, confidence);
-			}
-			
-			// Check if calibration should finish
-			if (state->isCalibrating) {
-				const Uint32 duration = now - state->autoCalibStartTime;
-				
-				if (duration >= MIN_DURATION && confidence >= CONFIDENCE_THRESHOLD) {
-					gmhPauseContinuousCalibration(gpadMotion[cidx]);
-					inputGyroCalibrationFinished(cidx, true);
-					state->isCalibrating = false;
-					state->lastAutoCalibTime = now;  // Reset timer for next cycle
-					sysLogPrintf(LOG_NOTE, "input: gyro calibration finished for player %d (%.2f confidence), next cycle in %dms", 
-					             cidx, confidence, INTERVAL);
-				}
+				sysLogPrintf(LOG_NOTE, "input: gyro calibration cycle started for player %d", cidx);
 			}
 		}
 		else {
-			// Only log movement if it interrupts the waiting period (before calibration starts)
-			// Don't log sensor noise after calibration finishes - that's expected behavior
-			if (state->wasStill && !state->isCalibrating && (now - state->lastAutoCalibTime < INTERVAL)) {
-				sysLogPrintf(LOG_NOTE, "input: controller movement detected for player %d, calibration cancelled", cidx);
+			// Stop any active calibration when controller moves
+			// Do NOT call inputGyroCalibrationFinished() or reset lastAutoCalibTime
+			// This prevents immediate retry - must wait for full interval from last successful calibration
+			if (state->isCalibrating) {
+				gmhPauseContinuousCalibration(gpadMotion[cidx]);
+				state->isCalibrating = false;
+				sysLogPrintf(LOG_NOTE, "input: controller moved for player %d, calibration aborted", cidx);
 			}
 		}
 		
