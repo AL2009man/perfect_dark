@@ -2339,10 +2339,14 @@ static void inputUpdateGyroAutoCalibration(s32 cidx)
 				state->lastAutoCalibTime = now - STARTUP_DELAY;
 			}
 			
-			if (now - state->lastAutoCalibTime >= INTERVAL && confidence < CONFIDENCE_THRESHOLD && !state->isCalibrating) {
-				gmhStartContinuousCalibration(gpadMotion[cidx]);
-				state->lastAutoCalibTime = now;
-				state->isCalibrating = true;
+			if (now - state->lastAutoCalibTime >= INTERVAL && !state->isCalibrating) {
+				if (confidence < CONFIDENCE_THRESHOLD) {
+					gmhStartContinuousCalibration(gpadMotion[cidx]);
+					state->lastAutoCalibTime = now;
+					state->isCalibrating = true;
+				} else {
+					state->lastAutoCalibTime = now;
+				}
 			}
 		}
 		else {
@@ -2358,8 +2362,9 @@ static void inputUpdateGyroAutoCalibration(s32 cidx)
 	
 	// STATIONARY/MENU_ONLY MODE: Calibrate when controller is placed on flat surface
 	if (mode == GYRO_AUTOCALIBRATION_STATIONARY || mode == GYRO_AUTOCALIBRATION_MENU_ONLY) {
+		const Uint32 STARTUP_DELAY = 2500;           // Initial delay before first calibration
 		const Uint32 CALIBRATION_DURATION = 1200;    // How long to run calibration
-		const Uint32 INTERVAL = 10000;               // How often to repeat calibration
+		const Uint32 COOLDOWN = 10000;               // Cooldown after calibration finishes
 		
 		if (!stationaryModeActive[cidx]) {
 			state->wasStill = false;
@@ -2373,28 +2378,29 @@ static void inputUpdateGyroAutoCalibration(s32 cidx)
 		const Uint32 timeSinceLastEvent = now - state->lastAutoCalibTime;
 		
 		if (isStationary) {
-			// When controller becomes stationary, record the time
-			if (!state->wasStill) {
+			if (!state->wasStill && state->lastAutoCalibTime == 0) {
+				state->lastAutoCalibTime = now;
+			}
+			else if (!state->wasStill && state->lastAutoCalibTime != 0) {
 				state->lastAutoCalibTime = now;
 			}
 			
-			// Start calibration after interval passes (only once per cycle)
-			if (!state->isCalibrating && timeSinceLastEvent >= INTERVAL) {
+			const Uint32 delayNeeded = (state->autoCalibStartTime == 0) ? STARTUP_DELAY : COOLDOWN;
+			
+			if (!state->isCalibrating && timeSinceLastEvent >= delayNeeded) {
 				gmhStartContinuousCalibration(gpadMotion[cidx]);
 				state->autoCalibStartTime = now;
 				state->isCalibrating = true;
 			}
 			
-			// Finish calibration when duration passes
 			if (state->isCalibrating && (now - state->autoCalibStartTime >= CALIBRATION_DURATION)) {
 				gmhPauseContinuousCalibration(gpadMotion[cidx]);
 				inputGyroCalibrationFinished(cidx, true);
 				state->isCalibrating = false;
-				state->lastAutoCalibTime = now;  // Reset for next cycle
+				state->lastAutoCalibTime = now;
 			}
 		}
 		else {
-			// Abort calibration if controller moves during active calibration
 			if (state->isCalibrating) {
 				gmhPauseContinuousCalibration(gpadMotion[cidx]);
 				gmhResetContinuousCalibration(gpadMotion[cidx]);
