@@ -2365,6 +2365,7 @@ static void inputUpdateGyroAutoCalibration(s32 cidx)
 		const Uint32 STARTUP_DELAY = 2500;           // Initial delay before first calibration
 		const Uint32 CALIBRATION_DURATION = 1200;    // How long to run calibration
 		const Uint32 COOLDOWN = 10000;               // Cooldown after calibration finishes
+		const float CONFIDENCE_THRESHOLD_MENU_ONLY = 0.80f;  // Only recalibrate if below 80% for MENU_ONLY mode
 		
 		if (!stationaryModeActive[cidx]) {
 			state->wasStill = false;
@@ -2376,6 +2377,8 @@ static void inputUpdateGyroAutoCalibration(s32 cidx)
 		
 		const bool isStationary = stillness && inputIsControllerSensorNoiseThreshold(cidx);
 		const Uint32 timeSinceLastEvent = now - state->lastAutoCalibTime;
+		const Uint32 delayNeeded = (state->autoCalibStartTime == 0) ? STARTUP_DELAY : COOLDOWN;
+		const bool timingConditionsMet = !state->isCalibrating && timeSinceLastEvent >= delayNeeded;
 		
 		if (isStationary) {
 			if (!state->wasStill && state->lastAutoCalibTime == 0) {
@@ -2385,9 +2388,21 @@ static void inputUpdateGyroAutoCalibration(s32 cidx)
 				state->lastAutoCalibTime = now;
 			}
 			
-			const Uint32 delayNeeded = (state->autoCalibStartTime == 0) ? STARTUP_DELAY : COOLDOWN;
+			bool shouldCalibrate = false;
 			
-			if (!state->isCalibrating && timeSinceLastEvent >= delayNeeded) {
+			if (mode == GYRO_AUTOCALIBRATION_MENU_ONLY) {
+				if (timingConditionsMet) {
+					if (confidence < CONFIDENCE_THRESHOLD_MENU_ONLY) {
+						shouldCalibrate = true;
+					} else {
+						state->lastAutoCalibTime = now;
+					}
+				}
+			} else {
+				shouldCalibrate = timingConditionsMet;
+			}
+			
+			if (shouldCalibrate) {
 				gmhStartContinuousCalibration(gpadMotion[cidx]);
 				state->autoCalibStartTime = now;
 				state->isCalibrating = true;
