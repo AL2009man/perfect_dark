@@ -2284,7 +2284,8 @@ static void inputUpdateGyroAutoCalibration(s32 cidx)
 			}
 			
 			bool shouldCalibrate = false;
-			
+
+			// MENU_ONLY mode uses confidence check to prevent accidental calibrations
 			if (mode == GYRO_AUTOCALIBRATION_MENU_ONLY) {
 				if (timingConditionsMet) {
 					if (confidence < CONFIDENCE_THRESHOLD_MENU_ONLY) {
