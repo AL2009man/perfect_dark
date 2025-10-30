@@ -946,15 +946,28 @@ void inputRumble(s32 idx, f32 strength, f32 time)
 	}
 
 	if (padsCfg[idx].rumbleOn) {
+		s32 filterSetting = padsCfg[idx].rumbleFilter;
+		
+		// Apply user's rumble scale
 		strength *= padsCfg[idx].rumbleScale;
+		
 		if (strength <= 0.f) {
 			strength = 0.f;
 			time = 0.f;
-		} else {
-			strength *= 65535.f;
-			time *= 1000.f;
 		}
-		SDL_GameControllerRumble(pads[idx], (u16)strength, (u16)strength, (u32)time);
+		
+		u16 lowFreq = (u16)(strength * 65535.f);
+		u16 highFreq = (u16)(strength * 65535.f);
+		
+		// Apply filter to reduce rumble intensity when enabled
+		if (filterSetting == 1) {
+			lowFreq = (u16)(lowFreq * 0.20f);           // 20% of original
+			highFreq = (u16)(strength * 65535.f * 0.08f); // 8% of original (recalculate from strength)
+		}
+		
+		u32 duration = (u32)(time * 1000.f);
+		
+		SDL_GameControllerRumble(pads[idx], lowFreq, highFreq, duration);
 	}
 }
 
