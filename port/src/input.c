@@ -1474,11 +1474,11 @@ const char *inputGetButtonDisplayName(s32 vk)
                                 
                                 // Steam Deck
                                 if (product == STEAM_DECK_BUILTIN_PID) {
-                                    iconType = getSteamVirtualControllerDetection(ctrl, CONTROLLER_ICON_STEAM_DECK);
+                                    iconType = CONTROLLER_ICON_STEAM_DECK;
                                 }
                                 // Steam Controller
                                 else if (isSteamControllerPID(product)) {
-                                    iconType = getSteamVirtualControllerDetection(ctrl, CONTROLLER_ICON_STEAM_CONTROLLER);
+                                    iconType = CONTROLLER_ICON_STEAM_CONTROLLER;
                                 }
                                 // Steam Virtual Gamepad
                                 else if (product == STEAM_VIRTUAL_GAMEPAD_PID) {
