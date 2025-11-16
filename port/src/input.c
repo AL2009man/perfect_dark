@@ -2276,11 +2276,11 @@ static void inputUpdateGyroAutoCalibration(s32 cidx)
 		const bool timingConditionsMet = !state->isCalibrating && timeSinceLastEvent >= delayNeeded;
 		
 		if (isStationary) {
-			if (!state->wasStill && state->lastAutoCalibTime == 0) {
-				state->lastAutoCalibTime = now;
-			}
-			else if (!state->wasStill && state->lastAutoCalibTime != 0) {
-				state->lastAutoCalibTime = now;
+			// Reset last auto-calib time when movement is detected
+			if (!state->wasStill) {
+				if (state->lastAutoCalibTime == 0) {
+					state->lastAutoCalibTime = now;
+				}
 			}
 			
 			bool shouldCalibrate = false;
