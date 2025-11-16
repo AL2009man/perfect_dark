@@ -2317,7 +2317,7 @@ static const struct menubind menuBinds[] = {
 	{ CK_2000,    "Full Crouch [+]\n",               "N64 Ext 2000\n" },
 	{ CK_0040,    "Reset Camera/Crosshair [+]\n",    "EXT Reset Camera/Crosshair\n" },
 	{ CK_0080,    "Gyro Activation Modifier [+]\n",  "EXT Gyro Activation Modifier\n" },
-	{ CK_0100,    "Gyro Calibration (Manual) [+]\n", "EXT Gyro Calibration (Manual)[+]\n" },
+	{ CK_0100,    "Gyro Calibration (Manual) [+]\n", "EXT Gyro Calibration (Manual)\n" },
 	{ CK_ACCEPT,  "UI Accept [+]\n",                 "EXT UI Accept\n" },
 	{ CK_CANCEL,  "UI Cancel [+]\n",                 "EXT UI Cancel\n" },
 };
