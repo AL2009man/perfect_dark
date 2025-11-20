@@ -1466,24 +1466,20 @@ const char *inputGetButtonDisplayName(s32 vk)
                 {
                     int iconType = CONTROLLER_ICON_GENERIC;
                     if (ctrl) {
-                        SDL_Joystick *joystick = SDL_GameControllerGetJoystick(ctrl);
-                        if (joystick) {
-                            Uint16 vendor = SDL_JoystickGetVendor(joystick);
-                            if (vendor == VALVE_VENDOR_ID) {
-                                Uint16 product = SDL_JoystickGetProduct(joystick);
-                                
-                                // Steam Deck
-                                if (product == STEAM_DECK_BUILTIN_PID) {
-                                    iconType = CONTROLLER_ICON_STEAM_DECK;
-                                }
-                                // Steam Controller
-                                else if (isSteamControllerPID(product)) {
-                                    iconType = CONTROLLER_ICON_STEAM_CONTROLLER;
-                                }
-                                // Steam Virtual Gamepad
-                                else if (product == STEAM_VIRTUAL_GAMEPAD_PID) {
-                                    iconType = getSteamVirtualControllerDetection(ctrl, CONTROLLER_ICON_STEAM_DECK);
-                                }
+                        if (SDL_GameControllerGetVendor(ctrl) == VALVE_VENDOR_ID) {
+                            Uint16 product = SDL_GameControllerGetProduct(ctrl);
+                            
+                            // Steam Deck
+                            if (product == STEAM_DECK_BUILTIN_PID) {
+                                iconType = CONTROLLER_ICON_STEAM_DECK;
+                            }
+                            // Steam Controller
+                            else if (isSteamControllerPID(product)) {
+                                iconType = CONTROLLER_ICON_STEAM_CONTROLLER;
+                            }
+                            // Steam Virtual Gamepad
+                            else if (product == STEAM_VIRTUAL_GAMEPAD_PID) {
+                                iconType = getSteamVirtualControllerDetection(ctrl, CONTROLLER_ICON_STEAM_DECK);
                             }
                         }
                     }

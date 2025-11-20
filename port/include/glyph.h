@@ -33,7 +33,7 @@ typedef enum {
 #define STEAM_VIRTUAL_GAMEPAD_PID       0x11ff  // Steam Virtual Gamepad
 #define STEAM_DECK_BUILTIN_PID          0x1205  // Valve Steam Deck Builtin
 
-// Check if a product ID is any Steam Controller variant
+// Check if a product ID is any Steam Controller (2015) variant
 static inline int isSteamControllerPID(unsigned short productId) {
 	return (productId == STEAM_CONTROLLER_LEGACY_PID ||
 	        productId == STEAM_CONTROLLER_WIRED_PID ||
@@ -50,15 +50,25 @@ static inline int getSteamVirtualControllerDetection(SDL_GameController* ctrl, i
 		return SDLControllerType;
 	}
 	
-	SDL_Joystick *joystick = SDL_GameControllerGetJoystick(ctrl);
-	if (!joystick || SDL_JoystickGetVendor(joystick) != VALVE_VENDOR_ID) {
+	if (SDL_GameControllerGetVendor(ctrl) != VALVE_VENDOR_ID) {
 		return SDLControllerType;
 	}
 	
-	unsigned short product = SDL_JoystickGetProduct(joystick);
+	unsigned short product = SDL_GameControllerGetProduct(ctrl);
 	
+	// Steam Virtual Gamepad - pass through the underlying controller type
 	if (product == STEAM_VIRTUAL_GAMEPAD_PID) {
 		return SDLControllerType;
+	}
+	
+	// Steam Deck
+	if (product == STEAM_DECK_BUILTIN_PID) {
+		return CONTROLLER_ICON_STEAM_DECK;
+	}
+	
+	// Steam Controller (2015)
+	if (isSteamControllerPID(product)) {
+		return CONTROLLER_ICON_STEAM_CONTROLLER;
 	}
 	
 	return SDLControllerType;
