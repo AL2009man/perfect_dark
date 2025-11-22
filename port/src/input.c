@@ -2146,7 +2146,7 @@ static void inputUpdateGyroCalibrationHandle(void)
 	}
 }
 
-// Check if controller sensor data is within noise thresholds indicating stillness
+// detect the motion sensor's noise threshold for additional safety-net while auto-calibrating for Stationary mode
 // based on SDL TestController's motion sensor noise filter
 static bool inputIsControllerSensorNoiseThreshold(s32 cidx)
 {
@@ -2303,6 +2303,11 @@ static void inputUpdateGyroAutoCalibration(s32 cidx)
 	if (!inputGyroAutoCalibrationModes(cidx)) {
 		gmhPauseContinuousCalibration(gpadMotion[cidx]);
 		if (mode == GYRO_AUTOCALIBRATION_MENU_ONLY) {
+			if (state->isCalibrating) {
+				gmhResetContinuousCalibration(gpadMotion[cidx]);
+				state->isCalibrating = false;
+				state->autoCalibStartTime = 0;
+			}
 			stationaryModeActive[cidx] = false;
 		}
 		return;
@@ -2381,15 +2386,16 @@ static void inputUpdateGyroAutoCalibration(s32 cidx)
 		const bool timingConditionsMet = !state->isCalibrating && timeSinceLastEvent >= delayNeeded;
 		
 		if (isStationary) {
-			if (!state->wasStill && state->lastAutoCalibTime == 0) {
-				state->lastAutoCalibTime = now;
-			}
-			else if (!state->wasStill && state->lastAutoCalibTime != 0) {
-				state->lastAutoCalibTime = now;
+			// Reset last auto-calib time when movement is detected
+			if (!state->wasStill) {
+				if (state->lastAutoCalibTime == 0) {
+					state->lastAutoCalibTime = now;
+				}
 			}
 			
 			bool shouldCalibrate = false;
-			
+
+			// MENU_ONLY mode uses confidence check to prevent accidental calibrations
 			if (mode == GYRO_AUTOCALIBRATION_MENU_ONLY) {
 				if (timingConditionsMet) {
 					if (confidence < CONFIDENCE_THRESHOLD_MENU_ONLY) {
