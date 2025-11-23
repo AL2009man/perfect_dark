@@ -2344,21 +2344,23 @@ static void inputUpdateGyroAutoCalibration(s32 cidx)
 				state->lastAutoCalibTime = now - STARTUP_DELAY;
 			}
 			
-			if (now - state->lastAutoCalibTime >= INTERVAL && !state->isCalibrating) {
+			if (now - state->lastAutoCalibTime >= INTERVAL) {
 				if (confidence < CONFIDENCE_THRESHOLD) {
-					gmhStartContinuousCalibration(gpadMotion[cidx]);
+					if (!state->isCalibrating) {
+						gmhStartContinuousCalibration(gpadMotion[cidx]);
+						state->isCalibrating = true;
+					}
 					state->lastAutoCalibTime = now;
-					state->isCalibrating = true;
-				} else {
+				} else if (state->isCalibrating) {
+					gmhPauseContinuousCalibration(gpadMotion[cidx]);
+					state->isCalibrating = false;
 					state->lastAutoCalibTime = now;
 				}
 			}
 		}
-		else {
-			if (state->wasStill) {
-				gmhPauseContinuousCalibration(gpadMotion[cidx]);
-				state->isCalibrating = false;
-			}
+		else if (state->wasStill && state->isCalibrating) {
+			gmhPauseContinuousCalibration(gpadMotion[cidx]);
+			state->isCalibrating = false;
 		}
 		
 		state->wasStill = stillness;
