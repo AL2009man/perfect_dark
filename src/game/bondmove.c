@@ -743,6 +743,7 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 	u32 stack;
 	f32 increment2;
 	f32 newverta;
+	f32 joy_edge_threshold;
 #ifndef PLATFORM_N64
 	const f32 mlookscale = g_Vars.lvupdate240 ? (4.f / (f32)g_Vars.lvupdate240) : 4.f;
 	const bool allowmlook = (g_Vars.currentplayernum == 0) && (allowc1x || allowc1y);
@@ -1413,35 +1414,41 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 						}
 					}
 
-					// Handle looking up/down while aiming
-					if (g_Vars.currentplayer->insightaimmode && movedata.c1stickyraw > 60) {
-						movedata.speedvertadown = (movedata.c1stickyraw - 60) / 10.0f;
+				// Handle looking up/down while aiming
+				joy_edge_threshold = -42.0f + PLAYER_EXTCFG().crosshairedgeboundary * 170.0f;
+				
+				if (joy_edge_threshold < 0.0f) {
+					joy_edge_threshold = 0.0f;
+				}
+				
+				if (g_Vars.currentplayer->insightaimmode && movedata.c1stickyraw > joy_edge_threshold) {
+					movedata.speedvertadown = (movedata.c1stickyraw - joy_edge_threshold) / 10.0f;
 
-						if (movedata.speedvertadown > 1) {
-							movedata.speedvertadown = 1;
-						}
-					} else if (g_Vars.currentplayer->insightaimmode && movedata.c1stickyraw < -60) {
-						movedata.speedvertaup = (-60 - movedata.c1stickyraw) / 10.0f;
-
-						if (movedata.speedvertaup > 1) {
-							movedata.speedvertaup = 1;
-						}
+					if (movedata.speedvertadown > 1) {
+						movedata.speedvertadown = 1;
 					}
+				} else if (g_Vars.currentplayer->insightaimmode && movedata.c1stickyraw < -joy_edge_threshold) {
+					movedata.speedvertaup = (-joy_edge_threshold - movedata.c1stickyraw) / 10.0f;
 
-					// Handle looking left/right while aiming
-					if (g_Vars.currentplayer->insightaimmode && movedata.c1stickxraw < -60) {
-						movedata.aimturnleftspeed = (-60 - movedata.c1stickxraw) / 10.0f;
-
-						if (movedata.aimturnleftspeed > 1) {
-							movedata.aimturnleftspeed = 1;
-						}
-					} else if (g_Vars.currentplayer->insightaimmode && movedata.c1stickxraw > 60) {
-						movedata.aimturnrightspeed = (movedata.c1stickxraw - 60) / 10.0f;
-
-						if (movedata.aimturnrightspeed > 1) {
-							movedata.aimturnrightspeed = 1;
-						}
+					if (movedata.speedvertaup > 1) {
+						movedata.speedvertaup = 1;
 					}
+				}
+
+				// Handle looking left/right while aiming
+				if (g_Vars.currentplayer->insightaimmode && movedata.c1stickxraw < -joy_edge_threshold) {
+					movedata.aimturnleftspeed = (-joy_edge_threshold - movedata.c1stickxraw) / 10.0f;
+
+					if (movedata.aimturnleftspeed > 1) {
+						movedata.aimturnleftspeed = 1;
+					}
+				} else if (g_Vars.currentplayer->insightaimmode && movedata.c1stickxraw > joy_edge_threshold) {
+					movedata.aimturnrightspeed = (movedata.c1stickxraw - joy_edge_threshold) / 10.0f;
+
+					if (movedata.aimturnrightspeed > 1) {
+						movedata.aimturnrightspeed = 1;
+					}
+				}
 
 #ifndef PLATFORM_N64
 					// Handle turning and looking (x/y) via mouselook when aiming
