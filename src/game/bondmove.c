@@ -43,10 +43,10 @@
 #include "input.h"
 #include "video.h"
 
-static void bgunProcessQuickDetonate(struct movedata *data, u32 c1buttons, u32 c1buttonsthisframe, u32 buttons1, u32 buttons2) {
+static void bgunProcessQuickDetonate(struct movedata* data, u32 c1buttons, u32 c1buttonsthisframe, u32 buttons1, u32 buttons2) {
 	if ((((c1buttons & (buttons1)) && (c1buttonsthisframe & (buttons2)))
-			|| ((c1buttons & (buttons2)) && (c1buttonsthisframe & (buttons1))))
-			&& bgunGetWeaponNum(HAND_RIGHT) == WEAPON_REMOTEMINE) {
+		|| ((c1buttons & (buttons2)) && (c1buttonsthisframe & (buttons1))))
+		&& bgunGetWeaponNum(HAND_RIGHT) == WEAPON_REMOTEMINE) {
 		data->detonating = true;
 		data->weaponbackoffset = 0;
 		data->weaponforwardoffset = 0;
@@ -60,14 +60,14 @@ static void bgunProcessQuickDetonate(struct movedata *data, u32 c1buttons, u32 c
 	}
 }
 
-static void bgunProcessInputAltButton(struct movedata *data, s8 contpad, s32 i)
+static void bgunProcessInputAltButton(struct movedata* data, s8 contpad, s32 i)
 {
 	s32 buttons = joyGetButtonsOnSample(i, contpad, 0xffffffff);
 	if (buttons & (BUTTON_ALTMODE)) {
 		if (g_Vars.currentplayer->altdowntime >= -1) {
 			if (buttons & (Z_TRIG)
-					&& g_Vars.currentplayer->altdowntime >= 0
-					&& bgunConsiderToggleGunFunction(g_Vars.currentplayer->altdowntime, true, false, true) != USETIMER_CONTINUE) {
+				&& g_Vars.currentplayer->altdowntime >= 0
+				&& bgunConsiderToggleGunFunction(g_Vars.currentplayer->altdowntime, true, false, true) != USETIMER_CONTINUE) {
 				g_Vars.currentplayer->altdowntime = -3;
 			}
 			if (g_Vars.currentplayer->altdowntime != -4) {
@@ -75,28 +75,32 @@ static void bgunProcessInputAltButton(struct movedata *data, s8 contpad, s32 i)
 					g_Vars.currentplayer->altdowntime++;
 				}
 			}
-		} else  {
+		}
+		else {
 			if (g_Vars.currentplayer->altdowntime == -2) {
 				bgunConsiderToggleGunFunction(g_Vars.currentplayer->altdowntime, false, false, true);
 				g_Vars.currentplayer->altdowntime = -4;
 			}
 		}
-	} else if (buttons & (BUTTON_CANCEL_USE | BUTTON_ACCEPT_USE)) {
+	}
+	else if (buttons & (BUTTON_CANCEL_USE | BUTTON_ACCEPT_USE)) {
 		if (g_Vars.currentplayer->altdowntime >= -1) {
 			if (buttons & (Z_TRIG)
-					&& g_Vars.currentplayer->altdowntime >= 0
-					&& bgunConsiderToggleGunFunction(g_Vars.currentplayer->altdowntime, true, false, true) != USETIMER_CONTINUE) {
+				&& g_Vars.currentplayer->altdowntime >= 0
+				&& bgunConsiderToggleGunFunction(g_Vars.currentplayer->altdowntime, true, false, true) != USETIMER_CONTINUE) {
 				g_Vars.currentplayer->altdowntime = -3;
 			}
 		}
-	} else {
+	}
+	else {
 		// Released L
 		if (g_Vars.currentplayer->altdowntime != 0) {
 			const bool trigpressed = (g_Vars.currentplayer->altdowntime == -3);
 			s32 result = bgunConsiderToggleGunFunction(g_Vars.currentplayer->altdowntime, trigpressed, false, true);
 			if (result == USETIMER_STOP) {
 				g_Vars.currentplayer->altdowntime = -1;
-			} else if (result == USETIMER_REPEAT) {
+			}
+			else if (result == USETIMER_REPEAT) {
 				g_Vars.currentplayer->altdowntime = -2;
 			}
 		}
@@ -142,7 +146,7 @@ bool bmoveIsAutoAimYEnabled(void)
 
 bool bmoveIsAutoAimYEnabledForCurrentWeapon(void)
 {
-	struct weaponfunc *func = currentPlayerGetWeaponFunction(0);
+	struct weaponfunc* func = currentPlayerGetWeaponFunction(0);
 
 	if (func) {
 		if (func->flags & FUNCFLAG_NOAUTOAIM) {
@@ -162,7 +166,7 @@ bool bmoveIsInSightAimMode(void)
 	return g_Vars.currentplayer->insightaimmode;
 }
 
-void bmoveUpdateAutoAimYProp(struct prop *prop, f32 autoaimy)
+void bmoveUpdateAutoAimYProp(struct prop* prop, f32 autoaimy)
 {
 	if (g_Vars.currentplayer->autoyaimtime60 >= 0) {
 		g_Vars.currentplayer->autoyaimtime60 -= g_Vars.lvupdate60;
@@ -172,7 +176,8 @@ void bmoveUpdateAutoAimYProp(struct prop *prop, f32 autoaimy)
 		if (g_Vars.currentplayer->autoyaimtime60 < 0) {
 			g_Vars.currentplayer->autoyaimtime60 = TICKS(30);
 			g_Vars.currentplayer->autoyaimprop = prop;
-		} else {
+		}
+		else {
 			return;
 		}
 	}
@@ -200,7 +205,7 @@ bool bmoveIsAutoAimXEnabled(void)
 
 bool bmoveIsAutoAimXEnabledForCurrentWeapon(void)
 {
-	struct weaponfunc *func = currentPlayerGetWeaponFunction(0);
+	struct weaponfunc* func = currentPlayerGetWeaponFunction(0);
 
 	if (func) {
 		if (func->flags & FUNCFLAG_NOAUTOAIM) {
@@ -215,7 +220,7 @@ bool bmoveIsAutoAimXEnabledForCurrentWeapon(void)
 	return bmoveIsAutoAimXEnabled();
 }
 
-void bmoveUpdateAutoAimXProp(struct prop *prop, f32 autoaimx)
+void bmoveUpdateAutoAimXProp(struct prop* prop, f32 autoaimx)
 {
 	if (g_Vars.currentplayer->autoxaimtime60 >= 0) {
 		g_Vars.currentplayer->autoxaimtime60 -= g_Vars.lvupdate60;
@@ -225,7 +230,8 @@ void bmoveUpdateAutoAimXProp(struct prop *prop, f32 autoaimx)
 		if (g_Vars.currentplayer->autoxaimtime60 < 0) {
 			g_Vars.currentplayer->autoxaimtime60 = TICKS(30);
 			g_Vars.currentplayer->autoxaimprop = prop;
-		} else {
+		}
+		else {
 			return;
 		}
 	}
@@ -233,7 +239,7 @@ void bmoveUpdateAutoAimXProp(struct prop *prop, f32 autoaimx)
 	g_Vars.currentplayer->autoaimx = autoaimx;
 }
 
-struct prop *bmoveGetHoverbike(void)
+struct prop* bmoveGetHoverbike(void)
 {
 	if (g_Vars.currentplayer->bondmovemode == MOVEMODE_BIKE) {
 		return g_Vars.currentplayer->hoverbike;
@@ -242,7 +248,7 @@ struct prop *bmoveGetHoverbike(void)
 	return NULL;
 }
 
-struct prop *bmoveGetGrabbedProp(void)
+struct prop* bmoveGetGrabbedProp(void)
 {
 	if (g_Vars.currentplayer->bondmovemode == MOVEMODE_GRAB) {
 		return g_Vars.currentplayer->grabbedprop;
@@ -251,9 +257,9 @@ struct prop *bmoveGetGrabbedProp(void)
 	return NULL;
 }
 
-void bmoveGrabProp(struct prop *prop)
+void bmoveGrabProp(struct prop* prop)
 {
-	struct defaultobj *obj = prop->obj;
+	struct defaultobj* obj = prop->obj;
 
 	if ((obj->hidden & OBJHFLAG_MOUNTED) == 0 && (obj->hidden & OBJHFLAG_GRABBED) == 0) {
 		g_Vars.currentplayer->grabbedprop = prop;
@@ -265,17 +271,21 @@ void bmoveSetMode(u32 movemode)
 {
 	if (g_Vars.currentplayer->bondmovemode == MOVEMODE_GRAB) {
 		bgrabExit();
-	} else if (g_Vars.currentplayer->bondmovemode == MOVEMODE_BIKE) {
+	}
+	else if (g_Vars.currentplayer->bondmovemode == MOVEMODE_BIKE) {
 		bbikeExit();
 	}
 
 	if (movemode == MOVEMODE_BIKE) {
 		bbikeInit();
-	} else if (movemode == MOVEMODE_GRAB) {
+	}
+	else if (movemode == MOVEMODE_GRAB) {
 		bgrabInit();
-	} else if (movemode == MOVEMODE_CUTSCENE) {
+	}
+	else if (movemode == MOVEMODE_CUTSCENE) {
 		bcutsceneInit();
-	} else if (movemode == MOVEMODE_WALK) {
+	}
+	else if (movemode == MOVEMODE_WALK) {
 		bwalkInit();
 	}
 }
@@ -297,20 +307,24 @@ void bmoveHandleActivate(void)
 {
 	if (g_Vars.currentplayer->bondmovemode == MOVEMODE_BIKE) {
 		bbikeHandleActivate();
-	} else if (g_Vars.currentplayer->bondmovemode == MOVEMODE_GRAB) {
+	}
+	else if (g_Vars.currentplayer->bondmovemode == MOVEMODE_GRAB) {
 		bgrabHandleActivate();
-	} else if (g_Vars.currentplayer->bondmovemode == MOVEMODE_WALK) {
+	}
+	else if (g_Vars.currentplayer->bondmovemode == MOVEMODE_WALK) {
 		bwalkHandleActivate();
 	}
 }
 
-void bmoveApplyMoveData(struct movedata *data)
+void bmoveApplyMoveData(struct movedata* data)
 {
 	if (g_Vars.currentplayer->bondmovemode == MOVEMODE_BIKE) {
 		bbikeApplyMoveData(data);
-	} else if (g_Vars.currentplayer->bondmovemode == MOVEMODE_GRAB) {
+	}
+	else if (g_Vars.currentplayer->bondmovemode == MOVEMODE_GRAB) {
 		bgrabApplyMoveData(data);
-	} else if (g_Vars.currentplayer->bondmovemode == MOVEMODE_WALK) {
+	}
+	else if (g_Vars.currentplayer->bondmovemode == MOVEMODE_WALK) {
 		bwalkApplyMoveData(data);
 	}
 }
@@ -319,9 +333,11 @@ void bmoveUpdateSpeedTheta(void)
 {
 	if (g_Vars.currentplayer->bondmovemode == MOVEMODE_BIKE) {
 		// empty
-	} else if (g_Vars.currentplayer->bondmovemode == MOVEMODE_GRAB) {
+	}
+	else if (g_Vars.currentplayer->bondmovemode == MOVEMODE_GRAB) {
 		bgrabUpdateSpeedTheta();
-	} else if (g_Vars.currentplayer->bondmovemode == MOVEMODE_WALK) {
+	}
+	else if (g_Vars.currentplayer->bondmovemode == MOVEMODE_WALK) {
 		bwalkUpdateSpeedTheta();
 	}
 }
@@ -347,31 +363,36 @@ void bmoveUpdateSpeedVerta(f32 value)
 	if (value > 0) {
 		if (g_Vars.currentplayer->speedverta > 0) {
 			g_Vars.currentplayer->speedverta -= 0.05f * g_Vars.lvupdate60freal * mult;
-		} else {
+		}
+		else {
 			g_Vars.currentplayer->speedverta -= 0.0125f * g_Vars.lvupdate60freal * mult;
 		}
 
 		if (g_Vars.currentplayer->speedverta < limit) {
 			g_Vars.currentplayer->speedverta = limit;
 		}
-	} else if (value < 0) {
+	}
+	else if (value < 0) {
 		if (g_Vars.currentplayer->speedverta < 0) {
 			g_Vars.currentplayer->speedverta += 0.05f * g_Vars.lvupdate60freal * mult;
-		} else {
+		}
+		else {
 			g_Vars.currentplayer->speedverta += 0.0125f * g_Vars.lvupdate60freal * mult;
 		}
 
 		if (g_Vars.currentplayer->speedverta > limit) {
 			g_Vars.currentplayer->speedverta = limit;
 		}
-	} else {
+	}
+	else {
 		if (g_Vars.currentplayer->speedverta > limit) {
 			g_Vars.currentplayer->speedverta -= 0.05f * g_Vars.lvupdate60freal * mult;
 
 			if (g_Vars.currentplayer->speedverta < limit) {
 				g_Vars.currentplayer->speedverta = limit;
 			}
-		} else {
+		}
+		else {
 			g_Vars.currentplayer->speedverta += 0.05f * g_Vars.lvupdate60freal * mult;
 
 			if (g_Vars.currentplayer->speedverta > limit) {
@@ -402,31 +423,36 @@ void bmoveUpdateSpeedThetaControl(f32 value)
 	if (value > 0) {
 		if (g_Vars.currentplayer->speedthetacontrol > 0) {
 			g_Vars.currentplayer->speedthetacontrol -= 0.05f * g_Vars.lvupdate60freal * mult;
-		} else {
+		}
+		else {
 			g_Vars.currentplayer->speedthetacontrol -= 0.0125f * g_Vars.lvupdate60freal * mult;
 		}
 
 		if (g_Vars.currentplayer->speedthetacontrol < limit) {
 			g_Vars.currentplayer->speedthetacontrol = limit;
 		}
-	} else if (value < 0) {
+	}
+	else if (value < 0) {
 		if (g_Vars.currentplayer->speedthetacontrol < 0.0f) {
 			g_Vars.currentplayer->speedthetacontrol += 0.05f * g_Vars.lvupdate60freal * mult;
-		} else {
+		}
+		else {
 			g_Vars.currentplayer->speedthetacontrol += 0.0125f * g_Vars.lvupdate60freal * mult;
 		}
 
 		if (g_Vars.currentplayer->speedthetacontrol > limit) {
 			g_Vars.currentplayer->speedthetacontrol = limit;
 		}
-	} else {
+	}
+	else {
 		if (g_Vars.currentplayer->speedthetacontrol > limit) {
 			g_Vars.currentplayer->speedthetacontrol -= 0.05f * g_Vars.lvupdate60freal * mult;
 
 			if (g_Vars.currentplayer->speedthetacontrol < limit) {
 				g_Vars.currentplayer->speedthetacontrol = limit;
 			}
-		} else {
+		}
+		else {
 			g_Vars.currentplayer->speedthetacontrol += 0.05f * g_Vars.lvupdate60freal * mult;
 
 			if (g_Vars.currentplayer->speedthetacontrol > limit) {
@@ -439,25 +465,27 @@ void bmoveUpdateSpeedThetaControl(f32 value)
 /**
  * Apply crosshair swivel based on camera movement with input detection
  */
-static void bmoveApplyCrosshairSwivel(struct movedata *movedata, f32 mlookscale, f32 *x, f32 *y)
+static void bmoveApplyCrosshairSwivel(struct movedata* movedata, f32 mlookscale, f32* x, f32* y)
 {
 #ifdef PLATFORM_N64
-	*x = g_Vars.currentplayer->speedtheta * 0.3f + g_Vars.currentplayer->gunextraaimx;
+	* x = g_Vars.currentplayer->speedtheta * 0.3f + g_Vars.currentplayer->gunextraaimx;
 	*y = -g_Vars.currentplayer->speedverta * 0.1f + g_Vars.currentplayer->gunextraaimy;
 #else
 	f32 xscale, yscale;
 	bool mouse_active = (movedata->freelookdx || movedata->freelookdy);
 	bool joystick_active = (movedata->c1stickxraw != 0 || movedata->c1stickyraw != 0);
-	
+
 	if ((mouse_active) && joystick_active) {
 		// Mouse + joystick sway
 		xscale = PLAYER_EXTCFG().crosshairsway * 0.80f;  // 80% for precision+joystick sway
 		yscale = PLAYER_EXTCFG().crosshairsway * 0.80f;  // 80% for precision+joystick sway
-	} else if (mouse_active) {
+	}
+	else if (mouse_active) {
 		// Mouse sway
 		xscale = PLAYER_EXTCFG().crosshairsway * 0.20f;  // 20% for mouse sway
 		yscale = PLAYER_EXTCFG().crosshairsway * 0.30f;  // 30% for mouse sway
-	} else {
+	}
+	else {
 		// Joystick only or no input - full sway
 		xscale = yscale = PLAYER_EXTCFG().crosshairsway;
 	}
@@ -476,7 +504,8 @@ static f32 bmoveCalculateJoyEdgeThreshold(void)
 	f32 boundary = PLAYER_EXTCFG().crosshairedgeboundary;
 	if (boundary <= 0.6f) {
 		return boundary * 100.0f;  // 0-60% -> 0-60
-	} else {
+	}
+	else {
 		return 60.0f + (boundary - 0.6f) * 170.0f;  // 60-100% -> 60-128
 	}
 }
@@ -539,21 +568,21 @@ f32 bmoveCalculateLookahead(void)
 	spf0.z = g_Vars.currentplayer->prop->pos.z;
 
 	portal00018148(&g_Vars.currentplayer->prop->pos, &spf0,
-			g_Vars.currentplayer->prop->rooms, spe0, NULL, 0);
+		g_Vars.currentplayer->prop->rooms, spe0, NULL, 0);
 
 	sp150.x = sp100.x * 400 + spf0.x;
 	sp150.y = sp100.y * 400 + spf0.y;
 	sp150.z = sp100.z * 400 + spf0.z;
 
 	if (cdExamLos08(&spf0, spe0, &sp150,
-				CDTYPE_BG | CDTYPE_CLOSEDDOORS,
-				GEOFLAG_FLOOR1 | GEOFLAG_FLOOR2 | GEOFLAG_WALL | GEOFLAG_BLOCK_SIGHT) == CDRESULT_COLLISION) {
+		CDTYPE_BG | CDTYPE_CLOSEDDOORS,
+		GEOFLAG_FLOOR1 | GEOFLAG_FLOOR2 | GEOFLAG_WALL | GEOFLAG_BLOCK_SIGHT) == CDRESULT_COLLISION) {
 		cdGetPos(&sp150, 455, "bondmove.c");
 		flags = cdGetGeoFlags();
 
 		sp160 = sqrtf((sp150.x - spf0.x) * (sp150.x - spf0.x)
-				+ (sp150.y - spf0.y) * (sp150.y - spf0.y)
-				+ (sp150.z - spf0.z) * (sp150.z - spf0.z));
+			+ (sp150.y - spf0.y) * (sp150.y - spf0.y)
+			+ (sp150.z - spf0.z) * (sp150.z - spf0.z));
 	}
 
 	if (sp160 > 60.0f || (flags & GEOFLAG_FLOOR1)) {
@@ -575,12 +604,12 @@ f32 bmoveCalculateLookahead(void)
 
 			if (
 #if VERSION >= VERSION_NTSC_1_0
-					cdFindFloorRoomYColourFlagsAtPos(&spbc, sp80, &sp78, NULL, NULL) > 0
+				cdFindFloorRoomYColourFlagsAtPos(&spbc, sp80, &sp78, NULL, NULL) > 0
 #else
-					cdFindFloorRoomYColourFlagsAtPos(&spbc, sp80, &sp78, NULL) > 0
+				cdFindFloorRoomYColourFlagsAtPos(&spbc, sp80, &sp78, NULL) > 0
 #endif
-					&& sp78 - ground < 200
-					&& sp78 - ground > -200) {
+				&& sp78 - ground < 200
+				&& sp78 - ground > -200) {
 				angle = atan2f(sp78 - g_Vars.currentplayer->vv_ground, value);
 				angle = (angle * 360) / M_BADTAU + -4;
 
@@ -605,12 +634,14 @@ f32 bmoveCalculateLookahead(void)
 					if (indextoremove < 0) {
 						indextoremove = j;
 						angletoremove = angles[j];
-					} else if (i & 1) {
+					}
+					else if (i & 1) {
 						if (angletoremove > angles[j]) {
 							indextoremove = j;
 							angletoremove = angles[j];
 						}
-					} else {
+					}
+					else {
 						if (angletoremove < angles[j]) {
 							indextoremove = j;
 							angletoremove = angles[j];
@@ -639,7 +670,7 @@ f32 bmoveCalculateLookahead(void)
 	return result;
 }
 
-void bmoveResetMoveData(struct movedata *data)
+void bmoveResetMoveData(struct movedata* data)
 {
 	data->canswivelgun = 0;
 	data->canmanualaim = 0;
@@ -771,8 +802,8 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 	c1stickx = allowc1x ? joyGetStickX(contpad1) : 0;
 	c1sticky = allowc1y ? joyGetStickY(contpad1) : 0;
 #ifndef PLATFORM_N64
-	c2stickx = allowc1x ? (s8) joyGetRStickX(contpad1) : 0;
-	c2sticky = allowc1y ? (s8) joyGetRStickY(contpad1) : 0;
+	c2stickx = allowc1x ? (s8)joyGetRStickX(contpad1) : 0;
+	c2sticky = allowc1y ? (s8)joyGetRStickY(contpad1) : 0;
 #endif
 
 	c1buttons = allowc1buttons ? joyGetButtons(contpad1, 0xffffffff) : 0;
@@ -794,17 +825,21 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 
 	if (c1stickx < -5) {
 		movedata.c1stickxsafe = c1stickx + 5;
-	} else if (c1stickx > 5) {
+	}
+	else if (c1stickx > 5) {
 		movedata.c1stickxsafe = c1stickx - 5;
-	} else {
+	}
+	else {
 		movedata.c1stickxsafe = 0;
 	}
 
 	if (c1sticky < -5) {
 		movedata.c1stickysafe = c1sticky + 5;
-	} else if (c1sticky > 5) {
+	}
+	else if (c1sticky > 5) {
 		movedata.c1stickysafe = c1sticky - 5;
-	} else {
+	}
+	else {
 		movedata.c1stickysafe = 0;
 	}
 
@@ -841,17 +876,20 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 				if (g_Vars.lvframenum > 15) {
 					playerPause(MENUROOT_MAINMENU);
 				}
-			} else {
+			}
+			else {
 				mpPushPauseDialog();
 			}
 		}
-	} else {
+	}
+	else {
 		if (g_Vars.mplayerisrunning) {
 			if (PLAYERCOUNT() == 1) {
 				if (mpIsPaused() && (c1buttonsthisframe & START_BUTTON) && g_MpSetup.paused != MPPAUSEMODE_GAMEOVER) {
 					mpSetPaused(MPPAUSEMODE_UNPAUSED);
 				}
-			} else {
+			}
+			else {
 				if (mpIsPaused() && (c1buttonsthisframe & START_BUTTON)) {
 					mpPushPauseDialog();
 				}
@@ -866,8 +904,8 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 				// 2.2: ctrl1 stick = look,      z = fire, ctrl2 stick = walk/strafe, z = aim
 				// 2.3: ctrl1 stick = walk/turn, z = aim,  ctrl2 stick = look/strafe, z = fire
 				// 2.4: ctrl1 stick = look,      z = aim,  ctrl2 stick = walk/strafe, z = fire
-				contpad2 = (s8) optionsGetContpadNum2(g_Vars.currentplayerstats->mpindex);
-				c2stickx = (s8) joyGetStickX(contpad2);
+				contpad2 = (s8)optionsGetContpadNum2(g_Vars.currentplayerstats->mpindex);
+				c2stickx = (s8)joyGetStickX(contpad2);
 				c2sticky = (joyGetStickY(contpad2) << 24) >> 24;
 				c2buttons = joyGetButtons(contpad2, 0xffffffff);
 				c2buttonsthisframe = joyGetButtonsPressedThisFrame(contpad2, 0xffffffff);
@@ -898,24 +936,29 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 
 				if (tmpc2stickx < -5) {
 					tmpc2stickx += 5;
-				} else if (tmpc2stickx > 5) {
+				}
+				else if (tmpc2stickx > 5) {
 					tmpc2stickx -= 5;
-				} else {
+				}
+				else {
 					tmpc2stickx = 0;
 				}
 
 				if (tmpc2sticky < -5) {
 					tmpc2sticky += 5;
-				} else if (tmpc2sticky > 5) {
+				}
+				else if (tmpc2sticky > 5) {
 					tmpc2sticky -= 5;
-				} else {
+				}
+				else {
 					tmpc2sticky = 0;
 				}
 
 				if (controlmode == CONTROLMODE_21 || controlmode == CONTROLMODE_23) {
 					movedata.analogstrafe = tmpc2stickx;
 					movedata.analogpitch = tmpc2sticky;
-				} else {
+				}
+				else {
 					movedata.analogstrafe = tmpc2stickx;
 					movedata.analogwalk = tmpc2sticky;
 				}
@@ -940,7 +983,8 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 					shootpad = contpad1;
 					aimallowedbuttons = c2allowedbuttons;
 					shootallowedbuttons = c1allowedbuttons;
-				} else {
+				}
+				else {
 					aimpad = contpad1;
 					shootpad = contpad2;
 					aimallowedbuttons = c1allowedbuttons;
@@ -996,7 +1040,8 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 						if (movedata.speedvertadown > 1) {
 							movedata.speedvertadown = 1;
 						}
-					} else {
+					}
+					else {
 						movedata.speedvertadown = 0;
 					}
 
@@ -1006,7 +1051,8 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 						if (movedata.speedvertaup > 1) {
 							movedata.speedvertaup = 1;
 						}
-					} else {
+					}
+					else {
 						movedata.speedvertaup = 0;
 					}
 
@@ -1016,7 +1062,8 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 						if (movedata.aimturnleftspeed > 1) {
 							movedata.aimturnleftspeed = 1;
 						}
-					} else {
+					}
+					else {
 						movedata.aimturnleftspeed = 0;
 					}
 
@@ -1026,7 +1073,8 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 						if (movedata.aimturnrightspeed > 1) {
 							movedata.aimturnrightspeed = 1;
 						}
-					} else {
+					}
+					else {
 						movedata.aimturnrightspeed = 0;
 					}
 
@@ -1038,20 +1086,22 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 							if (g_Vars.currentplayer->invdowntime > -3) {
 								g_Vars.currentplayer->invdowntime = 0;
 							}
-						} else {
+						}
+						else {
 							for (i = 0; i < numsamples; i++) {
 								if (controlmode == CONTROLMODE_PC) {
 									if (joyGetButtonsPressedOnSample(i, contpad1, c1allowedbuttons & BUTTON_WPNFORWARD)) {
 										movedata.weaponforwardoffset++;
 										g_Vars.currentplayer->invdowntime = -1;
-									} else if (joyGetButtonsPressedOnSample(i, contpad1, c1allowedbuttons & BUTTON_WPNBACK)) {
+									}
+									else if (joyGetButtonsPressedOnSample(i, contpad1, c1allowedbuttons & BUTTON_WPNBACK)) {
 										movedata.weaponbackoffset++;
 										g_Vars.currentplayer->invdowntime = -1;
 									}
 									continue;
 								}
 								if (joyGetButtonsOnSample(i, contpad1, c1allowedbuttons & A_BUTTON)
-										|| joyGetButtonsOnSample(i, contpad2, c2allowedbuttons & A_BUTTON)) {
+									|| joyGetButtonsOnSample(i, contpad2, c2allowedbuttons & A_BUTTON)) {
 									if (g_Vars.currentplayer->invdowntime > -2) {
 										if (joyGetButtonsPressedOnSample(i, shootpad, shootallowedbuttons & Z_TRIG)) {
 											movedata.weaponbackoffset++;
@@ -1059,18 +1109,20 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 										}
 
 										if (g_Vars.currentplayer->invdowntime > -1
-												&& joyGetButtonsOnSample(i, shootpad, shootallowedbuttons & Z_TRIG) == 0) {
+											&& joyGetButtonsOnSample(i, shootpad, shootallowedbuttons & Z_TRIG) == 0) {
 											if (g_Vars.currentplayer->invdowntime > TICKS(15)) {
 												amOpen();
 												g_Vars.currentplayer->invdowntime = -1;
-											} else {
+											}
+											else {
 												g_Vars.currentplayer->invdowntime += g_Vars.lvupdate60;
 											}
 										}
 									}
-								} else {
+								}
+								else {
 									if (g_Vars.currentplayer->invdowntime > 0 &&
-											(!allowc1buttons || joyGetButtonsOnSample(i, shootpad, shootallowedbuttons & Z_TRIG) == 0)) {
+										(!allowc1buttons || joyGetButtonsOnSample(i, shootpad, shootallowedbuttons & Z_TRIG) == 0)) {
 										movedata.weaponforwardoffset++;
 									}
 
@@ -1084,11 +1136,11 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 					if (allowc1buttons && controlmode != CONTROLMODE_PC) {
 						for (i = 0; i < numsamples; i++) {
 							if (joyGetButtonsOnSample(i, contpad1, c1allowedbuttons & B_BUTTON)
-									|| joyGetButtonsOnSample(i, contpad2, c2allowedbuttons & B_BUTTON)) {
+								|| joyGetButtonsOnSample(i, contpad2, c2allowedbuttons & B_BUTTON)) {
 								if (g_Vars.currentplayer->usedowntime >= -1) {
 									if (joyGetButtonsPressedOnSample(i, shootpad, shootallowedbuttons & Z_TRIG)
-											&& g_Vars.currentplayer->usedowntime > -1
-											&& bgunConsiderToggleGunFunction(g_Vars.currentplayer->usedowntime, true, false, 0) != USETIMER_CONTINUE) {
+										&& g_Vars.currentplayer->usedowntime > -1
+										&& bgunConsiderToggleGunFunction(g_Vars.currentplayer->usedowntime, true, false, 0) != USETIMER_CONTINUE) {
 										g_Vars.currentplayer->usedowntime = -3;
 									}
 
@@ -1098,19 +1150,24 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 
 											if (result == USETIMER_STOP) {
 												g_Vars.currentplayer->usedowntime = -1;
-											} else if (result == USETIMER_REPEAT) {
+											}
+											else if (result == USETIMER_REPEAT) {
 												g_Vars.currentplayer->usedowntime = -2;
-											} else {
+											}
+											else {
 												g_Vars.currentplayer->usedowntime++;
 											}
-										} else {
+										}
+										else {
 											g_Vars.currentplayer->usedowntime++;
 										}
 									}
-								} else if (g_Vars.currentplayer->usedowntime >= -2) {
+								}
+								else if (g_Vars.currentplayer->usedowntime >= -2) {
 									bgunConsiderToggleGunFunction(g_Vars.currentplayer->usedowntime, false, false, 0);
 								}
-							} else {
+							}
+							else {
 								// Released B - activate or reload
 								if (g_Vars.currentplayer->usedowntime > 0) {
 									movedata.btapcount++;
@@ -1152,7 +1209,8 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 								if (joyGetStickYOnSample(i, contpad2) > 30 && joyGetStickYOnSampleIndex(i, contpad2) <= 30) {
 									if (movedata.crouchdown) {
 										movedata.crouchdown--;
-									} else {
+									}
+									else {
 										movedata.crouchup++;
 									}
 
@@ -1162,7 +1220,8 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 								if (joyGetStickYOnSample(i, contpad2) < -30 && joyGetStickYOnSampleIndex(i, contpad2) >= -30) {
 									if (movedata.crouchup) {
 										movedata.crouchup--;
-									} else {
+									}
+									else {
 										movedata.crouchdown++;
 									}
 
@@ -1175,12 +1234,14 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 									if (g_Vars.currentplayer->aimtaptime > -1) {
 										g_Vars.currentplayer->aimtaptime++;
 									}
-								} else {
+								}
+								else {
 									if (g_Vars.currentplayer->aimtaptime > 0
-											&& g_Vars.currentplayer->aimtaptime < TICKS(15)) {
+										&& g_Vars.currentplayer->aimtaptime < TICKS(15)) {
 										if (movedata.crouchdown) {
 											movedata.crouchdown--;
-										} else {
+										}
+										else {
 											movedata.crouchup++;
 										}
 									}
@@ -1193,9 +1254,9 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 
 					// Handle shutting eyes in multiplayer
 					if (bmoveGetCrouchPos() == CROUCHPOS_SQUAT
-							&& g_Vars.currentplayer->crouchoffset == -90
-							&& g_Vars.mplayerisrunning
-							&& g_Vars.coopplayernum < 0) {
+						&& g_Vars.currentplayer->crouchoffset == -90
+						&& g_Vars.mplayerisrunning
+						&& g_Vars.coopplayernum < 0) {
 						movedata.eyesshut = g_Vars.currentplayer->insightaimmode
 							&& !canmanualzoom
 							&& joyGetStickY(contpad2) < -30;
@@ -1218,10 +1279,10 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 
 					// Handle mine detonation
 					if ((((c1buttons & A_BUTTON) && (c1buttonsthisframe & B_BUTTON))
-								|| ((c1buttons & B_BUTTON) && (c1buttonsthisframe & A_BUTTON))
-								|| ((c2buttons & A_BUTTON) && (c2buttonsthisframe & B_BUTTON))
-								|| ((c2buttons & B_BUTTON) && (c2buttonsthisframe & A_BUTTON)))
-							&& weaponnum == WEAPON_REMOTEMINE) {
+						|| ((c1buttons & B_BUTTON) && (c1buttonsthisframe & A_BUTTON))
+						|| ((c2buttons & A_BUTTON) && (c2buttonsthisframe & B_BUTTON))
+						|| ((c2buttons & B_BUTTON) && (c2buttonsthisframe & A_BUTTON)))
+						&& weaponnum == WEAPON_REMOTEMINE) {
 						movedata.detonating = true;
 						movedata.weaponbackoffset = 0;
 						movedata.weaponforwardoffset = 0;
@@ -1235,17 +1296,18 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 				movedata.zooming = g_Vars.currentplayer->insightaimmode;
 
 				if (g_Vars.currentplayer->waitforzrelease
-						&& joyGetButtons(shootpad, shootallowedbuttons & Z_TRIG) == 0) {
+					&& joyGetButtons(shootpad, shootallowedbuttons & Z_TRIG) == 0) {
 					g_Vars.currentplayer->waitforzrelease = false;
 				}
 
 				if (weaponHasFlag(bgunGetWeaponNum(HAND_RIGHT), WEAPONFLAG_FIRETOACTIVATE)) {
 					if (allowc1buttons
-							&& joyGetButtonsPressedThisFrame(shootpad, shootallowedbuttons & Z_TRIG)
-							&& g_Vars.currentplayer->pausemode == PAUSEMODE_UNPAUSED) {
+						&& joyGetButtonsPressedThisFrame(shootpad, shootallowedbuttons & Z_TRIG)
+						&& g_Vars.currentplayer->pausemode == PAUSEMODE_UNPAUSED) {
 						movedata.btapcount++;
 					}
-				} else {
+				}
+				else {
 					movedata.triggeron = g_Vars.currentplayer->waitforzrelease == false
 						&& allowc1buttons
 						&& joyGetButtons(shootpad, shootallowedbuttons & Z_TRIG)
@@ -1255,17 +1317,20 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 				}
 
 				movedata.disablelookahead = true;
-			} else {
+			}
+			else {
 				// 1.x or PC control style
 				if (controlmode == CONTROLMODE_PC) {
 					shootbuttons = Z_TRIG;
 					aimbuttons = R_TRIG;
 					invbuttons = A_BUTTON;
-				} else if (controlmode == CONTROLMODE_13 || controlmode == CONTROLMODE_14) {
+				}
+				else if (controlmode == CONTROLMODE_13 || controlmode == CONTROLMODE_14) {
 					shootbuttons = A_BUTTON;
 					aimbuttons = Z_TRIG;
 					invbuttons = L_TRIG | R_TRIG;
-				} else {
+				}
+				else {
 					shootbuttons = Z_TRIG;
 					aimbuttons = L_TRIG | R_TRIG;
 					invbuttons = A_BUTTON;
@@ -1276,7 +1341,8 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 						movedata.analogstrafe = c2stickx;
 						movedata.analogwalk = c2sticky;
 						movedata.unk14 = (c2stickx || c2sticky);
-					} else {
+					}
+					else {
 						movedata.analogstrafe = 0.f;
 						movedata.analogwalk = 0.f;
 					}
@@ -1321,7 +1387,8 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 						sdmask = D_CBUTTONS;
 						slmask = L_CBUTTONS;
 						srmask = R_CBUTTONS;
-					} else {
+					}
+					else {
 						sumask = U_JPAD | U_CBUTTONS;
 						sdmask = D_JPAD | D_CBUTTONS;
 						slmask = L_JPAD | L_CBUTTONS;
@@ -1335,7 +1402,8 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 								movedata.digitalstepleft = joyCountButtonsOnSpecificSamples(aimoffhist, contpad1, c1allowedbuttons & slmask);
 								movedata.digitalstepright = joyCountButtonsOnSpecificSamples(aimoffhist, contpad1, c1allowedbuttons & srmask);
 							}
-						} else {
+						}
+						else {
 							// This doesn't appear to be r-leaning.
 							// R-leaning still works when these are commented.
 							if (c1buttons & slmask) {
@@ -1366,7 +1434,7 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 							}
 							if (PLAYER_EXTCFG().mouseaimmode == MOUSEAIM_LOCKED || bgunGetWeaponNum(HAND_RIGHT) == WEAPON_HORIZONSCANNER) {
 								movedata.cannaturalpitch = movedata.cannaturalpitch || (movedata.freelookdy != 0.0f);
-								movedata.cannaturalturn = movedata.cannaturalturn  || (movedata.freelookdx != 0.0f);
+								movedata.cannaturalturn = movedata.cannaturalturn || (movedata.freelookdx != 0.0f);
 							}
 						}
 #endif
@@ -1384,7 +1452,8 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 							movedata.analoglean = 0.f;
 #endif
 						}
-					} else {
+					}
+					else {
 						// 1.1 or 1.3
 						if (c1buttons & (L_JPAD | L_CBUTTONS)) {
 							movedata.unk30 = 1;
@@ -1438,7 +1507,8 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 						if (movedata.speedvertadown > 1) {
 							movedata.speedvertadown = 1;
 						}
-					} else if (g_Vars.currentplayer->insightaimmode && movedata.c1stickyraw < -joy_edge_threshold) {
+					}
+					else if (g_Vars.currentplayer->insightaimmode && movedata.c1stickyraw < -joy_edge_threshold) {
 						movedata.speedvertaup = (-joy_edge_threshold - movedata.c1stickyraw) / (127.0f - joy_edge_threshold);
 
 						if (movedata.speedvertaup > 1) {
@@ -1453,7 +1523,8 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 						if (movedata.aimturnleftspeed > 1) {
 							movedata.aimturnleftspeed = 1;
 						}
-					} else if (g_Vars.currentplayer->insightaimmode && movedata.c1stickxraw > joy_edge_threshold) {
+					}
+					else if (g_Vars.currentplayer->insightaimmode && movedata.c1stickxraw > joy_edge_threshold) {
 						movedata.aimturnrightspeed = (movedata.c1stickxraw - joy_edge_threshold) / (127.0f - joy_edge_threshold);
 
 						if (movedata.aimturnrightspeed > 1) {
@@ -1468,24 +1539,28 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 						float edge_boundary = PLAYER_EXTCFG().crosshairedgeboundary;
 						if (g_Vars.currentplayer->swivelpos[0] > edge_boundary) {
 							movedata.aimturnrightspeed += (g_Vars.currentplayer->swivelpos[0] - edge_boundary) / (1.0f - edge_boundary);
-						} else if (g_Vars.currentplayer->swivelpos[0] < -edge_boundary) {
+						}
+						else if (g_Vars.currentplayer->swivelpos[0] < -edge_boundary) {
 							movedata.aimturnleftspeed += (g_Vars.currentplayer->swivelpos[0] + edge_boundary) / -(1.0f - edge_boundary);
 						}
 						f32 vertaup = 0.f, vertadown = 0.f;
 						if (g_Vars.currentplayer->swivelpos[1] > edge_boundary) {
 							vertaup = (g_Vars.currentplayer->swivelpos[1] - edge_boundary) / (1.0f - edge_boundary);
-						} else if (g_Vars.currentplayer->swivelpos[1] < -edge_boundary) {
+						}
+						else if (g_Vars.currentplayer->swivelpos[1] < -edge_boundary) {
 							vertadown = (g_Vars.currentplayer->swivelpos[1] + edge_boundary) / -(1.0f - edge_boundary);
 						}
 						// Uninvert pitch if needed
 						if (movedata.invertpitch) {
 							movedata.speedvertaup += vertadown;
 							movedata.speedvertadown += vertaup;
-						} else {
+						}
+						else {
 							movedata.speedvertaup += vertaup;
 							movedata.speedvertadown += vertadown;
 						}
-					} else {
+					}
+					else {
 						// Reset mouse aim position when not aiming
 						g_Vars.currentplayer->swivelpos[0] = 0.f;
 						g_Vars.currentplayer->swivelpos[1] = 0.f;
@@ -1500,14 +1575,16 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 							if (g_Vars.currentplayer->invdowntime > -3) {
 								g_Vars.currentplayer->invdowntime = 0;
 							}
-						} else {
+						}
+						else {
 							for (i = 0; i < numsamples; i++) {
 #ifndef PLATFORM_N64
 								if (controlmode == CONTROLMODE_PC) {
 									if (joyGetButtonsPressedOnSample(i, contpad1, c1allowedbuttons & BUTTON_WPNFORWARD)) {
 										movedata.weaponforwardoffset++;
 										g_Vars.currentplayer->invdowntime = -1;
-									} else if (joyGetButtonsPressedOnSample(i, contpad1, c1allowedbuttons & BUTTON_WPNBACK)) {
+									}
+									else if (joyGetButtonsPressedOnSample(i, contpad1, c1allowedbuttons & BUTTON_WPNBACK)) {
 										movedata.weaponbackoffset++;
 										g_Vars.currentplayer->invdowntime = -1;
 									}
@@ -1526,15 +1603,17 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 											if (g_Vars.currentplayer->invdowntime > TICKS(15)) {
 												amOpen();
 												g_Vars.currentplayer->invdowntime = -1;
-											} else {
+											}
+											else {
 												g_Vars.currentplayer->invdowntime += g_Vars.lvupdate60;
 											}
 										}
 									}
-								} else {
+								}
+								else {
 									// Wasn't holding A on this sample
 									if (g_Vars.currentplayer->invdowntime > 0 &&
-											(!allowc1buttons || joyGetButtonsOnSample(i, contpad1, shootbuttons & c1allowedbuttons) == 0)) {
+										(!allowc1buttons || joyGetButtonsOnSample(i, contpad1, shootbuttons & c1allowedbuttons) == 0)) {
 										// But was on previous sample, so cycle weapon
 										movedata.weaponforwardoffset++;
 									}
@@ -1555,8 +1634,8 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 								if (g_Vars.currentplayer->usedowntime >= -1) {
 									if (controlmode != CONTROLMODE_PC) {
 										if (joyGetButtonsPressedOnSample(i, contpad1, shootbuttons & c1allowedbuttons)
-												&& g_Vars.currentplayer->usedowntime >= 0
-												&& bgunConsiderToggleGunFunction(g_Vars.currentplayer->usedowntime, true, false, 0) != USETIMER_CONTINUE) {
+											&& g_Vars.currentplayer->usedowntime >= 0
+											&& bgunConsiderToggleGunFunction(g_Vars.currentplayer->usedowntime, true, false, 0) != USETIMER_CONTINUE) {
 											g_Vars.currentplayer->usedowntime = -3;
 										}
 									}
@@ -1568,21 +1647,26 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 												bgunConsiderToggleGunFunction(g_Vars.currentplayer->usedowntime, false, false, 0);
 											if (result == USETIMER_STOP) {
 												g_Vars.currentplayer->usedowntime = -1;
-											} else if (result == USETIMER_REPEAT) {
+											}
+											else if (result == USETIMER_REPEAT) {
 												g_Vars.currentplayer->usedowntime = -2;
-											} else {
+											}
+											else {
 												g_Vars.currentplayer->usedowntime++;
 											}
-										} else {
+										}
+										else {
 											g_Vars.currentplayer->usedowntime++;
 										}
 									}
-								} else {
+								}
+								else {
 									if ((controlmode != CONTROLMODE_PC) && g_Vars.currentplayer->usedowntime >= -2) {
 										bgunConsiderToggleGunFunction(g_Vars.currentplayer->usedowntime, false, false, 0);
 									}
 								}
-							} else {
+							}
+							else {
 								// Released B
 								if (g_Vars.currentplayer->usedowntime > 0) {
 									movedata.btapcount++;
@@ -1617,17 +1701,20 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 									if (g_Vars.currentplayer->amdowntime > -3) {
 										g_Vars.currentplayer->amdowntime = 0;
 									}
-								} else {
+								}
+								else {
 									if (g_Vars.currentplayer->amdowntime >= 0) {
 										if (joyGetButtonsPressedOnSample(i, contpad1, c1allowedbuttons & BUTTON_RADIAL)) {
 											amOpen();
 											g_Vars.currentplayer->amdowntime = -1;
-										} else {
+										}
+										else {
 											g_Vars.currentplayer->amdowntime++;
 										}
 									}
 								}
-							} else {
+							}
+							else {
 								g_Vars.currentplayer->amdowntime = 0;
 							}
 						}
@@ -1643,7 +1730,8 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 								if (crouchsample) {
 									if (g_Vars.currentplayer->crouchpos <= 0) {
 										g_Vars.currentplayer->crouchpos = CROUCHPOS_STAND;
-									} else {
+									}
+									else {
 										g_Vars.currentplayer->crouchpos--;
 									}
 								}
@@ -1651,7 +1739,8 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 								if (crouchsample) {
 									if (g_Vars.currentplayer->crouchpos == CROUCHPOS_DUCK) {
 										g_Vars.currentplayer->crouchpos = CROUCHPOS_STAND;
-									} else {
+									}
+									else {
 										g_Vars.currentplayer->crouchpos = CROUCHPOS_DUCK;
 									}
 								}
@@ -1659,18 +1748,22 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 								if (crouchsample) {
 									if (g_Vars.currentplayer->crouchpos == CROUCHPOS_SQUAT) {
 										g_Vars.currentplayer->crouchpos = CROUCHPOS_STAND;
-									} else {
+									}
+									else {
 										g_Vars.currentplayer->crouchpos = CROUCHPOS_SQUAT;
 									}
 								}
-							} else if (PLAYER_EXTCFG().crouchmode == CROUCHMODE_HOLD) {
+							}
+							else if (PLAYER_EXTCFG().crouchmode == CROUCHMODE_HOLD) {
 								// hold to crouch
 								crouchsample = joyGetButtonsOnSample(i, contpad1, c1allowedbuttons) & (BUTTON_FULL_CROUCH | BUTTON_HALF_CROUCH);
 								if (!crouchsample) {
 									g_Vars.currentplayer->crouchpos = CROUCHPOS_STAND;
-								} else if (crouchsample & BUTTON_FULL_CROUCH) {
+								}
+								else if (crouchsample & BUTTON_FULL_CROUCH) {
 									g_Vars.currentplayer->crouchpos = CROUCHPOS_SQUAT;
-								} else if (crouchsample & BUTTON_HALF_CROUCH) {
+								}
+								else if (crouchsample & BUTTON_HALF_CROUCH) {
 									g_Vars.currentplayer->crouchpos = CROUCHPOS_DUCK;
 								}
 							}
@@ -1740,7 +1833,8 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 								if (goUp) {
 									if (movedata.crouchdown) {
 										movedata.crouchdown--;
-									} else {
+									}
+									else {
 										movedata.crouchup++;
 									}
 
@@ -1754,7 +1848,8 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 								if (goDn) {
 									if (movedata.crouchup) {
 										movedata.crouchup--;
-									} else {
+									}
+									else {
 										movedata.crouchdown++;
 									}
 
@@ -1767,13 +1862,15 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 									if (g_Vars.currentplayer->aimtaptime >= 0) {
 										g_Vars.currentplayer->aimtaptime++;
 									}
-								} else {
+								}
+								else {
 									// Released aim
 									if (g_Vars.currentplayer->aimtaptime > 0 && g_Vars.currentplayer->aimtaptime < TICKS(15)) {
 										// Was only a tap, so uncrouch
 										if (movedata.crouchdown) {
 											movedata.crouchdown--;
-										} else {
+										}
+										else {
 											movedata.crouchup++;
 										}
 									}
@@ -1786,9 +1883,9 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 
 					// Handle shutting eyes in multiplayer
 					if (bmoveGetCrouchPos() == CROUCHPOS_SQUAT
-							&& g_Vars.currentplayer->crouchoffset == -90
-							&& g_Vars.mplayerisrunning
-							&& g_Vars.coopplayernum <= -1) {
+						&& g_Vars.currentplayer->crouchoffset == -90
+						&& g_Vars.mplayerisrunning
+						&& g_Vars.coopplayernum <= -1) {
 						movedata.eyesshut = g_Vars.currentplayer->insightaimmode
 							&& !canmanualzoom
 							&& joyGetButtons(contpad1, c1allowedbuttons & sdmask);
@@ -1797,12 +1894,13 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 					if (bgunGetWeaponNum(HAND_RIGHT) == WEAPON_FARSIGHT) {
 						movedata.farsighttempautoseek = g_Vars.currentplayer->insightaimmode && (c1buttons & (srmask | slmask));
 						if (controlmode == CONTROLMODE_PC && g_Vars.currentplayer->insightaimmode) {
-								movedata.unk14 = 1;
+							movedata.unk14 = 1;
 #ifndef PLATFORM_N64
-								movedata.analogstrafe = c2stickx;
+							movedata.analogstrafe = c2stickx;
 #endif
 						}
-					} else {
+					}
+					else {
 						movedata.rleanleft = g_Vars.currentplayer->insightaimmode && (c1buttons & slmask);
 						movedata.rleanright = g_Vars.currentplayer->insightaimmode && (c1buttons & srmask);
 #ifndef PLATFORM_N64
@@ -1815,8 +1913,8 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 					// Handle mine detonation
 					if (controlmode != CONTROLMODE_PC) {
 						if ((((c1buttons & invbuttons) && (c1buttonsthisframe & B_BUTTON))
-								|| ((c1buttons & B_BUTTON) && (c1buttonsthisframe & invbuttons)))
-								&& weaponnum == WEAPON_REMOTEMINE) {
+							|| ((c1buttons & B_BUTTON) && (c1buttonsthisframe & invbuttons)))
+							&& weaponnum == WEAPON_REMOTEMINE) {
 							movedata.detonating = true;
 							movedata.weaponbackoffset = 0;
 							movedata.weaponforwardoffset = 0;
@@ -1824,25 +1922,27 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 							g_Vars.currentplayer->invdowntime = -2;
 							g_Vars.currentplayer->usedowntime = -2;
 						}
-					} else {
+					}
+					else {
 						bgunProcessQuickDetonate(&movedata, c1buttons, c1buttonsthisframe, (BUTTON_CANCEL_USE | BUTTON_ACCEPT_USE), (BUTTON_WPNBACK | BUTTON_RADIAL | BUTTON_RELOAD));
 					}
-				}
+					}
 
 				movedata.aiming = g_Vars.currentplayer->insightaimmode;
 				movedata.zooming = g_Vars.currentplayer->insightaimmode;
 
 				if (g_Vars.currentplayer->waitforzrelease
-						&& (c1buttons & shootbuttons) == 0) {
+					&& (c1buttons & shootbuttons) == 0) {
 					g_Vars.currentplayer->waitforzrelease = false;
 				}
 
 				if (weaponHasFlag(bgunGetWeaponNum(HAND_RIGHT), WEAPONFLAG_FIRETOACTIVATE)) {
 					if ((c1buttonsthisframe & shootbuttons)
-							&& g_Vars.currentplayer->pausemode == PAUSEMODE_UNPAUSED) {
+						&& g_Vars.currentplayer->pausemode == PAUSEMODE_UNPAUSED) {
 						movedata.btapcount++;
 					}
-				} else {
+				}
+				else {
 					movedata.triggeron = g_Vars.currentplayer->waitforzrelease == false
 						&& (c1buttons & shootbuttons)
 						&& g_Vars.currentplayer->pausemode == PAUSEMODE_UNPAUSED;
@@ -1854,9 +1954,9 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 				if (controlmode == CONTROLMODE_12 || controlmode == CONTROLMODE_14 || controlmode == CONTROLMODE_PC) {
 					movedata.disablelookahead = true;
 				}
-			} // end 1.x
+				} // end 1.x
+			}
 		}
-	}
 
 	g_Vars.currentplayer->bondactivateorreload = 0;
 
@@ -1872,7 +1972,8 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 		g_Vars.currentplayer->activatetimethis = g_Vars.lvframe60;
 		if (!usereloads) {
 			g_Vars.currentplayer->bondactivateorreload = g_Vars.currentplayer->bondactivateorreload | JO_ACTION_ACTIVATE;
-		} else {
+		}
+		else {
 			g_Vars.currentplayer->bondactivateorreload = movedata.btapcount ?
 				(g_Vars.currentplayer->bondactivateorreload | JO_ACTION_ACTIVATE | JO_ACTION_RELOAD) : 0;
 		}
@@ -1919,9 +2020,9 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 
 		// FarSight in secondary function
 		if (bgunGetWeaponNum(HAND_RIGHT) == WEAPON_FARSIGHT
-				&& g_Vars.currentplayer->insightaimmode
-				&& (movedata.farsighttempautoseek || g_Vars.currentplayer->hands[HAND_RIGHT].gset.weaponfunc == FUNC_SECONDARY)
-				&& g_Vars.currentplayer->autoeraserdist > 0) {
+			&& g_Vars.currentplayer->insightaimmode
+			&& (movedata.farsighttempautoseek || g_Vars.currentplayer->hands[HAND_RIGHT].gset.weaponfunc == FUNC_SECONDARY)
+			&& g_Vars.currentplayer->autoeraserdist > 0) {
 			eraserfov = cam0f0b49b8(500.0f / g_Vars.currentplayer->autoeraserdist);
 
 			if (eraserfov > PLAYER_DEFAULT_FOV) {
@@ -1940,13 +2041,15 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 
 			if (crosspos[0] < (camGetScreenLeft() + camGetScreenWidth() * 0.5f) - 20.0f) {
 				movedata.aimturnleftspeed = 0.25f;
-			} else if (crosspos[0] > camGetScreenLeft() + camGetScreenWidth() * 0.5f + 20.0f) {
+			}
+			else if (crosspos[0] > camGetScreenLeft() + camGetScreenWidth() * 0.5f + 20.0f) {
 				movedata.aimturnrightspeed = 0.25f;
 			}
 
 			if (crosspos[1] < (camGetScreenTop() + camGetScreenHeight() * 0.5f) - 20.0f) {
 				movedata.speedvertaup = 0.25f;
-			} else if (crosspos[1] > camGetScreenTop() + camGetScreenHeight() * 0.5f + 20.0f) {
+			}
+			else if (crosspos[1] > camGetScreenTop() + camGetScreenHeight() * 0.5f + 20.0f) {
 				movedata.speedvertadown = 0.25f;
 			}
 		}
@@ -1956,7 +2059,7 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 		}
 
 		if (bgunGetWeaponNum(HAND_RIGHT) == WEAPON_AR34
-				&& g_Vars.currentplayer->hands[HAND_RIGHT].gset.weaponfunc == FUNC_SECONDARY) {
+			&& g_Vars.currentplayer->hands[HAND_RIGHT].gset.weaponfunc == FUNC_SECONDARY) {
 			zoomfov = currentPlayerGetGunZoomFov();
 		}
 
@@ -1984,7 +2087,8 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 #endif
 			g_Vars.currentplayer->speedboost = 1.25f;
 		}
-	} else {
+	}
+	else {
 		if (g_Vars.currentplayer->speedboost > 1) {
 			g_Vars.currentplayer->speedboost -= 0.01f * g_Vars.lvupdate60freal;
 		}
@@ -2003,7 +2107,7 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 
 		if (g_Vars.currentplayer->lookaheadcentreenabled) {
 			if (g_Vars.lvframenum != g_Vars.currentplayer->lookaheadframe
-					&& g_Vars.currentplayernum == (g_Vars.lvframenum & 3)) {
+				&& g_Vars.currentplayernum == (g_Vars.lvframenum & 3)) {
 				g_Vars.currentplayer->cachedlookahead = bmoveCalculateLookahead();
 			}
 
@@ -2011,7 +2115,7 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 		}
 
 		if (g_Vars.currentplayer->movecentrerelease
-				&& movedata.analogwalk < 40 && movedata.analogwalk > -40) {
+			&& movedata.analogwalk < 40 && movedata.analogwalk > -40) {
 			g_Vars.currentplayer->movecentrerelease = false;
 		}
 
@@ -2020,24 +2124,27 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 				g_Vars.currentplayer->docentreupdown = false;
 				g_Vars.currentplayer->prevupdown = true;
 				g_Vars.currentplayer->automovecentre = false;
-			} else {
+			}
+			else {
 				if (movedata.disablelookahead) {
 					g_Vars.currentplayer->automovecentre = false;
-				} else if (g_Vars.currentplayer->automovecentreenabled) {
+				}
+				else if (g_Vars.currentplayer->automovecentreenabled) {
 					if (movedata.canlookahead && (movedata.analogwalk > 60 || movedata.analogwalk < -60)) {
 						g_Vars.currentplayer->automovecentre = true;
 					}
 
 					if (g_Vars.currentplayer->automovecentre
-							&& (g_Vars.currentplayer->vv_verta > lookahead + 5.0f || g_Vars.currentplayer->vv_verta < lookahead + -10.0f)
-							&& g_Vars.currentplayer->movecentrerelease == false) {
-						g_Vars.currentplayer->docentreupdown = true;
-					}
-				} else if (g_Vars.currentplayer->fastmovecentreenabled
-						&& movedata.canlookahead
-						&& (movedata.analogwalk > 60 || movedata.analogwalk < -60)
 						&& (g_Vars.currentplayer->vv_verta > lookahead + 5.0f || g_Vars.currentplayer->vv_verta < lookahead + -10.0f)
 						&& g_Vars.currentplayer->movecentrerelease == false) {
+						g_Vars.currentplayer->docentreupdown = true;
+					}
+				}
+				else if (g_Vars.currentplayer->fastmovecentreenabled
+					&& movedata.canlookahead
+					&& (movedata.analogwalk > 60 || movedata.analogwalk < -60)
+					&& (g_Vars.currentplayer->vv_verta > lookahead + 5.0f || g_Vars.currentplayer->vv_verta < lookahead + -10.0f)
+					&& g_Vars.currentplayer->movecentrerelease == false) {
 					g_Vars.currentplayer->docentreupdown = true;
 				}
 
@@ -2058,9 +2165,11 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 
 				if (g_Vars.currentplayer->vv_verta > lookahead + increment2) {
 					bmoveUpdateSpeedVerta(1);
-				} else if (g_Vars.currentplayer->vv_verta < lookahead - increment2) {
+				}
+				else if (g_Vars.currentplayer->vv_verta < lookahead - increment2) {
 					bmoveUpdateSpeedVerta(-1);
-				} else {
+				}
+				else {
 					bmoveUpdateSpeedVerta(0);
 				}
 
@@ -2069,9 +2178,11 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 
 				if (g_Vars.currentplayer->vv_verta > lookahead && newverta > lookahead) {
 					g_Vars.currentplayer->vv_verta = newverta;
-				} else if (g_Vars.currentplayer->vv_verta < lookahead && newverta < lookahead) {
+				}
+				else if (g_Vars.currentplayer->vv_verta < lookahead && newverta < lookahead) {
 					g_Vars.currentplayer->vv_verta = newverta;
-				} else {
+				}
+				else {
 					g_Vars.currentplayer->vv_verta = lookahead;
 					g_Vars.currentplayer->speedverta = 0;
 
@@ -2080,20 +2191,23 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 					}
 				}
 			}
-		} else {
+		}
+		else {
 			if (movedata.cannaturalpitch) {
 				tmp = viGetFovY() / PLAYER_DEFAULT_FOV;
 				fVar25 = movedata.analogpitch / 70.0f;
 
 				if (fVar25 > 1) {
 					fVar25 = 1;
-				} else if (fVar25 < -1) {
+				}
+				else if (fVar25 < -1) {
 					fVar25 = -1;
 				}
 
 				if (fVar25 >= 0) {
 					fVar25 *= fVar25;
-				} else {
+				}
+				else {
 					fVar25 *= -fVar25;
 				}
 
@@ -2102,19 +2216,22 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 #endif
 
 				g_Vars.currentplayer->speedverta = -fVar25 * tmp;
-			} else if (movedata.speedvertadown > 0) {
+			}
+			else if (movedata.speedvertadown > 0) {
 				bmoveUpdateSpeedVerta(movedata.speedvertadown);
 
 				if (movedata.canlookahead && (movedata.analogwalk > 60 || movedata.analogwalk < -60)) {
 					g_Vars.currentplayer->movecentrerelease = true;
 				}
-			} else if (movedata.speedvertaup > 0) {
+			}
+			else if (movedata.speedvertaup > 0) {
 				bmoveUpdateSpeedVerta(-movedata.speedvertaup);
 
 				if (movedata.canlookahead && (movedata.analogwalk > 60 || movedata.analogwalk < -60)) {
 					g_Vars.currentplayer->movecentrerelease = true;
 				}
-			} else {
+			}
+			else {
 				bmoveUpdateSpeedVerta(0);
 			}
 
@@ -2128,13 +2245,15 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 
 		if (fVar25 > 1) {
 			fVar25 = 1;
-		} else if (fVar25 < -1) {
+		}
+		else if (fVar25 < -1) {
 			fVar25 = -1;
 		}
 
 		if (fVar25 >= 0) {
 			fVar25 *= fVar25;
-		} else {
+		}
+		else {
 			fVar25 *= -fVar25;
 		}
 
@@ -2143,11 +2262,14 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 #endif
 
 		g_Vars.currentplayer->speedthetacontrol = fVar25 * tmp;
-	} else if (movedata.aimturnleftspeed > 0) {
+	}
+	else if (movedata.aimturnleftspeed > 0) {
 		bmoveUpdateSpeedThetaControl(movedata.aimturnleftspeed);
-	} else if (movedata.aimturnrightspeed > 0) {
+	}
+	else if (movedata.aimturnrightspeed > 0) {
 		bmoveUpdateSpeedThetaControl(-movedata.aimturnrightspeed);
-	} else {
+	}
+	else {
 		bmoveUpdateSpeedThetaControl(0);
 	}
 
@@ -2182,26 +2304,27 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 
 	if (g_Vars.currentplayer->unk1c64) {
 		g_Vars.currentplayer->unk1c64 = 0;
-	} else if (movedata.canswivelgun) {
+	}
+	else if (movedata.canswivelgun) {
 		f32 x;
 		f32 y;
 
 		bgunSetAimType(0);
 
 		if (
-				(
-				 movedata.canautoaim
-				 && (bmoveIsAutoAimXEnabledForCurrentWeapon() || bmoveIsAutoAimYEnabledForCurrentWeapon())
-				 && g_Vars.currentplayer->autoxaimprop
-				 && g_Vars.currentplayer->autoyaimprop
-				 && weaponHasAimFlag(weaponnum, INVAIMFLAG_AUTOAIM)
+			(
+				movedata.canautoaim
+				&& (bmoveIsAutoAimXEnabledForCurrentWeapon() || bmoveIsAutoAimYEnabledForCurrentWeapon())
+				&& g_Vars.currentplayer->autoxaimprop
+				&& g_Vars.currentplayer->autoyaimprop
+				&& weaponHasAimFlag(weaponnum, INVAIMFLAG_AUTOAIM)
 				)
-				|| (bgunGetWeaponNum(HAND_RIGHT) == WEAPON_CMP150 && g_Vars.currentplayer->hands[HAND_RIGHT].gset.weaponfunc == FUNC_SECONDARY)) {
+			|| (bgunGetWeaponNum(HAND_RIGHT) == WEAPON_CMP150 && g_Vars.currentplayer->hands[HAND_RIGHT].gset.weaponfunc == FUNC_SECONDARY)) {
 			// Auto aim - move crosshair towards target
 			s32 followlockon = false;
 
 			if (bgunGetWeaponNum(HAND_RIGHT) == WEAPON_CMP150
-					&& g_Vars.currentplayer->hands[HAND_RIGHT].gset.weaponfunc == FUNC_SECONDARY) {
+				&& g_Vars.currentplayer->hands[HAND_RIGHT].gset.weaponfunc == FUNC_SECONDARY) {
 				followlockon = true;
 			}
 
@@ -2218,10 +2341,12 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 
 			if (followlockon) {
 				bgunSwivel(x, y, PAL ? 0.899f : 0.915f, PAL ? 0.899f : 0.915f);
-			} else {
+			}
+			else {
 				bgunSwivelWithDamp(x, y, g_Vars.currentplayer->autoaimdamp);
 			}
-		} else {
+		}
+		else {
 			// This code moves the crosshair as the player turns and makes
 			// it return to the centre when not affected by anything else.
 			if (g_Vars.currentplayer->autoaimdamp < (PAL ? 0.974f : 0.979f)) {
@@ -2236,13 +2361,14 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 			x = g_Vars.currentplayer->speedtheta * 0.3f + g_Vars.currentplayer->gunextraaimx;
 			y = -g_Vars.currentplayer->speedverta * 0.1f + g_Vars.currentplayer->gunextraaimy;
 #else
-            // Crosshair swivel movement system
+			// Crosshair swivel movement system
 			bmoveApplyCrosshairSwivel(&movedata, mlookscale, &x, &y);
 #endif
 
 			bgunSwivelWithDamp(x, y, PAL ? 0.955f : 0.963f);
 		}
-	} else if (movedata.canmanualaim) {
+	}
+	else if (movedata.canmanualaim) {
 		// Adjust crosshair's position on screen
 		// when holding aim and moving stick
 		bgunSetAimType(0);
@@ -2265,9 +2391,9 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 #endif
 		bgunSwivelWithoutDamp((movedata.c1stickxraw * 0.65f) / 80.0f, (movedata.c1stickyraw * 0.65f) / 80.0f);
 	}
-}
+	}
 
-void bmoveFindEnteredRoomsByPos(struct player *player, struct coord *mid, RoomNum *rooms)
+void bmoveFindEnteredRoomsByPos(struct player* player, struct coord* mid, RoomNum * rooms)
 {
 	struct coord bbmin;
 	struct coord bbmax;
@@ -2285,19 +2411,19 @@ void bmoveFindEnteredRoomsByPos(struct player *player, struct coord *mid, RoomNu
 	bgFindEnteredRooms(&bbmin, &bbmax, rooms, 7, false);
 }
 
-void bmoveFindEnteredRooms(struct player *player, RoomNum *rooms)
+void bmoveFindEnteredRooms(struct player* player, RoomNum * rooms)
 {
 	bmoveFindEnteredRoomsByPos(player, &player->prop->pos, rooms);
 }
 
-void bmoveUpdateRooms(struct player *player)
+void bmoveUpdateRooms(struct player* player)
 {
 	propDeregisterRooms(player->prop);
 	bmoveFindEnteredRooms(player, player->prop->rooms);
 	propRegisterRooms(player->prop);
 }
 
-void bmove0f0cb904(struct coord *arg0)
+void bmove0f0cb904(struct coord* arg0)
 {
 	if (arg0->f[0] || arg0->f[2]) {
 		f32 hypotenuse = sqrtf(arg0->f[0] * arg0->f[0] + arg0->f[2] * arg0->f[2]);
@@ -2318,7 +2444,8 @@ void bmove0f0cb904(struct coord *arg0)
 						if (arg0->f[i] < 0) {
 							arg0->f[i] = 0;
 						}
-					} else if (arg0->f[i] < 0) {
+					}
+					else if (arg0->f[i] < 0) {
 						arg0->f[i] -= (1.0f / 30.0f) * g_Vars.lvupdate60freal * arg0->f[i] / hypotenuse;
 
 						if (arg0->f[i] > 0) {
@@ -2326,31 +2453,34 @@ void bmove0f0cb904(struct coord *arg0)
 						}
 					}
 				}
-			} else {
+			}
+			else {
 				arg0->f[i] = 0;
 			}
 		}
 	}
 }
 
-void bmove0f0cba88(f32 *a, f32 *b, struct coord *c, f32 mult1, f32 mult2)
+void bmove0f0cba88(f32 * a, f32 * b, struct coord* c, f32 mult1, f32 mult2)
 {
 	if (c->x != 0 || c->z != 0) {
 		bmove0f0cb904(c);
 		*a = c->z * mult2 + -c->x * mult1;
 		*b = -c->x * mult2 - c->z * mult1;
-	} else {
+	}
+	else {
 		*a = 0;
 		*b = 0;
 	}
 }
 
-void bmoveUpdateMoveInitSpeed(struct coord *newpos)
+void bmoveUpdateMoveInitSpeed(struct coord* newpos)
 {
 	if (g_Vars.currentplayer->moveinitspeed.x != 0) {
 		if (g_Vars.currentplayer->moveinitspeed.x < 0.001f && g_Vars.currentplayer->moveinitspeed.x > -0.001f) {
 			g_Vars.currentplayer->moveinitspeed.x = 0;
-		} else {
+		}
+		else {
 			g_Vars.currentplayer->moveinitspeed.x *= 0.9f;
 			newpos->x += g_Vars.currentplayer->moveinitspeed.x * g_Vars.lvupdate60freal;
 		}
@@ -2359,7 +2489,8 @@ void bmoveUpdateMoveInitSpeed(struct coord *newpos)
 	if (g_Vars.currentplayer->moveinitspeed.z != 0) {
 		if (g_Vars.currentplayer->moveinitspeed.z < 0.001f && g_Vars.currentplayer->moveinitspeed.z > -0.001f) {
 			g_Vars.currentplayer->moveinitspeed.z = 0;
-		} else {
+		}
+		else {
 			g_Vars.currentplayer->moveinitspeed.z *= 0.9f;
 			newpos->z += g_Vars.currentplayer->moveinitspeed.z * g_Vars.lvupdate60freal;
 		}
@@ -2368,7 +2499,7 @@ void bmoveUpdateMoveInitSpeed(struct coord *newpos)
 
 void bmoveTick(bool allowc1x, bool allowc1y, bool allowc1buttons, bool ignorec2)
 {
-	struct chrdata *chr;
+	struct chrdata* chr;
 	u8 foot;
 	s32 sound;
 	f32 xdiff;
@@ -2380,22 +2511,25 @@ void bmoveTick(bool allowc1x, bool allowc1y, bool allowc1buttons, bool ignorec2)
 
 	if (g_Vars.currentplayer->bondmovemode == MOVEMODE_BIKE) {
 		bbikeTick();
-	} else if (g_Vars.currentplayer->bondmovemode == MOVEMODE_GRAB) {
+	}
+	else if (g_Vars.currentplayer->bondmovemode == MOVEMODE_GRAB) {
 		bgrabTick();
-	} else if (g_Vars.currentplayer->bondmovemode == MOVEMODE_CUTSCENE) {
+	}
+	else if (g_Vars.currentplayer->bondmovemode == MOVEMODE_CUTSCENE) {
 		bcutsceneTick();
-	} else if (g_Vars.currentplayer->bondmovemode == MOVEMODE_WALK) {
+	}
+	else if (g_Vars.currentplayer->bondmovemode == MOVEMODE_WALK) {
 		bwalkTick();
 	}
 
 	// Update footstep sounds
 	if ((g_Vars.currentplayer->bondmovemode == MOVEMODE_WALK || g_Vars.currentplayer->bondmovemode == MOVEMODE_GRAB)
-			&& (g_Vars.currentplayer->speedforwards || g_Vars.currentplayer->speedsideways)
-			&& (!g_Vars.normmplayerisrunning || PLAYERCOUNT() == 1)) {
+		&& (g_Vars.currentplayer->speedforwards || g_Vars.currentplayer->speedsideways)
+		&& (!g_Vars.normmplayerisrunning || PLAYERCOUNT() == 1)) {
 		chr = g_Vars.currentplayer->prop->chr;
 
 		if (g_Vars.currentplayer->cameramode == CAMERAMODE_DEFAULT
-				&& g_Vars.currentplayer->bdeltapos.y >= -6.0f) {
+			&& g_Vars.currentplayer->bdeltapos.y >= -6.0f) {
 			xdiff = g_Vars.currentplayer->bondprevpos.x - g_Vars.currentplayer->prop->pos.x;
 			ydiff = g_Vars.currentplayer->bondprevpos.y - g_Vars.currentplayer->prop->pos.y;
 			zdiff = g_Vars.currentplayer->bondprevpos.z - g_Vars.currentplayer->prop->pos.z;
@@ -2413,7 +2547,8 @@ void bmoveTick(bool allowc1x, bool allowc1y, bool allowc1buttons, bool ignorec2)
 			if (foot) {
 				if (g_Vars.currentplayer->foot) {
 					chr->footstep = 1;
-				} else {
+				}
+				else {
 					chr->footstep = 2;
 				}
 
@@ -2443,7 +2578,8 @@ void bmoveUpdateVerta(void)
 
 	if (g_Vars.currentplayer->vv_verta > 90) {
 		g_Vars.currentplayer->vv_verta = 90;
-	} else if (g_Vars.currentplayer->vv_verta < -90) {
+	}
+	else if (g_Vars.currentplayer->vv_verta < -90) {
 		g_Vars.currentplayer->vv_verta = -90;
 	}
 
@@ -2464,7 +2600,7 @@ void bmoveUpdateVerta(void)
 	g_Vars.currentplayer->bond2.unk00.z = g_Vars.currentplayer->vv_costheta;
 
 	if (g_Vars.currentplayer->prop) {
-		struct chrdata *chr = g_Vars.currentplayer->prop->chr;
+		struct chrdata* chr = g_Vars.currentplayer->prop->chr;
 
 		if (chr && chr->model) {
 			chrSetLookAngle(chr, BADDEG2RAD(360 - g_Vars.currentplayer->vv_theta));
@@ -2472,7 +2608,7 @@ void bmoveUpdateVerta(void)
 	}
 }
 
-void bmove0f0cc19c(struct coord *arg)
+void bmove0f0cc19c(struct coord* arg)
 {
 	f32 min;
 	f32 mult;
@@ -2496,13 +2632,16 @@ void bmove0f0cc19c(struct coord *arg)
 	if (cheatIsActive(CHEAT_SMALLJO)) {
 		if (g_Vars.currentplayer->bondmovemode == MOVEMODE_BIKE) {
 			mult = g_Vars.currentplayer->bondentert * 0.6f + 0.4f;
-		} else if (g_Vars.currentplayer->bondmovemode == MOVEMODE_WALK && g_Vars.currentplayer->walkinitmove) {
+		}
+		else if (g_Vars.currentplayer->bondmovemode == MOVEMODE_WALK && g_Vars.currentplayer->walkinitmove) {
 			mult = (1.0f - g_Vars.currentplayer->walkinitt) * 0.6f + 0.4f;
 			g_Vars.currentplayer->bond2.unk10.y += (g_Vars.currentplayer->crouchoffsetreal - g_Vars.currentplayer->crouchoffsetrealsmall) * g_Vars.currentplayer->walkinitt;
-		} else if (g_Vars.currentplayer->bondmovemode == MOVEMODE_WALK) {
+		}
+		else if (g_Vars.currentplayer->bondmovemode == MOVEMODE_WALK) {
 			mult = 0.4f;
 			g_Vars.currentplayer->bond2.unk10.y += (g_Vars.currentplayer->crouchoffsetreal - g_Vars.currentplayer->crouchoffsetrealsmall);
-		} else {
+		}
+		else {
 			mult = 0.4f;
 		}
 
@@ -2526,7 +2665,7 @@ void bmove0f0cc19c(struct coord *arg)
 #endif
 }
 
-void bmoveUpdateHead(f32 arg0, f32 arg1, f32 arg2, Mtxf *arg3, f32 arg4)
+void bmoveUpdateHead(f32 arg0, f32 arg1, f32 arg2, Mtxf * arg3, f32 arg4)
 {
 	f32 sp244 = 0;
 	Mtxf sp180;
@@ -2540,10 +2679,12 @@ void bmoveUpdateHead(f32 arg0, f32 arg1, f32 arg2, Mtxf *arg3, f32 arg4)
 
 		if (arg0 != 0) {
 			sp244 = arg1 / arg0;
-		} else if (arg1 == 0) {
+		}
+		else if (arg1 == 0) {
 			arg0 = 0;
 		}
-	} else {
+	}
+	else {
 		if (g_Vars.currentplayer->startnewbonddie) {
 			bheadStartDeathAnimation(g_DeathAnimations[rngRandom() % g_NumDeathAnimations], rngRandom() % 2, 0, 1);
 			g_Vars.currentplayer->startnewbonddie = false;
@@ -2558,9 +2699,9 @@ void bmoveUpdateHead(f32 arg0, f32 arg1, f32 arg2, Mtxf *arg3, f32 arg4)
 
 	if (optionsGetHeadRoll(g_Vars.currentplayerstats->mpindex)) {
 		mtx00016d58(&sp116,
-				0, 0, 0,
-				-g_Vars.currentplayer->headlook.x, -g_Vars.currentplayer->headlook.y, -g_Vars.currentplayer->headlook.z,
-				g_Vars.currentplayer->headup.x, g_Vars.currentplayer->headup.y, g_Vars.currentplayer->headup.z);
+			0, 0, 0,
+			-g_Vars.currentplayer->headlook.x, -g_Vars.currentplayer->headlook.y, -g_Vars.currentplayer->headlook.z,
+			g_Vars.currentplayer->headup.x, g_Vars.currentplayer->headup.y, g_Vars.currentplayer->headup.z);
 		mtx4MultMtx4InPlace(&sp116, &sp180);
 	}
 
