@@ -2315,7 +2315,6 @@ static const struct menubind menuBinds[] = {
 	{ CK_8000,    "Cycle Crouch [+]\n",              "N64 Ext 8000\n" },
 	{ CK_4000,    "Half Crouch [+]\n",               "N64 Ext 4000\n" },
 	{ CK_2000,    "Full Crouch [+]\n",               "N64 Ext 2000\n" },
-	{ CK_0040,    "Reset Camera/Crosshair [+]\n",    "EXT Reset Camera/Crosshair\n" },
 	{ CK_0080,    "Gyro Activation Modifier [+]\n",  "EXT Gyro Activation Modifier\n" },
 	{ CK_0100,    "Gyro Calibration (Manual) [+]\n", "EXT Gyro Calibration (Manual)\n" },
 	{ CK_ACCEPT,  "UI Accept [+]\n",                 "EXT UI Accept\n" },
@@ -2338,7 +2337,6 @@ static MenuItemHandlerResult menuhandlerResetBindsN64(s32 operation, struct menu
 	}
 
 struct menuitem g_ExtendedBindsMenuItems[] = {
-	DEFINE_MENU_BIND(),
 	DEFINE_MENU_BIND(),
 	DEFINE_MENU_BIND(),
 	DEFINE_MENU_BIND(),

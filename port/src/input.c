@@ -311,7 +311,6 @@ void inputSetDefaultKeyBinds(s32 cidx, s32 n64mode)
 		{ CK_STICK_XPOS,    SDL_SCANCODE_RIGHT,  0                   },
 		{ CK_STICK_YNEG,    SDL_SCANCODE_DOWN,   0                   },
 		{ CK_STICK_YPOS,    SDL_SCANCODE_UP,     0                   },
-		{ CK_0040,          SDL_SCANCODE_C,      0                   },
 		{ CK_0100,          SDL_SCANCODE_F10,    0                   },
 		{ CK_4000,          SDL_SCANCODE_LSHIFT, 0                   },
 		{ CK_2000,          SDL_SCANCODE_LCTRL,  0                   }
@@ -333,7 +332,6 @@ void inputSetDefaultKeyBinds(s32 cidx, s32 n64mode)
 		{ CK_C_L,    SDL_CONTROLLER_BUTTON_DPAD_LEFT     },
 		{ CK_ACCEPT, SDL_CONTROLLER_BUTTON_A             },
 		{ CK_CANCEL, SDL_CONTROLLER_BUTTON_B             },
-		{ CK_0040,   SDL_CONTROLLER_BUTTON_RIGHTSTICK    },
 		{ CK_0100,   SDL_CONTROLLER_BUTTON_BACK          },
 		{ CK_8000,   SDL_CONTROLLER_BUTTON_LEFTSTICK     },
 	};

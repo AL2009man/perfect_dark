@@ -102,7 +102,7 @@ enum contkey {
 	CK_STICK_YPOS,
 	CK_ACCEPT,
 	CK_CANCEL,
-	CK_0040, // Reset Camera/Crosshair action
+	CK_0040,
 	CK_0080, // Gyro Modifier action
 	CK_0100, // Gyro Calibration (Manual) action
 	CK_0200,

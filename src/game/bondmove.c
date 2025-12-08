@@ -503,95 +503,6 @@ static void bmoveApplyCrosshairSwivel(struct movedata *movedata, f32 mlookscale,
 #endif
 }
 
-#ifndef PLATFORM_N64
-/**
- * Handle camera/crosshair recentering
- */
-void bmoveUpdateCameraRecentering(s32 cidx, bool aim_mode, bool offbike)
-{
-	static bool prev_reset_pressed[MAX_PLAYERS] = {false, false, false, false};
-	static struct {
-		bool active;
-		float time;
-		float duration;
-	} s_crosshair[MAX_PLAYERS] = {
-		{false, 0.0f, 0.30f}, {false, 0.0f, 0.30f}, 
-		{false, 0.0f, 0.30f}, {false, 0.0f, 0.30f}
-	};
-	static struct {
-		bool active;
-		float time;
-		float start;
-		float target;
-		float duration;
-	} s_camera[MAX_PLAYERS] = {
-		{false, 0.0f, 0.0f, 0.0f, 0.24f}, {false, 0.0f, 0.0f, 0.0f, 0.24f},
-		{false, 0.0f, 0.0f, 0.0f, 0.24f}, {false, 0.0f, 0.0f, 0.0f, 0.24f}
-	};
-
-	bool reset_pressed = inputBindPressed(cidx, CK_0040);
-
-	// Start recentering on button press
-	if (reset_pressed && !prev_reset_pressed[cidx] && g_Vars.currentplayer) {
-		if (aim_mode) {
-			if (fabsf(g_Vars.currentplayer->swivelpos[0]) > 0.01f || fabsf(g_Vars.currentplayer->swivelpos[1]) > 0.01f) {
-				s_crosshair[cidx].active = true;
-				s_crosshair[cidx].time = 0.0f;
-			}
-		} else {
-			s_camera[cidx].active = true;
-			s_camera[cidx].time = 0.0f;
-			s_camera[cidx].start = g_Vars.currentplayer->vv_verta;
-			s_camera[cidx].target = 0.0f;
-			g_Vars.currentplayer->docentreupdown = false;
-			g_Vars.currentplayer->automovecentre = false;
-		}
-	}
-	prev_reset_pressed[cidx] = reset_pressed;
-
-	// Animate crosshair recentering
-	if (s_crosshair[cidx].active && g_Vars.currentplayer && g_Vars.currentplayer->insightaimmode) {
-		float t = s_crosshair[cidx].time / s_crosshair[cidx].duration;
-		if (t > 1.0f) t = 1.0f;
-		float smooth = t * t * (3.0f - 2.0f * t);
-		g_Vars.currentplayer->swivelpos[0] *= (1.0f - smooth);
-		g_Vars.currentplayer->swivelpos[1] *= (1.0f - smooth);
-
-		s_crosshair[cidx].time += g_Vars.lvupdate60freal / 60.0f;
-		if (s_crosshair[cidx].time >= s_crosshair[cidx].duration ||
-			(fabsf(g_Vars.currentplayer->swivelpos[0]) < 0.01f && fabsf(g_Vars.currentplayer->swivelpos[1]) < 0.01f)) {
-			g_Vars.currentplayer->swivelpos[0] = 0.0f;
-			g_Vars.currentplayer->swivelpos[1] = 0.0f;
-			s_crosshair[cidx].active = false;
-		}
-	}
-
-	// Animate camera vertical recentering
-	if (s_camera[cidx].active && g_Vars.currentplayer) {
-		float t = s_camera[cidx].time / s_camera[cidx].duration;
-		if (t > 1.0f) t = 1.0f;
-		float smooth = t * t * (3.0f - 2.0f * t);
-		g_Vars.currentplayer->vv_verta = s_camera[cidx].start + (s_camera[cidx].target - s_camera[cidx].start) * smooth;
-
-		s_camera[cidx].time += g_Vars.lvupdate60freal / 60.0f;
-		if (s_camera[cidx].time >= s_camera[cidx].duration ||
-			fabsf(g_Vars.currentplayer->vv_verta - s_camera[cidx].target) < 0.01f) {
-			g_Vars.currentplayer->vv_verta = s_camera[cidx].target;
-			g_Vars.currentplayer->speedverta = 0.0f;
-			s_camera[cidx].active = false;
-		}
-	}
-}
-
-/**
- * Check if recentering is active (used to prevent movements)
- */
-bool bmoveIsRecenteringActive(s32 cidx)
-{
-	return false;
-}
-#endif
-
 /**
  * Calculate the lookahead angle.
  *
@@ -2160,14 +2071,10 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 
 	// Look ahead
 	if (g_Vars.currentplayer->pausemode == PAUSEMODE_UNPAUSED) {
-			lookahead = -4;
-			offbike = g_Vars.currentplayer->bondmovemode == MOVEMODE_WALK
-					|| g_Vars.currentplayer->bondmovemode == MOVEMODE_GRAB;
+		lookahead = -4;
 
-#ifndef PLATFORM_N64
-		// Handle camera/crosshair recentering
-		bmoveUpdateCameraRecentering(cidx, g_Vars.currentplayer->insightaimmode, offbike);
-#endif
+		offbike = g_Vars.currentplayer->bondmovemode == MOVEMODE_WALK
+			|| g_Vars.currentplayer->bondmovemode == MOVEMODE_GRAB;
 
 		if (g_Vars.currentplayer->lookaheadcentreenabled) {
 			if (g_Vars.lvframenum != g_Vars.currentplayer->lookaheadframe
@@ -2266,28 +2173,20 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 				}
 
 #ifndef PLATFORM_N64
-				// Pause camera input during recentering animation
 				fVar25 += movedata.freelookdy * mlookscale;
 				fVar25 += movedata.gyrolookdy * gyroscale;
 #endif
 
 				g_Vars.currentplayer->speedverta = -fVar25 * tmp;
-#ifndef PLATFORM_N64
-			// Pause vertical camera input during camera recentering
 			} else if (movedata.speedvertadown > 0) {
-#else
-			} else if (movedata.speedvertadown > 0) {
-#endif
 				bmoveUpdateSpeedVerta(movedata.speedvertadown);
+
 				if (movedata.canlookahead && (movedata.analogwalk > 60 || movedata.analogwalk < -60)) {
 					g_Vars.currentplayer->movecentrerelease = true;
 				}
-#ifndef PLATFORM_N64
 			} else if (movedata.speedvertaup > 0) {
-#else
-			} else if (movedata.speedvertaup > 0) {
-#endif
 				bmoveUpdateSpeedVerta(-movedata.speedvertaup);
+
 				if (movedata.canlookahead && (movedata.analogwalk > 60 || movedata.analogwalk < -60)) {
 					g_Vars.currentplayer->movecentrerelease = true;
 				}
@@ -2295,12 +2194,7 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 				bmoveUpdateSpeedVerta(0);
 			}
 
-#ifndef PLATFORM_N64
-			// Only apply normal speedverta if new animated system is not active
 			g_Vars.currentplayer->vv_verta += g_Vars.currentplayer->speedverta * g_Vars.lvupdate60freal * 3.5f;
-#else
-			g_Vars.currentplayer->vv_verta += g_Vars.currentplayer->speedverta * g_Vars.lvupdate60freal * 3.5f;
-#endif
 		}
 	}
 

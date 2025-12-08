@@ -4751,8 +4751,6 @@ enum weaponnum {
 #define CROUCHMODE_TOGGLE 2 // press the crouch buttons to toggle stance
 #define CROUCHMODE_TOGGLE_ANALOG (CROUCHMODE_ANALOG | CROUCHMODE_TOGGLE)
 
-#define RESET_CAMERA CK_0040 // reset camera and/or crosshair to default position
-
 #define GYRO_MODIFIER         CK_0080 // press/hold or toggle gyro activation
 #define GYRO_CALIBRATION      CK_0100 // calibrate gyro manually
 
