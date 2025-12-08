@@ -2168,10 +2168,12 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 				}
 
 #ifndef PLATFORM_N64
-				// Handle camera pitch via centralized camera movement
+				// Handle mouse input directly via centralized system (not analog stick)
 				if (movedata.freelookdy != 0.0f) {
-					f32 pitchDelta = 0.0f;
-					bmoveApplyCameraMovement(&movedata, mlookscale, &pitchDelta, NULL);
+					// Use temporary movedata for centralized camera movement (mouse only)
+					struct movedata tempMoveData = {0};
+					tempMoveData.freelookdy = movedata.freelookdy;
+					bmoveApplyCameraMovement(&tempMoveData, mlookscale, NULL, NULL);
 				}
 #endif
 
@@ -2213,10 +2215,12 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 		}
 
 #ifndef PLATFORM_N64
-	// Handle camera yaw via centralized camera movement
+	// Handle mouse input directly via centralized system (not analog stick)
 	if (movedata.freelookdx != 0.0f) {
-		f32 turnDelta = 0.0f;
-		bmoveApplyCameraMovement(&movedata, mlookscale, NULL, &turnDelta);
+		// Use temporary movedata for centralized camera movement (mouse only)
+		struct movedata tempMoveData = {0};
+		tempMoveData.freelookdx = movedata.freelookdx;
+		bmoveApplyCameraMovement(&tempMoveData, mlookscale, NULL, NULL);
 	}
 	// handles Vehicle turning scaling
 	bool offbike = g_Vars.currentplayer->bondmovemode == MOVEMODE_WALK || g_Vars.currentplayer->bondmovemode == MOVEMODE_GRAB;
