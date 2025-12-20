@@ -69,10 +69,8 @@ static SDL_GameController *pads[INPUT_MAX_CONTROLLERS];
 	.gyroAxisMode = GYRO_YAW, \
 	.gyroAimMode = GYRO_AIM_CROSSHAIR, \
 	.gyroModifier = GYRO_ALWAYS_ON, \
-	.gyroSensX = 2.5f, \
-	.gyroSensY = 2.5f, \
-	.gyroAimSensX = 5.0f, \
-	.gyroAimSensY = 5.0f, \
+	.gyroSens = 2.5f, \
+	.gyroAimSens = 5.0f, \
 	.gyroVHMixer = 0.0f, \
 	.gyroInvertX = 0, \
 	.gyroInvertY = 0, \
@@ -99,10 +97,8 @@ static struct controllercfg {
 	s32 gyroAxisMode;
 	s32 gyroAimMode;
 	s32 gyroModifier;
-	f32 gyroSensX;
-	f32 gyroSensY;
-	f32 gyroAimSensX;
-	f32 gyroAimSensY;
+	f32 gyroSens;
+	f32 gyroAimSens;
 	f32 gyroVHMixer;
 	s32 gyroInvertX;
 	s32 gyroInvertY;
@@ -1716,9 +1712,9 @@ void inputGyroGetScaledDelta(s32 cidx, f32* dx, f32* dy, f32* dz)
 
 	if (padsCfg[cidx].gyroEnabled) {
 		if (!isnan(gyroDeltaYaw[cidx]) && !isnan(gyroDeltaPitch[cidx]) && !isnan(gyroDeltaRoll[cidx])) {
-			gdx = gyroDeltaYaw[cidx] * padsCfg[cidx].gyroSensX;
-			gdy = gyroDeltaPitch[cidx] * padsCfg[cidx].gyroSensY;
-			gdz = gyroDeltaRoll[cidx] * padsCfg[cidx].gyroSensY;
+			gdx = gyroDeltaYaw[cidx] * padsCfg[cidx].gyroSens;
+			gdy = gyroDeltaPitch[cidx] * padsCfg[cidx].gyroSens;
+			gdz = gyroDeltaRoll[cidx] * padsCfg[cidx].gyroSens;
 		}
 	}
 
@@ -1730,16 +1726,14 @@ void inputGyroGetScaledDelta(s32 cidx, f32* dx, f32* dy, f32* dz)
 	applyGyroVHMixer(cidx, dx, dy);
 }
 
-void inputGyroGetSpeed(s32 cidx, f32* x, f32* y)
+void inputGyroGetSpeed(s32 cidx, f32* sens)
 {
-    if (x) *x = padsCfg[cidx].gyroSensX;
-    if (y) *y = padsCfg[cidx].gyroSensY;
+    if (sens) *sens = padsCfg[cidx].gyroSens;
 }
 
-void inputGyroSetSpeed(s32 cidx, f32 x, f32 y)
+void inputGyroSetSpeed(s32 cidx, f32 sens)
 {
-    padsCfg[cidx].gyroSensX = x;
-    padsCfg[cidx].gyroSensY = y;
+    padsCfg[cidx].gyroSens = sens;
 }
 
 void inputGyroGetScaledDeltaCrosshair(s32 cidx, f32* dx, f32* dy)
@@ -1747,8 +1741,8 @@ void inputGyroGetScaledDeltaCrosshair(s32 cidx, f32* dx, f32* dy)
 	f32 gdx = 0.f, gdy = 0.f;
 
 	if (padsCfg[cidx].gyroEnabled) {
-		gdx = gyroDeltaYaw[cidx] * (0.022f / 2.0f) * padsCfg[cidx].gyroAimSensX;
-		gdy = gyroDeltaPitch[cidx] * (0.022f / 2.0f) * padsCfg[cidx].gyroAimSensY;
+		gdx = gyroDeltaYaw[cidx] * (0.022f / 2.0f) * padsCfg[cidx].gyroAimSens;
+		gdy = gyroDeltaPitch[cidx] * (0.022f / 2.0f) * padsCfg[cidx].gyroAimSens;
 	}
 
 	if (dx) *dx = gdx;
@@ -1760,16 +1754,14 @@ void inputGyroGetScaledDeltaCrosshair(s32 cidx, f32* dx, f32* dy)
 	}
 }
 
-void inputGyroGetAimSpeed(s32 cidx, f32* x, f32* y)
+void inputGyroGetAimSpeed(s32 cidx, f32* sens)
 {
-    if (x) *x = padsCfg[cidx].gyroAimSensX;
-    if (y) *y = padsCfg[cidx].gyroAimSensY;
+    if (sens) *sens = padsCfg[cidx].gyroAimSens;
 }
 
-void inputGyroSetAimSpeed(s32 cidx, f32 x, f32 y)
+void inputGyroSetAimSpeed(s32 cidx, f32 sens)
 {
-    padsCfg[cidx].gyroAimSensX = x;
-    padsCfg[cidx].gyroAimSensY = y;
+    padsCfg[cidx].gyroAimSens = sens;
 }
 
 static inline void applyGyroInvert(s32 cidx, f32* dx, f32* dy, bool useAimInvert) {
@@ -2729,10 +2721,8 @@ PD_CONSTRUCTOR static void inputConfigInit(void)
 		configRegisterInt(strFmt("%s.GyroModifier", secname), &padsCfg[c].gyroModifier, GYRO_ALWAYS_ON, GYRO_DISABLE_HELD);
 		configRegisterInt(strFmt("%s.GyroAxisMode", secname), &padsCfg[c].gyroAxisMode, GYRO_YAW, GYRO_WORLD);
 		configRegisterInt(strFmt("%s.GyroAutoCalibration", secname), &padsCfg[c].gyroAutoCalibration, GYRO_AUTOCALIBRATION_OFF, GYRO_AUTOCALIBRATION_ALWAYS);
-		configRegisterFloat(strFmt("%s.GyroSpeedX", secname), &padsCfg[c].gyroSensX, -30.f, 30.f);
-		configRegisterFloat(strFmt("%s.GyroSpeedY", secname), &padsCfg[c].gyroSensY, -30.f, 30.f);
-		configRegisterFloat(strFmt("%s.GyroAimSensX", secname), &padsCfg[c].gyroAimSensX, -10.f, 10.f);
-		configRegisterFloat(strFmt("%s.GyroAimSensY", secname), &padsCfg[c].gyroAimSensY, -10.f, 10.f);
+		configRegisterFloat(strFmt("%s.GyroSpeed", secname), &padsCfg[c].gyroSens, -30.f, 30.f);
+		configRegisterFloat(strFmt("%s.GyroAimSens", secname), &padsCfg[c].gyroAimSens, -10.f, 10.f);
 		configRegisterInt(strFmt("%s.GyroInvertX", secname), &padsCfg[c].gyroInvertX, 0, 1);
 		configRegisterInt(strFmt("%s.GyroInvertY", secname), &padsCfg[c].gyroInvertY, 0, 1);
 		configRegisterInt(strFmt("%s.GyroAimInvertX", secname), &padsCfg[c].gyroAimInvertX, 0, 1);

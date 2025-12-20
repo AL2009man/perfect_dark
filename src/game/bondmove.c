@@ -449,20 +449,17 @@ void bmoveUpdateSpeedThetaControl(f32 value)
  */
 static void bmoveApplyCrosshairAimingMovement(f32 aimspeedx, f32 aimspeedy, f32 dx, f32 dy)
 {
-	// Resolution/Aspect Ratio-based scaling coefficients
-	const f32 xscale = (aimspeedx * 320.f / 1080.f) / g_Vars.currentplayer->aspect;
-	const f32 yscale = aimspeedy * 240.f / 1080.f;
-
-	// Calculate new positions with input directly
-	const f32 x = g_Vars.currentplayer->swivelpos[0] + (dx * xscale);
-	const f32 y = g_Vars.currentplayer->swivelpos[1] + (dy * yscale);
-	
-	// Clamping
-	g_Vars.currentplayer->swivelpos[0] = (x < -1.f) ? -1.f : (x > 1.f) ? 1.f : x;
-	g_Vars.currentplayer->swivelpos[1] = (y < -1.f) ? -1.f : (y > 1.f) ? 1.f : y;
-
-	// Applying to gun swivel system
-	bgunSwivelWithDamp(g_Vars.currentplayer->swivelpos[0], g_Vars.currentplayer->swivelpos[1], 0.01f);
+	const f32 xcoeff = 320.f / 1080.f;
+	const f32 ycoeff = 240.f / 1080.f;
+	const f32 xscale = (aimspeedx * xcoeff) / g_Vars.currentplayer->aspect;
+	const f32 yscale = aimspeedy * ycoeff;
+	f32 x = g_Vars.currentplayer->swivelpos[0] + (dx * xscale);
+	f32 y = g_Vars.currentplayer->swivelpos[1] + (dy * yscale);
+	x = (x < -1.f) ? -1.f : ((x > 1.f) ? 1.f : x);
+	y = (y < -1.f) ? -1.f : ((y > 1.f) ? 1.f : y);
+	g_Vars.currentplayer->swivelpos[0] = x;
+	g_Vars.currentplayer->swivelpos[1] = y;
+	bgunSwivelWithDamp(x, y, 0.01f);
 }
 
 /**
