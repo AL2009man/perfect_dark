@@ -670,21 +670,79 @@ static MenuItemHandlerResult menuhandlerGyroAxisMode(s32 operation, struct menui
     return 0;
 }
 
+static MenuItemHandlerResult menuhandlerGyroAdvanced(s32 operation, struct menuitem* item, union handlerdata* data)
+{
+    switch (operation) {
+    case MENUOP_GET:
+        return inputGyroGetAdvanced(g_ExtMenuPlayer);
+    case MENUOP_SET:
+        inputGyroSetAdvanced(g_ExtMenuPlayer, data->checkbox.value);
+        // When disabling Advanced mode, sync Y to X so unified slider works correctly
+        if (!data->checkbox.value) {
+            f32 sensX, aimSensX;
+            inputGyroGetSpeed(g_ExtMenuPlayer, &sensX, NULL);
+            inputGyroSetSpeed(g_ExtMenuPlayer, sensX, sensX);
+            inputGyroGetAimSpeed(g_ExtMenuPlayer, &aimSensX, NULL);
+            inputGyroSetAimSpeed(g_ExtMenuPlayer, aimSensX, aimSensX);
+        }
+        break;
+    }
+    return 0;
+}
+
+
 static MenuItemHandlerResult menuhandlerGyroSensitivity(s32 operation, struct menuitem* item, union handlerdata* data)
 {
-    f32 sens;
+    f32 sensX, sensY;
+    s32 axis = item->param; // 0 = unified, 1 = X, 2 = Y
     switch (operation) {
     case MENUOP_GETSLIDER:
-        inputGyroGetSpeed(g_ExtMenuPlayer, &sens);
-        data->slider.value = sens * 100.f + 0.5f;
+        if (axis == 2) {
+            inputGyroGetSpeed(g_ExtMenuPlayer, NULL, &sensY);
+            data->slider.value = sensY * 100.f + 0.5f;
+        } else {
+            inputGyroGetSpeed(g_ExtMenuPlayer, &sensX, NULL);
+            data->slider.value = sensX * 100.f + 0.5f;
+        }
         break;
     case MENUOP_SET:
-        inputGyroSetSpeed(g_ExtMenuPlayer, (f32)data->slider.value / 100.f);
+        {
+            f32 val = (f32)data->slider.value / 100.f;
+            if (axis == 0) {
+                // Unified: set both X and Y to same value
+                inputGyroSetSpeed(g_ExtMenuPlayer, val, val);
+            } else if (axis == 1) {
+                // X only: preserve Y
+                inputGyroGetSpeed(g_ExtMenuPlayer, NULL, &sensY);
+                inputGyroSetSpeed(g_ExtMenuPlayer, val, sensY);
+            } else {
+                // Y only: preserve X
+                inputGyroGetSpeed(g_ExtMenuPlayer, &sensX, NULL);
+                inputGyroSetSpeed(g_ExtMenuPlayer, sensX, val);
+            }
+        }
         break;
     case MENUOP_GETSLIDERLABEL:
-        inputGyroGetSpeed(g_ExtMenuPlayer, &sens);
-        sprintf(data->slider.label, "%.2fx", sens);
+        if (axis == 2) {
+            inputGyroGetSpeed(g_ExtMenuPlayer, NULL, &sensY);
+            sprintf(data->slider.label, "%.2f", sensY);
+        } else if (axis == 1) {
+            inputGyroGetSpeed(g_ExtMenuPlayer, &sensX, NULL);
+            sprintf(data->slider.label, "%.2f", sensX);
+        } else {
+            // Unified slider will show Multiplier value
+            inputGyroGetSpeed(g_ExtMenuPlayer, &sensX, NULL);
+            sprintf(data->slider.label, "%.2fx", sensX);
+        }
         break;
+    case MENUOP_CHECKHIDDEN:
+        // Unified (0): hide when advanced mode is enabled
+        // X/Y (1,2): hide when advanced mode is disabled
+        if (axis == 0) {
+            return inputGyroGetAdvanced(g_ExtMenuPlayer);
+        } else {
+            return !inputGyroGetAdvanced(g_ExtMenuPlayer);
+        }
     }
     return 0;
 }
@@ -721,19 +779,52 @@ static MenuItemHandlerResult menuhandlerGyroInvertY(s32 operation, struct menuit
 
 static MenuItemHandlerResult menuhandlerGyroCrosshairSpeed(s32 operation, struct menuitem* item, union handlerdata* data)
 {
-    f32 sens;
+    f32 sensX, sensY;
+    s32 axis = item->param; // 0 = unified, 1 = X, 2 = Y
     switch (operation) {
     case MENUOP_GETSLIDER:
-        inputGyroGetAimSpeed(g_ExtMenuPlayer, &sens);
-        data->slider.value = sens * 100.f + 0.5f;
+        if (axis == 2) {
+            inputGyroGetAimSpeed(g_ExtMenuPlayer, NULL, &sensY);
+            data->slider.value = sensY * 100.f + 0.5f;
+        } else {
+            inputGyroGetAimSpeed(g_ExtMenuPlayer, &sensX, NULL);
+            data->slider.value = sensX * 100.f + 0.5f;
+        }
         break;
     case MENUOP_SET:
-        inputGyroSetAimSpeed(g_ExtMenuPlayer, (f32)data->slider.value / 100.f);
+        {
+            f32 val = (f32)data->slider.value / 100.f;
+            if (axis == 0) {
+                // Unified: set both X and Y to same value
+                inputGyroSetAimSpeed(g_ExtMenuPlayer, val, val);
+            } else if (axis == 1) {
+                // X only: preserve Y
+                inputGyroGetAimSpeed(g_ExtMenuPlayer, NULL, &sensY);
+                inputGyroSetAimSpeed(g_ExtMenuPlayer, val, sensY);
+            } else {
+                // Y only: preserve X
+                inputGyroGetAimSpeed(g_ExtMenuPlayer, &sensX, NULL);
+                inputGyroSetAimSpeed(g_ExtMenuPlayer, sensX, val);
+            }
+        }
         break;
     case MENUOP_GETSLIDERLABEL:
-        inputGyroGetAimSpeed(g_ExtMenuPlayer, &sens);
-        sprintf(data->slider.label, "%.2f", sens);
+        if (axis == 2) {
+            inputGyroGetAimSpeed(g_ExtMenuPlayer, NULL, &sensY);
+            sprintf(data->slider.label, "%.2f", sensY);
+        } else {
+            inputGyroGetAimSpeed(g_ExtMenuPlayer, &sensX, NULL);
+            sprintf(data->slider.label, "%.2f", sensX);
+        }
         break;
+    case MENUOP_CHECKHIDDEN:
+        // Unified (0): hide when advanced mode is enabled
+        // X/Y (1,2): hide when advanced mode is disabled
+        if (axis == 0) {
+            return inputGyroGetAdvanced(g_ExtMenuPlayer);
+        } else {
+            return !inputGyroGetAdvanced(g_ExtMenuPlayer);
+        }
     }
     return 0;
 }
@@ -780,6 +871,9 @@ static MenuItemHandlerResult menuhandlerGyroVHMixer(s32 operation, struct menuit
 	case MENUOP_GETSLIDERLABEL:
 		sprintf(data->slider.label, "%d%%", (int)data->slider.value - 100);
 		break;
+	case MENUOP_CHECKHIDDEN:
+		// Hide when advanced mode is enabled
+		return inputGyroGetAdvanced(g_ExtMenuPlayer);
 	}
 	return 0;
 }
@@ -997,7 +1091,23 @@ struct menuitem g_ExtendedGyroMenuItems[] = {
 		MENUITEMTYPE_SLIDER,
 		0,
 		MENUITEMFLAG_LITERAL_TEXT | MENUITEMFLAG_SLIDER_WIDE,
-		(uintptr_t)"Gyro Speed",
+		(uintptr_t)"Gyro Speed (deg/s)",
+		3000,
+		menuhandlerGyroSensitivity,
+	},
+	{
+		MENUITEMTYPE_SLIDER,
+		1,
+		MENUITEMFLAG_LITERAL_TEXT | MENUITEMFLAG_SLIDER_WIDE,
+		(uintptr_t)"Gyro Speed X",
+		3000,
+		menuhandlerGyroSensitivity,
+	},
+	{
+		MENUITEMTYPE_SLIDER,
+		2,
+		MENUITEMFLAG_LITERAL_TEXT | MENUITEMFLAG_SLIDER_WIDE,
+		(uintptr_t)"Gyro Speed Y",
 		3000,
 		menuhandlerGyroSensitivity,
 	},
@@ -1011,9 +1121,25 @@ struct menuitem g_ExtendedGyroMenuItems[] = {
 	},
 	{
 		MENUITEMTYPE_SLIDER,
+		1,
+		MENUITEMFLAG_LITERAL_TEXT | MENUITEMFLAG_SLIDER_WIDE,
+		(uintptr_t)"Gyro Crosshair Speed X",
+		1000,
+		menuhandlerGyroCrosshairSpeed,
+	},
+	{
+		MENUITEMTYPE_SLIDER,
+		2,
+		MENUITEMFLAG_LITERAL_TEXT | MENUITEMFLAG_SLIDER_WIDE,
+		(uintptr_t)"Gyro Crosshair Speed Y",
+		1000,
+		menuhandlerGyroCrosshairSpeed,
+	},
+	{
+		MENUITEMTYPE_SLIDER,
 		0,
 		MENUITEMFLAG_LITERAL_TEXT | MENUITEMFLAG_SLIDER_WIDE,
-		(uintptr_t)"Gyro X/Y Output Mixer",
+		(uintptr_t)"X/Y Output Mixer",
 		200,
 		menuhandlerGyroVHMixer,
 	},
@@ -1088,6 +1214,22 @@ struct menuitem g_ExtendedGyroMenuItems[] = {
 		(uintptr_t)"Deadzone Threshold",
 		100,
 		menuhandlerGyroDeadzone,
+	},
+	{
+		MENUITEMTYPE_SEPARATOR,
+		0,
+		0,
+		0,
+		0,
+		NULL,
+	},
+	{
+		MENUITEMTYPE_CHECKBOX,
+		0,
+		MENUITEMFLAG_LITERAL_TEXT,
+		(uintptr_t)"Enable Gyro Advanced Settings",
+		0,
+		menuhandlerGyroAdvanced,
 	},
 	{
 		MENUITEMTYPE_SEPARATOR,

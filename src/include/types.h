@@ -6155,8 +6155,8 @@ struct extplayerconfig {
 	f32 mouseaimspeedx;
 	f32 mouseaimspeedy;
 	s32 gyroaimmode;
-	f32 gyroaimsensx;
-	f32 gyroaimsensy;
+	f32 gyroaimspeedx;
+	f32 gyroaimspeedy;
 	s32 crouchmode;
 	f32 radialmenuspeed;
 	f32 crosshairsway;

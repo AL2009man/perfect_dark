@@ -308,10 +308,14 @@ void inputGyroSetAxisMode(s32 cidx, s32 mode);
 s32 inputGyroGetAxisMode(s32 cidx);
 
 // Gyro Speed Management
-void inputGyroGetSpeed(s32 cidx, f32* sens);
-void inputGyroSetSpeed(s32 cidx, f32 sens);
-void inputGyroGetAimSpeed(s32 cidx, f32* sens);
-void inputGyroSetAimSpeed(s32 cidx, f32 sens);
+void inputGyroGetSpeed(s32 cidx, f32* sensX, f32* sensY);
+void inputGyroSetSpeed(s32 cidx, f32 sensX, f32 sensY);
+void inputGyroGetAimSpeed(s32 cidx, f32* sensX, f32* sensY);
+void inputGyroSetAimSpeed(s32 cidx, f32 sensX, f32 sensY);
+
+// Gyro Advanced Mode Management
+s32 inputGyroGetAdvanced(s32 cidx);
+void inputGyroSetAdvanced(s32 cidx, s32 advanced);
 
 // Gyro Invert Management
 void inputGyroGetInvert(s32 cidx, s32* invertx, s32* inverty);

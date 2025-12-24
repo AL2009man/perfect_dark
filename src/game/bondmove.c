@@ -2325,7 +2325,7 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
         // Gyro is active, apply gyro movement
         inputGyroGetScaledDeltaCrosshair(g_Vars.currentplayernum, &movedata.gyrolookdx, &movedata.gyrolookdy);
         if (movedata.gyrolookdx != 0.0f || movedata.gyrolookdy != 0.0f) {
-            bmoveApplyCrosshairAimingMovement(PLAYER_EXTCFG().gyroaimsensx, PLAYER_EXTCFG().gyroaimsensy, 
+            bmoveApplyCrosshairAimingMovement(PLAYER_EXTCFG().gyroaimspeedx, PLAYER_EXTCFG().gyroaimspeedy, 
                                         movedata.gyrolookdx, movedata.gyrolookdy);
             return;
         }
