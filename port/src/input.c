@@ -903,6 +903,14 @@ s32 inputInit(void)
 
 	inputLoadBinds();
 
+	// if GyroAdvanced is disabled: GyroSpeedY/GyroAimSpeedY will sync to GyroSpeedX/GyroAimSpeedX
+	for (s32 i = 0; i < INPUT_MAX_CONTROLLERS; ++i) {
+		if (!padsCfg[i].gyroAdvanced) {
+			padsCfg[i].gyroSpeedY = padsCfg[i].gyroSpeedX;
+			padsCfg[i].gyroAimSpeedY = padsCfg[i].gyroAimSpeedX;
+		}
+	}
+
 	return connectedMask;
 }
 
