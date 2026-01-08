@@ -75,8 +75,11 @@ static s32 connectedMask = 0;
 static s32 numJoysticks = 0;
 
 static s32 useHIDAPI = 1;
-static s32 useRawInput = 1;
+
+static s32 useRawInput = 0;
+
 static s32 usePositionalFaceButtonLayout = 1;
+
 
 static s32 mouseEnabled = 1;
 static s32 mouseX, mouseY;
@@ -196,7 +199,7 @@ void inputSetDefaultKeyBinds(s32 cidx, s32 n64mode)
 		{ CK_RTRIG,         VK_MOUSE_RIGHT,      SDL_SCANCODE_Z      },
 		{ CK_LTRIG,         SDL_SCANCODE_F,      SDL_SCANCODE_X      },
 		{ CK_ZTRIG,         VK_MOUSE_LEFT,       SDL_SCANCODE_SPACE  },
-		{ CK_START,         SDL_SCANCODE_RETURN, SDL_SCANCODE_TAB    },
+		{ CK_START,         SDL_SCANCODE_TAB,    0                   },
 		{ CK_DPAD_D,        SDL_SCANCODE_Q,      VK_MOUSE_MIDDLE     },
 		{ CK_DPAD_U,        0,                   0                   },
 		{ CK_Y,             VK_MOUSE_WHEEL_DN,   0                   },
@@ -210,7 +213,9 @@ void inputSetDefaultKeyBinds(s32 cidx, s32 n64mode)
 		{ CK_STICK_YNEG,    SDL_SCANCODE_DOWN,   0                   },
 		{ CK_STICK_YPOS,    SDL_SCANCODE_UP,     0                   },
 		{ CK_4000,          SDL_SCANCODE_LSHIFT, 0                   },
-		{ CK_2000,          SDL_SCANCODE_LCTRL,  0                   }
+		{ CK_2000,          SDL_SCANCODE_LCTRL,  0                   },
+		{ CK_ACCEPT,        SDL_SCANCODE_RETURN, SDL_SCANCODE_E      },
+		{ CK_CANCEL,        VK_MOUSE_RIGHT,      0                   },
 	};
 
 	static const u32 pcjoybinds[][2] = {
@@ -694,6 +699,7 @@ s32 inputInit(void)
 		// the two hints below enable Rumble and Motion Sensor for PS4/5 pads connected via bluetooth
 		SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_PS4_RUMBLE, "1");
 		SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_PS5_RUMBLE, "1");
+		SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_STEAM, "1");
 #endif
 #if SDL_VERSION_ATLEAST(2, 23, 2)
 		SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_COMBINE_JOY_CONS, "1");
@@ -704,10 +710,18 @@ s32 inputInit(void)
 #if SDL_VERSION_ATLEAST(2, 26, 0)
 		SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_WII, "1");
 #endif
+#if SDL_VERSION_ATLEAST(2, 30, 0)
+		SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_STEAMDECK, "1");
+#endif
 	}
 	if (useRawInput) {
 		SDL_SetHint(SDL_HINT_JOYSTICK_RAWINPUT, "1");
+#ifdef SDL_HINT_JOYSTICK_RAWINPUT_CORRELATE_XINPUT
 		SDL_SetHint(SDL_HINT_JOYSTICK_RAWINPUT_CORRELATE_XINPUT, "1");
+#elif defined(SDL_HINT_JOYSTICK_HIDAPI_CORRELATE_XINPUT)
+		// old name for SDL_HINT_JOYSTICK_RAWINPUT_CORRELATE_XINPUT before SDL2.0.16
+		SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_CORRELATE_XINPUT, "1");
+#endif
 	}
 
 	if (usePositionalFaceButtonLayout) {
@@ -1252,26 +1266,24 @@ void inputMouseGetRawDelta(s32 *dx, s32 *dy)
 
 void inputMouseGetScaledDelta(f32* dx, f32* dy)
 {
-		f32 mdx = 0.f, mdy = 0.f;
-
-		if (mouseLocked) {
-				mdx = mouseDX * (0.022f / 3.5f) * mouseSensX;
-				mdy = mouseDY * (0.022f / 3.5f) * mouseSensY;
-		}
-		if (dx) *dx = mdx;
-		if (dy) *dy = mdy;
+	f32 mdx = 0.f, mdy = 0.f;
+	if (mouseLocked) {
+		mdx = mouseDX * (0.022f / 3.5f) * mouseSensX;
+		mdy = mouseDY * (0.022f / 3.5f) * mouseSensY;
+	}
+	if (dx) *dx = mdx;
+	if (dy) *dy = mdy;
 }
 
 void inputMouseGetAbsScaledDelta(f32* dx, f32* dy)
 {
-		f32 mdx = 0.f, mdy = 0.f;
-
-		if (mouseLocked) {
-				mdx = fabsf(mouseDX) * (0.022f / 3.5f) * fabsf(mouseSensX);
-				mdy = fabsf(mouseDY) * (0.022f / 3.5f) * fabsf(mouseSensY);
-		}
-		if (dx) *dx = mdx;
-		if (dy) *dy = mdy;
+	f32 mdx = 0.f, mdy = 0.f;
+	if (mouseLocked) {
+		mdx = mouseDX * (0.022f / 3.5f) * fabsf(mouseSensX);
+		mdy = mouseDY * (0.022f / 3.5f) * fabsf(mouseSensY);
+	}
+	if (dx) *dx = mdx;
+	if (dy) *dy = mdy;
 }
 
 void inputMouseGetSpeed(f32 *x, f32 *y)
