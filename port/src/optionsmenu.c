@@ -662,6 +662,34 @@ static MenuItemHandlerResult menuhandlerButtonPromptOverride(s32 operation, stru
 	return 0;
 }
 
+static MenuItemHandlerResult menuhandlerGlyphOverride(s32 operation, struct menuitem *item, union handlerdata *data)
+{
+	static const char *opts[] = {
+		"Auto",
+		"Controller",
+		"Keyboard/Mouse"
+	};
+
+	switch (operation) {
+	case MENUOP_CHECKHIDDEN:
+		// this check only appears for Player 1 options
+		return g_ExtMenuPlayer != 0;
+	case MENUOP_GETOPTIONCOUNT:
+		data->dropdown.value = ARRAYCOUNT(opts);
+		break;
+	case MENUOP_GETOPTIONTEXT:
+		return (intptr_t)opts[data->dropdown.value];
+	case MENUOP_SET:
+		inputSetGlyphOverride(0, data->dropdown.value);
+		break;
+	case MENUOP_GETSELECTEDINDEX:
+		data->dropdown.value = inputGetGlyphOverride(0);
+		break;
+	}
+
+	return 0;
+}
+
 struct menuitem g_ExtendedControllerMenuItems[] = {
 	{
 		MENUITEMTYPE_DROPDOWN,
@@ -678,6 +706,14 @@ struct menuitem g_ExtendedControllerMenuItems[] = {
 		(uintptr_t)"Button Prompt Styles",
 		0,
 		menuhandlerButtonPromptOverride,
+	},
+	{
+		MENUITEMTYPE_DROPDOWN,
+		0,
+		MENUITEMFLAG_LITERAL_TEXT,
+		(uintptr_t)"Input Glyph Override",
+		0,
+		menuhandlerGlyphOverride,
 	},
 	{
 		MENUITEMTYPE_CHECKBOX,

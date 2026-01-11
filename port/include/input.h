@@ -135,6 +135,12 @@ enum buttonpromptmode {
 	GLYPH_STEAM_DECK = 9,
 };
 
+enum inputglyphpoverride {
+	GLYPH_OVERRIDE_AUTO = 0,
+	GLYPH_OVERRIDE_CONTROLLER = 1,
+	GLYPH_OVERRIDE_KEYBOARDMOUSE = 2,
+};
+
 // returns bitmask of connected controllers or -1 if failed
 s32 inputInit(void);
 
@@ -269,6 +275,10 @@ void inputSetMouseLockMode(s32 lockmode);
 // get/set button prompt override
 s32 inputGetButtonPromptOverride(s32 cidx);
 void inputSetButtonPromptOverride(s32 cidx, s32 override);
+
+// get/set input glyph override (Player 1 only)
+s32 inputGetGlyphOverride(s32 cidx);
+void inputSetGlyphOverride(s32 cidx, s32 override);
 
 // same as inputLockMouse but works only if mouse is enabled and lockmode == MLOCK_AUTO
 s32 inputAutoLockMouse(s32 wantlock);

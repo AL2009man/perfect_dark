@@ -48,6 +48,7 @@ static SDL_GameController *pads[INPUT_MAX_CONTROLLERS];
 	.deviceIndex = -1, \
 	.cancelCButtons = 0, \
 	.buttonPromptOverride = -1, \
+	.inputGlyphOverride = -0, \
 }
 
 static struct controllercfg {
@@ -61,6 +62,7 @@ static struct controllercfg {
 	s32 deviceIndex;
 	s32 cancelCButtons;
 	s32 buttonPromptOverride;
+	s32 inputGlyphOverride;
 } padsCfg[INPUT_MAX_CONTROLLERS] = {
 	CONTROLLERCFG_DEFAULT,
 	CONTROLLERCFG_DEFAULT,
@@ -501,47 +503,57 @@ static int inputEventFilter(void *data, SDL_Event *event)
 
 		case SDL_MOUSEWHEEL:
 			mouseWheel = event->wheel.y;
-			if (mouseWheel) {
+			if (mouseWheel && padsCfg[0].inputGlyphOverride != GLYPH_OVERRIDE_CONTROLLER) {
 				lastKey = (mouseWheel < 0) + VK_MOUSE_WHEEL_UP;
 			}
 			break;
 
 		case SDL_MOUSEBUTTONDOWN:
-			lastKey = VK_MOUSE_BEGIN - 1 + event->button.button;
+			if (padsCfg[0].inputGlyphOverride != GLYPH_OVERRIDE_CONTROLLER) {
+				lastKey = VK_MOUSE_BEGIN - 1 + event->button.button;
+			}
 			break;
 		
 		case SDL_MOUSEBUTTONUP:
-			lastKey = VK_MOUSE_BEGIN - 1 + event->button.button;
+			if (padsCfg[0].inputGlyphOverride != GLYPH_OVERRIDE_CONTROLLER) {
+				lastKey = VK_MOUSE_BEGIN - 1 + event->button.button;
+			}
 			break;
 
 		case SDL_KEYDOWN:
-			lastKey = VK_KEYBOARD_BEGIN + event->key.keysym.scancode;
+			if (padsCfg[0].inputGlyphOverride != GLYPH_OVERRIDE_CONTROLLER) {
+				lastKey = VK_KEYBOARD_BEGIN + event->key.keysym.scancode;
+			}
 			break;
 
 		case SDL_CONTROLLERBUTTONDOWN: {
-			lastKey = VK_JOY1_BEGIN + event->cbutton.button;
-			SDL_GameController *ctrl = SDL_GameControllerFromInstanceID(event->cdevice.which);
-			const s32 idx = inputControllerGetIndex(ctrl);
-			if (idx >= 0) {
-				lastKey += idx * INPUT_MAX_CONTROLLER_BUTTONS;
+			if (padsCfg[0].inputGlyphOverride != GLYPH_OVERRIDE_KEYBOARDMOUSE) {
+				lastKey = VK_JOY1_BEGIN + event->cbutton.button;
+				SDL_GameController *ctrl = SDL_GameControllerFromInstanceID(event->cdevice.which);
+				const s32 idx = inputControllerGetIndex(ctrl);
+				if (idx >= 0) {
+					lastKey += idx * INPUT_MAX_CONTROLLER_BUTTONS;
+				}
 			}
 			break;
 		}
 
 		case SDL_CONTROLLERAXISMOTION: {
-			SDL_GameController *ctrl = SDL_GameControllerFromInstanceID(event->cdevice.which);
-			const s32 idx = inputControllerGetIndex(ctrl);
-			if (event->caxis.axis >= SDL_CONTROLLER_AXIS_TRIGGERLEFT && event->caxis.value > TRIG_THRESHOLD) {
-				// Trigger press
-				lastKey = VK_JOY1_LTRIG + (event->caxis.axis - SDL_CONTROLLER_AXIS_TRIGGERLEFT);
-				if (idx >= 0) {
-					lastKey += idx * INPUT_MAX_CONTROLLER_BUTTONS;
-				}
-			} else if (abs(event->caxis.value) > TRIG_THRESHOLD) {
-				// Analog stick movement
-				lastKey = VK_JOY1_BEGIN;
-				if (idx >= 0) {
-					lastKey += idx * INPUT_MAX_CONTROLLER_BUTTONS;
+			if (padsCfg[0].inputGlyphOverride != GLYPH_OVERRIDE_KEYBOARDMOUSE) {
+				SDL_GameController *ctrl = SDL_GameControllerFromInstanceID(event->cdevice.which);
+				const s32 idx = inputControllerGetIndex(ctrl);
+				if (event->caxis.axis >= SDL_CONTROLLER_AXIS_TRIGGERLEFT && event->caxis.value > TRIG_THRESHOLD) {
+					// Trigger press
+					lastKey = VK_JOY1_LTRIG + (event->caxis.axis - SDL_CONTROLLER_AXIS_TRIGGERLEFT);
+					if (idx >= 0) {
+						lastKey += idx * INPUT_MAX_CONTROLLER_BUTTONS;
+					}
+				} else if (abs(event->caxis.value) > TRIG_THRESHOLD) {
+					// Analog stick movement
+					lastKey = VK_JOY1_BEGIN;
+					if (idx >= 0) {
+						lastKey += idx * INPUT_MAX_CONTROLLER_BUTTONS;
+					}
 				}
 			}
 			break;
@@ -1347,6 +1359,22 @@ void inputSetButtonPromptOverride(s32 cidx, s32 override)
 	padsCfg[cidx].buttonPromptOverride = override;
 }
 
+s32 inputGetGlyphOverride(s32 cidx)
+{
+	if (cidx < 0 || cidx >= INPUT_MAX_CONTROLLERS) {
+		return -1;
+	}
+	return padsCfg[cidx].inputGlyphOverride;
+}
+
+void inputSetGlyphOverride(s32 cidx, s32 override)
+{
+	if (cidx < 0 || cidx >= INPUT_MAX_CONTROLLERS) {
+		return;
+	}
+	padsCfg[cidx].inputGlyphOverride = override;
+}
+
 const char *inputGetContKeyName(u32 ck)
 {
 	if (ck >= CK_TOTAL_COUNT) {
@@ -1695,6 +1723,7 @@ PD_CONSTRUCTOR static void inputConfigInit(void)
 	configRegisterInt("Input.FirstGamepadNum", &firstController, 0, 3);
 	configRegisterInt("Input.UseHIDAPI", &useHIDAPI, 0, 1);
 	configRegisterInt("Input.UseRawInput", &useRawInput, 0, 1);
+	configRegisterInt("Input.InputGlyphOverride", &padsCfg[0].inputGlyphOverride, GLYPH_OVERRIDE_AUTO, GLYPH_OVERRIDE_KEYBOARDMOUSE);
 
 	char secname[] = "Input.Player1.Binds";
 	char keyname[256] = { 0 };
