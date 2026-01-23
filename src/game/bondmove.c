@@ -500,6 +500,64 @@ static void bmoveApplyCrosshairSwivel(struct movedata *movedata, f32 mlookscale,
 #endif
 }
 
+#ifndef PLATFORM_N64
+/**
+ * Add mouse/gyro input to speed values for crosshair sway detection
+ */
+static void bmovePrecisionInputToCrosshairSwaySpeed(struct movedata *movedata, f32 mlookscale, f32 gyroscale, f32 fovscale, bool vertical)
+{
+	if (vertical) {
+		if (movedata->freelookdy != 0.0f) {
+			g_Vars.currentplayer->speedverta += -movedata->freelookdy * mlookscale * fovscale;
+		}
+		if (movedata->gyrolookdy != 0.0f) {
+			g_Vars.currentplayer->speedverta += -movedata->gyrolookdy * gyroscale * fovscale;
+		}
+	} else {
+		if (movedata->freelookdx != 0.0f) {
+			g_Vars.currentplayer->speedthetacontrol += movedata->freelookdx * mlookscale * fovscale;
+		}
+		if (movedata->gyrolookdx != 0.0f) {
+			g_Vars.currentplayer->speedthetacontrol += movedata->gyrolookdx * gyroscale * fovscale;
+		}
+	}
+}
+
+/**
+ * Apply mouse/gyro 1:1 direct camera rotation
+ * Removes the scaled contribution from speed system and applies direct angle
+ */
+static void bmoveApplyCameraMovement(struct movedata *movedata, f32 mlookscale, f32 gyroscale, bool vertical)
+{
+	f32 fovscale = viGetFovY() / PLAYER_DEFAULT_FOV;
+	f32 timescale = g_Vars.lvupdate60freal * 3.5f;
+
+	if (vertical) {
+		// Mouse 1:1 vertical rotation
+		if (movedata->freelookdy != 0.0f) {
+			f32 scaledContrib = mlookscale * fovscale * timescale;
+			g_Vars.currentplayer->vv_verta += -movedata->freelookdy * (1.0f - scaledContrib);
+		}
+		// Gyro 1:1 vertical rotation
+		if (movedata->gyrolookdy != 0.0f) {
+			f32 scaledContrib = gyroscale * fovscale * timescale;
+			g_Vars.currentplayer->vv_verta += -movedata->gyrolookdy * (1.0f - scaledContrib);
+		}
+	} else {
+		// Mouse 1:1 horizontal rotation
+		if (movedata->freelookdx != 0.0f) {
+			f32 scaledContrib = mlookscale * fovscale * timescale;
+			g_Vars.currentplayer->vv_theta += movedata->freelookdx * (1.0f - scaledContrib);
+		}
+		// Gyro 1:1 horizontal rotation
+		if (movedata->gyrolookdx != 0.0f) {
+			f32 scaledContrib = gyroscale * fovscale * timescale;
+			g_Vars.currentplayer->vv_theta += movedata->gyrolookdx * (1.0f - scaledContrib);
+		}
+	}
+}
+#endif
+
 /**
  * Calculate the lookahead angle.
  *
@@ -778,7 +836,7 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 	f32 newverta;
 #ifndef PLATFORM_N64
     // Mouse sensitivity scaling
-    const f32 mlookscale = g_Vars.lvupdate240 ? (4.f / (f32)g_Vars.lvupdate240) : 4.f;
+    const f32 mlookscale = g_Vars.lvupdate240 ? (1.f / (f32)g_Vars.lvupdate240) : 1.f;
     const bool allowmlook = (g_Vars.currentplayernum == 0) && (allowc1x || allowc1y);
 
     // Gyro sensitivity scaling (crosshair sway)
@@ -2167,17 +2225,11 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 					fVar25 *= -fVar25;
 				}
 
-#ifndef PLATFORM_N64
-				fVar25 += movedata.freelookdy * mlookscale;
-#endif
-
 				g_Vars.currentplayer->speedverta = -fVar25 * tmp;
 
 #ifndef PLATFORM_N64
-				// Add gyro to speedverta for crosshair sway detection
-				if (movedata.gyrolookdy != 0.0f) {
-					g_Vars.currentplayer->speedverta += -movedata.gyrolookdy * gyroscale * tmp;
-				}
+				// Add mouse/gyro to speedverta for crosshair sway detection
+				bmovePrecisionInputToCrosshairSwaySpeed(&movedata, mlookscale, gyroscale, tmp, true);
 #endif
 			} else if (movedata.speedvertadown > 0) {
 				bmoveUpdateSpeedVerta(movedata.speedvertadown);
@@ -2198,11 +2250,9 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 			g_Vars.currentplayer->vv_verta += g_Vars.currentplayer->speedverta * g_Vars.lvupdate60freal * 3.5f;
 
 #ifndef PLATFORM_N64
-			// Gyro 1:1 rotation: remove scaled contribution from speed system, apply direct angle
-			if (movedata.cannaturalpitch && movedata.gyrolookdy != 0.0f) {
-				f32 fovscale = viGetFovY() / PLAYER_DEFAULT_FOV;
-				f32 scaledContrib = gyroscale * fovscale * g_Vars.lvupdate60freal * 3.5f;
-				g_Vars.currentplayer->vv_verta += -movedata.gyrolookdy * (1.0f - scaledContrib);
+			// Apply mouse/gyro 1:1 vertical rotation
+			if (movedata.cannaturalpitch) {
+				bmoveApplyCameraMovement(&movedata, mlookscale, gyroscale, true);
 			}
 #endif
 		}
@@ -2224,17 +2274,11 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 			fVar25 *= -fVar25;
 		}
 
-#ifndef PLATFORM_N64
-		fVar25 += movedata.freelookdx * mlookscale;
-#endif
-
 		g_Vars.currentplayer->speedthetacontrol = fVar25 * tmp;
 
 #ifndef PLATFORM_N64
-		// Add gyro to speedthetacontrol for crosshair sway detection
-		if (movedata.gyrolookdx != 0.0f) {
-			g_Vars.currentplayer->speedthetacontrol += movedata.gyrolookdx * gyroscale * tmp;
-		}
+		// Add mouse/gyro to speedthetacontrol for crosshair sway detection
+		bmovePrecisionInputToCrosshairSwaySpeed(&movedata, mlookscale, gyroscale, tmp, false);
 #endif
 	} else if (movedata.aimturnleftspeed > 0) {
 		bmoveUpdateSpeedThetaControl(movedata.aimturnleftspeed);
@@ -2248,11 +2292,9 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 	bmoveUpdateSpeedTheta();
 
 #ifndef PLATFORM_N64
-	// Gyro 1:1 rotation: remove scaled contribution from speed system, apply direct angle
-	if (movedata.cannaturalturn && movedata.gyrolookdx != 0.0f) {
-		f32 fovscale = viGetFovY() / PLAYER_DEFAULT_FOV;
-		f32 scaledContrib = gyroscale * fovscale * g_Vars.lvupdate60freal * 3.5f;
-		g_Vars.currentplayer->vv_theta += movedata.gyrolookdx * (1.0f - scaledContrib);
+	// Apply mouse/gyro 1:1 horizontal rotation
+	if (movedata.cannaturalturn) {
+		bmoveApplyCameraMovement(&movedata, mlookscale, gyroscale, false);
 	}
 #endif
 
