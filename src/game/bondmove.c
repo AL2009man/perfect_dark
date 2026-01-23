@@ -783,8 +783,7 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 
     // Gyro sensitivity scaling - Natural sensitivity scale 
     // Compensate for the FOV-based scaling to achieve near 1:1 rotation
-    const f32 gyrobasesens = 1.105f / (viGetFovY() / PLAYER_DEFAULT_FOV);
-    const f32 gyroscale = g_Vars.lvupdate240 ? (gyrobasesens / (f32)g_Vars.lvupdate240) : gyrobasesens;
+    const f32 gyroscale = (1.105f / (viGetFovY() / PLAYER_DEFAULT_FOV)) / (g_Vars.lvupdate240 ? (f32)g_Vars.lvupdate240 : 1.f);
     const bool allowgyro = (g_Vars.players[cidx] != NULL) && (allowc1x || allowc1y) && inputGyroIsEnabled(cidx);
 
     bool allowmcross = false;
