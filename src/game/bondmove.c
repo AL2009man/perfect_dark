@@ -451,8 +451,9 @@ static void bmoveApplyCrosshairAimingMovement(f32 aimspeedx, f32 aimspeedy, f32 
 {
 	const f32 xcoeff = 320.f / 1080.f;
 	const f32 ycoeff = 240.f / 1080.f;
-	const f32 xscale = (aimspeedx * xcoeff) / g_Vars.currentplayer->aspect;
-	const f32 yscale = aimspeedy * ycoeff;
+	// TODO: until crosshair decouple is fully implemented, we'll reduce mouseaimspeed's scaling
+	const f32 xscale = (aimspeedx * 0.20f * xcoeff) / g_Vars.currentplayer->aspect;
+	const f32 yscale = aimspeedy * 0.20f * ycoeff;
 	f32 x = g_Vars.currentplayer->swivelpos[0] + (dx * xscale);
 	f32 y = g_Vars.currentplayer->swivelpos[1] + (dy * yscale);
 	x = (x < -1.f) ? -1.f : ((x > 1.f) ? 1.f : x);
