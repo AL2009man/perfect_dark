@@ -529,29 +529,28 @@ static void bmovePrecisionInputToCrosshairSwaySpeed(struct movedata *movedata, f
  */
 static void bmoveApplyCameraMovement(struct movedata *movedata, f32 mlookscale, f32 gyroscale, bool vertical)
 {
-	f32 fovscale = viGetFovY() / PLAYER_DEFAULT_FOV;
 	f32 timescale = g_Vars.lvupdate60freal * 3.5f;
 
 	if (vertical) {
 		// Mouse 1:1 vertical rotation
 		if (movedata->freelookdy != 0.0f) {
-			f32 scaledContrib = mlookscale * fovscale * timescale;
+			f32 scaledContrib = mlookscale * timescale;
 			g_Vars.currentplayer->vv_verta += -movedata->freelookdy * (1.0f - scaledContrib);
 		}
 		// Gyro 1:1 vertical rotation
 		if (movedata->gyrolookdy != 0.0f) {
-			f32 scaledContrib = gyroscale * fovscale * timescale;
+			f32 scaledContrib = gyroscale * timescale;
 			g_Vars.currentplayer->vv_verta += -movedata->gyrolookdy * (1.0f - scaledContrib);
 		}
 	} else {
 		// Mouse 1:1 horizontal rotation
 		if (movedata->freelookdx != 0.0f) {
-			f32 scaledContrib = mlookscale * fovscale * timescale;
+			f32 scaledContrib = mlookscale * timescale;
 			g_Vars.currentplayer->vv_theta += movedata->freelookdx * (1.0f - scaledContrib);
 		}
 		// Gyro 1:1 horizontal rotation
 		if (movedata->gyrolookdx != 0.0f) {
-			f32 scaledContrib = gyroscale * fovscale * timescale;
+			f32 scaledContrib = gyroscale * timescale;
 			g_Vars.currentplayer->vv_theta += movedata->gyrolookdx * (1.0f - scaledContrib);
 		}
 	}
