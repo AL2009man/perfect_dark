@@ -504,21 +504,21 @@ static void bmoveApplyCrosshairSwivel(struct movedata *movedata, f32 mlookscale,
 /**
  * Add mouse/gyro input to speed values for crosshair sway detection
  */
-static void bmovePrecisionInputToCrosshairSwaySpeed(struct movedata *movedata, f32 mlookscale, f32 gyroscale, f32 fovscale, bool vertical)
+static void bmovePrecisionInputToCrosshairSwaySpeed(struct movedata *movedata, f32 mlookscale, f32 gyroscale, bool vertical)
 {
 	if (vertical) {
 		if (movedata->freelookdy != 0.0f) {
-			g_Vars.currentplayer->speedverta += -movedata->freelookdy * mlookscale * fovscale;
+			g_Vars.currentplayer->speedverta += -movedata->freelookdy * mlookscale;
 		}
 		if (movedata->gyrolookdy != 0.0f) {
-			g_Vars.currentplayer->speedverta += -movedata->gyrolookdy * gyroscale * fovscale;
+			g_Vars.currentplayer->speedverta += -movedata->gyrolookdy * gyroscale;
 		}
 	} else {
 		if (movedata->freelookdx != 0.0f) {
-			g_Vars.currentplayer->speedthetacontrol += movedata->freelookdx * mlookscale * fovscale;
+			g_Vars.currentplayer->speedthetacontrol += movedata->freelookdx * mlookscale;
 		}
 		if (movedata->gyrolookdx != 0.0f) {
-			g_Vars.currentplayer->speedthetacontrol += movedata->gyrolookdx * gyroscale * fovscale;
+			g_Vars.currentplayer->speedthetacontrol += movedata->gyrolookdx * gyroscale;
 		}
 	}
 }
@@ -2228,7 +2228,7 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 
 #ifndef PLATFORM_N64
 				// Add mouse/gyro to speedverta for crosshair sway detection
-				bmovePrecisionInputToCrosshairSwaySpeed(&movedata, mlookscale, gyroscale, tmp, true);
+				bmovePrecisionInputToCrosshairSwaySpeed(&movedata, mlookscale, gyroscale, true);
 #endif
 			} else if (movedata.speedvertadown > 0) {
 				bmoveUpdateSpeedVerta(movedata.speedvertadown);
@@ -2277,7 +2277,7 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 
 #ifndef PLATFORM_N64
 		// Add mouse/gyro to speedthetacontrol for crosshair sway detection
-		bmovePrecisionInputToCrosshairSwaySpeed(&movedata, mlookscale, gyroscale, tmp, false);
+		bmovePrecisionInputToCrosshairSwaySpeed(&movedata, mlookscale, gyroscale, false);
 #endif
 	} else if (movedata.aimturnleftspeed > 0) {
 		bmoveUpdateSpeedThetaControl(movedata.aimturnleftspeed);
