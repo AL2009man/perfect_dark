@@ -43,14 +43,6 @@
 #include "input.h"
 #include "video.h"
 
-// Provide a fallback implementation if needed
-#ifndef MAX
-#define MAX(a, b) ((a) > (b) ? (a) : (b))
-#endif
-#ifndef fmax
-#define fmax(a, b) MAX(a, b)
-#endif
-
 static void bgunProcessQuickDetonate(struct movedata *data, u32 c1buttons, u32 c1buttonsthisframe, u32 buttons1, u32 buttons2) {
 	if ((((c1buttons & (buttons1)) && (c1buttonsthisframe & (buttons2)))
 			|| ((c1buttons & (buttons2)) && (c1buttonsthisframe & (buttons1))))
@@ -835,11 +827,11 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 	f32 increment2;
 	f32 newverta;
 #ifndef PLATFORM_N64
-    // Mouse sensitivity scaling
+    // Mouse crosshair sway scaling
     const f32 mlookscale = g_Vars.lvupdate240 ? (1.f / (f32)g_Vars.lvupdate240) : 1.f;
     const bool allowmlook = (g_Vars.currentplayernum == 0) && (allowc1x || allowc1y);
 
-    // Gyro sensitivity scaling (crosshair sway)
+    // Gyro crosshair sway scaling
     const f32 gyroscale = g_Vars.lvupdate240 ? (1.0f / (f32)g_Vars.lvupdate240) : 1.0f;
     const bool allowgyro = (g_Vars.players[cidx] != NULL) && (allowc1x || allowc1y) && inputGyroIsEnabled(cidx);
 
