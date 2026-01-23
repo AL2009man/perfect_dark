@@ -43,14 +43,6 @@
 #include "input.h"
 #include "video.h"
 
-// Provide a fallback implementation if needed
-#ifndef MAX
-#define MAX(a, b) ((a) > (b) ? (a) : (b))
-#endif
-#ifndef fmax
-#define fmax(a, b) MAX(a, b)
-#endif
-
 static void bgunProcessQuickDetonate(struct movedata *data, u32 c1buttons, u32 c1buttonsthisframe, u32 buttons1, u32 buttons2) {
 	if ((((c1buttons & (buttons1)) && (c1buttonsthisframe & (buttons2)))
 			|| ((c1buttons & (buttons2)) && (c1buttonsthisframe & (buttons1))))
@@ -781,10 +773,8 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
     const f32 mlookscale = g_Vars.lvupdate240 ? (4.f / (f32)g_Vars.lvupdate240) : 4.f;
     const bool allowmlook = (g_Vars.currentplayernum == 0) && (allowc1x || allowc1y);
 
-    // Gyro sensitivity scaling - Natural sensitivity scale 
-    // Compensate for the FOV-based scaling to achieve near 1:1 rotation
-    const f32 gyrobasesens = 1.105f / (viGetFovY() / PLAYER_DEFAULT_FOV);
-    const f32 gyroscale = g_Vars.lvupdate240 ? (gyrobasesens / (f32)g_Vars.lvupdate240) : gyrobasesens;
+    // Gyro sensitivity scaling (crosshair sway)
+    const f32 gyroscale = g_Vars.lvupdate240 ? (1.0f / (f32)g_Vars.lvupdate240) : 1.0f;
     const bool allowgyro = (g_Vars.players[cidx] != NULL) && (allowc1x || allowc1y) && inputGyroIsEnabled(cidx);
 
     bool allowmcross = false;
@@ -2171,10 +2161,16 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 
 #ifndef PLATFORM_N64
 				fVar25 += movedata.freelookdy * mlookscale;
-				fVar25 += movedata.gyrolookdy * gyroscale;
 #endif
 
 				g_Vars.currentplayer->speedverta = -fVar25 * tmp;
+
+#ifndef PLATFORM_N64
+				// Add gyro to speedverta for crosshair sway detection
+				if (movedata.gyrolookdy != 0.0f) {
+					g_Vars.currentplayer->speedverta += -movedata.gyrolookdy * gyroscale;
+				}
+#endif
 			} else if (movedata.speedvertadown > 0) {
 				bmoveUpdateSpeedVerta(movedata.speedvertadown);
 
@@ -2192,6 +2188,14 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 			}
 
 			g_Vars.currentplayer->vv_verta += g_Vars.currentplayer->speedverta * g_Vars.lvupdate60freal * 3.5f;
+
+#ifndef PLATFORM_N64
+			// Natural Sensitivity Scale: apply direct angle to gyro y
+			if (movedata.cannaturalpitch && movedata.gyrolookdy != 0.0f) {
+				f32 scaledContrib = gyroscale * g_Vars.lvupdate60freal * 3.5f;
+				g_Vars.currentplayer->vv_verta += -movedata.gyrolookdy * (1.0f - scaledContrib);
+			}
+#endif
 		}
 	}
 
@@ -2213,10 +2217,16 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 
 #ifndef PLATFORM_N64
 		fVar25 += movedata.freelookdx * mlookscale;
-		fVar25 += movedata.gyrolookdx * gyroscale;
 #endif
 
 		g_Vars.currentplayer->speedthetacontrol = fVar25 * tmp;
+
+#ifndef PLATFORM_N64
+		// Add gyro to speedthetacontrol for crosshair sway detection
+		if (movedata.gyrolookdx != 0.0f) {
+			g_Vars.currentplayer->speedthetacontrol += movedata.gyrolookdx * gyroscale;
+		}
+#endif
 	} else if (movedata.aimturnleftspeed > 0) {
 		bmoveUpdateSpeedThetaControl(movedata.aimturnleftspeed);
 	} else if (movedata.aimturnrightspeed > 0) {
@@ -2227,6 +2237,14 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 
 	g_Vars.currentplayer->speedtheta = g_Vars.currentplayer->speedthetacontrol;
 	bmoveUpdateSpeedTheta();
+
+#ifndef PLATFORM_N64
+	// Natural Sensitivity Scale: apply direct angle to gyro y
+	if (movedata.cannaturalturn && movedata.gyrolookdx != 0.0f) {
+		f32 scaledContrib = gyroscale * g_Vars.lvupdate60freal * 3.5f;
+		g_Vars.currentplayer->vv_theta += movedata.gyrolookdx * (1.0f - scaledContrib);
+	}
+#endif
 
 	if (movedata.detonating) {
 		g_Vars.currentplayer->hands[HAND_RIGHT].mode = HANDMODE_NONE;
