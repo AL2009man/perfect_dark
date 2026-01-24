@@ -2214,7 +2214,7 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 				g_Vars.currentplayer->speedverta = -fVar25 * tmp;
 
 #ifndef PLATFORM_N64
-				// Add mouse/gyro to speedverta for crosshair sway detection
+				// Add speedverta to Precision Input for crosshair sway detection
 				bmovePrecisionInputToCrosshairSwaySpeed(&movedata, mlookscale, gyroscale, true);
 #endif
 			} else if (movedata.speedvertadown > 0) {
@@ -2236,7 +2236,7 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 			g_Vars.currentplayer->vv_verta += g_Vars.currentplayer->speedverta * g_Vars.lvupdate60freal * 3.5f;
 
 #ifndef PLATFORM_N64
-			// Apply mouse/gyro 1:1 vertical rotation
+			// Apply camera vertical rotation
 			if (movedata.cannaturalpitch) {
 				bmoveApplyCameraMovement(&movedata, mlookscale, gyroscale, true);
 			}
@@ -2263,7 +2263,7 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 		g_Vars.currentplayer->speedthetacontrol = fVar25 * tmp;
 
 #ifndef PLATFORM_N64
-		// Add mouse/gyro to speedthetacontrol for crosshair sway detection
+		/// Add speedtheta to Precision Input for crosshair sway detection
 		bmovePrecisionInputToCrosshairSwaySpeed(&movedata, mlookscale, gyroscale, false);
 #endif
 	} else if (movedata.aimturnleftspeed > 0) {
@@ -2278,7 +2278,7 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 	bmoveUpdateSpeedTheta();
 
 #ifndef PLATFORM_N64
-	// Apply mouse/gyro 1:1 horizontal rotation
+	// Apply camera horizontal rotation
 	if (movedata.cannaturalturn) {
 		bmoveApplyCameraMovement(&movedata, mlookscale, gyroscale, false);
 	}
