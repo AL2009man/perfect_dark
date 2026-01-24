@@ -495,18 +495,18 @@ static void bmoveApplyCrosshairSwivel(struct movedata *movedata, f32 mlookscale,
 
 #ifndef PLATFORM_N64
 /**
- * Add mouse/gyro input to speed values for crosshair sway detection
+ * Apply precision-based input to speed values for crosshair sway detection
  */
 static void bmovePrecisionInputToCrosshairSwaySpeed(struct movedata *movedata, f32 mlookscale, f32 gyroscale, bool vertical)
 {
-	if (vertical) {
+	if (vertical) { // Vertical sway movement
 		if (movedata->freelookdy != 0.0f) {
 			g_Vars.currentplayer->speedverta += -movedata->freelookdy * mlookscale;
 		}
 		if (movedata->gyrolookdy != 0.0f) {
 			g_Vars.currentplayer->speedverta += -movedata->gyrolookdy * gyroscale;
 		}
-	} else {
+	} else { // Horizontal sway movement
 		if (movedata->freelookdx != 0.0f) {
 			g_Vars.currentplayer->speedthetacontrol += movedata->freelookdx * mlookscale;
 		}
@@ -517,34 +517,26 @@ static void bmovePrecisionInputToCrosshairSwaySpeed(struct movedata *movedata, f
 }
 
 /**
- * Apply mouse/gyro 1:1 direct camera rotation
- * Removes the scaled contribution from speed system and applies direct angle
+ * Apply camera movement
+ * Supports angle-based camera movement for precision-based inputs
  */
 static void bmoveApplyCameraMovement(struct movedata *movedata, f32 mlookscale, f32 gyroscale, bool vertical)
 {
 	f32 timescale = g_Vars.lvupdate60freal * 3.5f;
 
-	if (vertical) {
-		// Mouse 1:1 vertical rotation
+	if (vertical) { // Camera vertical movement
 		if (movedata->freelookdy != 0.0f) {
-			f32 scaledContrib = mlookscale * timescale;
-			g_Vars.currentplayer->vv_verta += -movedata->freelookdy * (1.0f - scaledContrib);
+			g_Vars.currentplayer->vv_verta += -movedata->freelookdy * (1.0f - mlookscale * timescale);
 		}
-		// Gyro 1:1 vertical rotation
 		if (movedata->gyrolookdy != 0.0f) {
-			f32 scaledContrib = gyroscale * timescale;
-			g_Vars.currentplayer->vv_verta += -movedata->gyrolookdy * (1.0f - scaledContrib);
+			g_Vars.currentplayer->vv_verta += -movedata->gyrolookdy * (1.0f - gyroscale * timescale);
 		}
-	} else {
-		// Mouse 1:1 horizontal rotation
+	} else { // Camera horizontal movement
 		if (movedata->freelookdx != 0.0f) {
-			f32 scaledContrib = mlookscale * timescale;
-			g_Vars.currentplayer->vv_theta += movedata->freelookdx * (1.0f - scaledContrib);
+			g_Vars.currentplayer->vv_theta += movedata->freelookdx * (1.0f - mlookscale * timescale);
 		}
-		// Gyro 1:1 horizontal rotation
 		if (movedata->gyrolookdx != 0.0f) {
-			f32 scaledContrib = gyroscale * timescale;
-			g_Vars.currentplayer->vv_theta += movedata->gyrolookdx * (1.0f - scaledContrib);
+			g_Vars.currentplayer->vv_theta += movedata->gyrolookdx * (1.0f - gyroscale * timescale);
 		}
 	}
 }
