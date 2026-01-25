@@ -2151,7 +2151,7 @@ static bool inputGyroAutoCalibrationModes(s32 cidx)
 		case GYRO_AUTOCALIBRATION_OFF: 
 			return false;
 		case GYRO_AUTOCALIBRATION_MENU_ONLY:
-			return g_MenuData.isdialogopen;
+			return g_Menus[cidx].curdialog != NULL;
 		case GYRO_AUTOCALIBRATION_STATIONARY:
 			return true;
 		case GYRO_AUTOCALIBRATION_ALWAYS:
