@@ -2192,8 +2192,7 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 #ifndef PLATFORM_N64
 			// Natural Sensitivity Scale: apply direct angle to gyro y
 			if (movedata.cannaturalpitch && movedata.gyrolookdy != 0.0f) {
-				f32 scaledContrib = gyroscale * g_Vars.lvupdate60freal * 3.5f;
-				g_Vars.currentplayer->vv_verta += -movedata.gyrolookdy * (1.0f - scaledContrib);
+				g_Vars.currentplayer->vv_verta += -movedata.gyrolookdy * (1.0f - gyroscale * g_Vars.lvupdate60freal * 3.5f);
 			}
 #endif
 		}
@@ -2239,10 +2238,9 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 	bmoveUpdateSpeedTheta();
 
 #ifndef PLATFORM_N64
-	// Natural Sensitivity Scale: apply direct angle to gyro y
+	// Natural Sensitivity Scale: apply direct angle to gyro x
 	if (movedata.cannaturalturn && movedata.gyrolookdx != 0.0f) {
-		f32 scaledContrib = gyroscale * g_Vars.lvupdate60freal * 3.5f;
-		g_Vars.currentplayer->vv_theta += movedata.gyrolookdx * (1.0f - scaledContrib);
+		g_Vars.currentplayer->vv_theta += movedata.gyrolookdx * (1.0f - gyroscale * g_Vars.lvupdate60freal * 3.5f);
 	}
 #endif
 
