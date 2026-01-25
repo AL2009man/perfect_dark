@@ -147,18 +147,18 @@ static s32 mouseShowCursor = 1;
 static f32 mouseSensX = 2.5f;
 static f32 mouseSensY = 2.5f;
 
-// Motion Sensor data declaration
-static GamepadMotionHandle gpadMotion[INPUT_MAX_CONTROLLERS] = { NULL };
-static f32 gyroDeltaYaw[INPUT_MAX_CONTROLLERS], gyroDeltaPitch[INPUT_MAX_CONTROLLERS], gyroDeltaRoll[INPUT_MAX_CONTROLLERS];
-static float sensorGyroData[INPUT_MAX_CONTROLLERS][3] = {0};
-static float sensorAccelData[INPUT_MAX_CONTROLLERS][3] = {0}; // stored in g-force
-static bool hasSensorData[INPUT_MAX_CONTROLLERS] = {false};
-
 static s32 lastKey = 0;
 static char lastChar = 0;
 static s32 textInput = 0;
 
 static char *clipboardText = NULL;
+
+// Motion Sensor data declarations
+static GamepadMotionHandle gpadMotion[INPUT_MAX_CONTROLLERS] = { NULL };
+static f32 gyroDeltaYaw[INPUT_MAX_CONTROLLERS], gyroDeltaPitch[INPUT_MAX_CONTROLLERS], gyroDeltaRoll[INPUT_MAX_CONTROLLERS];
+static float sensorGyroData[INPUT_MAX_CONTROLLERS][3] = {0};
+static float sensorAccelData[INPUT_MAX_CONTROLLERS][3] = {0};
+static bool hasSensorData[INPUT_MAX_CONTROLLERS] = {false};
 
 // Gyro processing function declarations
 static inline void applyGyroInvert(s32 cidx, f32* dx, f32* dy, bool useAimInvert);
