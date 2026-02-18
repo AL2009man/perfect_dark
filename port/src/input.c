@@ -1172,6 +1172,7 @@ void inputUpdateGyro(s32 cidx)
 {
 	// Calculate frame time 
 	float deltaTime = g_Vars.diffframe60f / 60.0f;
+	float frameTime = g_Vars.lvupdate60freal;
 
 	// Process sensor data
 	f32 deltaX = 0.f, deltaY = 0.f, deltaZ = 0.f;
@@ -1181,9 +1182,9 @@ void inputUpdateGyro(s32 cidx)
 	inputApplyGyroProcessing(cidx, &deltaX, &deltaY, &deltaZ);
 
 	// Store processed gyro deltas
-	gyroDeltaYaw[cidx] = deltaX;
-	gyroDeltaPitch[cidx] = deltaY;
-	gyroDeltaRoll[cidx] = deltaZ;
+	gyroDeltaYaw[cidx] = deltaX * frameTime;
+	gyroDeltaPitch[cidx] = deltaY * frameTime;
+	gyroDeltaRoll[cidx] = deltaZ * frameTime;
 }
 
 void inputUpdate(void)

@@ -856,35 +856,28 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 
 	// Handle Gyro Input
 	if (allowgyro) {
-		float gyroCamDx = 0.f, gyroCamDy = 0.f, gyroCamDz = 0.f;
-		float gyroCrossDx = 0.f, gyroCrossDy = 0.f;
 		int gyroAimMode = inputGetGyroAimMode(cidx);
+
 		if (gyroAimMode == GYRO_AIM_CAMERA || gyroAimMode == GYRO_AIM_BOTH) {
-			inputGyroGetScaledDelta(cidx, &gyroCamDx, &gyroCamDy, &gyroCamDz);
-			const f32 norm = g_Vars.lvupdate60freal;
-			movedata.gyrolookdx += gyroCamDx * norm;
-			movedata.gyrolookdy += gyroCamDy * norm;
+			float gdx, gdy, gdz;
+			inputGyroGetScaledDelta(cidx, &gdx, &gdy, &gdz);
+			movedata.gyrolookdx += gdx;
+			movedata.gyrolookdy += gdy;
 		}
 
 		if (gyroAimMode == GYRO_AIM_CROSSHAIR || gyroAimMode == GYRO_AIM_BOTH) {
-			inputGyroGetScaledDeltaCrosshair(cidx, &gyroCrossDx, &gyroCrossDy);
+			float gdx, gdy;
+			inputGyroGetScaledDeltaCrosshair(cidx, &gdx, &gdy);
 			if (g_Vars.players[cidx]) {
-				const f32 norm = g_Vars.lvupdate60freal;
-				g_Vars.players[cidx]->swivelpos[0] += gyroCrossDx * norm;
-				g_Vars.players[cidx]->swivelpos[1] += gyroCrossDy * norm;
+				g_Vars.players[cidx]->swivelpos[0] += gdx;
+				g_Vars.players[cidx]->swivelpos[1] += gdy;
 			}
-			allowmcross = true;
+			allowgcross = true;
 		}
 
 		if (movedata.invertpitch) {
 			movedata.gyrolookdy = -movedata.gyrolookdy;
 		}
-
-		// Clamp gyro input to prevent runaway camera movement
-		if (movedata.gyrolookdx < -10.0f) movedata.gyrolookdx = -10.0f;
-		if (movedata.gyrolookdx > 10.0f)  movedata.gyrolookdx = 10.0f;
-		if (movedata.gyrolookdy < -10.0f) movedata.gyrolookdy = -10.0f;
-		if (movedata.gyrolookdy > 10.0f)  movedata.gyrolookdy = 10.0f;
 	}
 #endif
 
@@ -1524,8 +1517,8 @@ void bmoveProcessInput(bool allowc1x, bool allowc1y, bool allowc1buttons, bool i
 					}
 
 #ifndef PLATFORM_N64
-					// Handle turning and looking (x/y) via mouselook when aiming
-					bool allowcross = allowmcross;
+					// Handle turning and looking (x/y) via mouselook/gyro when aiming
+					bool allowcross = allowmcross || allowgcross;
 					if (g_Vars.currentplayer->insightaimmode && allowcross && bgunGetWeaponNum(HAND_RIGHT) != WEAPON_HORIZONSCANNER) {
 						float edge_boundary = PLAYER_EXTCFG().crosshairedgeboundary;
 						if (g_Vars.currentplayer->swivelpos[0] > edge_boundary) {
