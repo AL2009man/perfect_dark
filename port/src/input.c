@@ -45,10 +45,10 @@
 #define GMH_MAX_STILLNESS_ERROR 1.5f       // Maximum sensor error allowed during stillness detection
 
 // Motion sensor noise threshold constants
-#define GYRO_NOISE_THRESHOLD 0.16f            // Absolute gyro threshold (degrees/second)
-#define GYRO_RATE_THRESHOLD 0.3f              // Frame-to-frame gyro change threshold (degrees/second)
-#define ACCEL_GRAVITY_TOLERANCE 0.02f         // Gravity magnitude tolerance
-#define ACCEL_DELTA_THRESHOLD 0.01f           // Accelerometer movement threshold in G units
+#define GYRO_NOISE_THRESHOLD 0.16f         // Gyro threshold (degrees/second)
+#define GYRO_RATE_THRESHOLD 0.3f           // Frame-to-frame gyro change threshold (degrees/second)
+#define ACCEL_GRAVITY_TOLERANCE 0.02f      // Gravity magnitude tolerance
+#define ACCEL_DELTA_THRESHOLD 0.01f        // Accelerometer movement threshold
 
 static SDL_GameController *pads[INPUT_MAX_CONTROLLERS];
 
@@ -459,32 +459,35 @@ static inline void inputInitController(const s32 cidx, const s32 jidx)
 	}
 
 #if SDL_VERSION_ATLEAST(2, 0, 14)
-	// Try to initialize motion sensors (gyro + accelerometer)
+	// initialize motion sensors
 	padsCfg[cidx].gyroSensorActive = 0;
 
-	if (SDL_GameControllerHasSensor(pads[cidx], SDL_SENSOR_GYRO) && 
-	    SDL_GameControllerHasSensor(pads[cidx], SDL_SENSOR_ACCEL)) {
-		sysLogPrintf(LOG_NOTE, "input: detects assigned controller's motion sensors for player %d", cidx);
+	if (!SDL_GameControllerHasSensor(pads[cidx], SDL_SENSOR_GYRO) || 
+	    !SDL_GameControllerHasSensor(pads[cidx], SDL_SENSOR_ACCEL)) {
+		return;
+	}
 
-		if (SDL_GameControllerSetSensorEnabled(pads[cidx], SDL_SENSOR_GYRO, SDL_TRUE) == 0 &&
-		    SDL_GameControllerSetSensorEnabled(pads[cidx], SDL_SENSOR_ACCEL, SDL_TRUE) == 0) {
+	// while hotswapping: nintendo switch controllers sensors under bluetooth will not work properly,
+	// this can be fixed by either changing/reset the controller id order (within controller options), or restarting the game while connected.
+	sysLogPrintf(LOG_NOTE, "input: assigned controller's motion sensors detected for player %d", cidx);
 
-			padsCfg[cidx].gyroSensorActive = 1;
+	if (SDL_GameControllerSetSensorEnabled(pads[cidx], SDL_SENSOR_GYRO, SDL_TRUE) != 0 ||
+	    SDL_GameControllerSetSensorEnabled(pads[cidx], SDL_SENSOR_ACCEL, SDL_TRUE) != 0) {
+		return;
+	}
 
-			// Create or reset GamepadMotionHelper instance
-			if (!gpadMotion[cidx]) {
-				gpadMotion[cidx] = gmhCreateGamepadMotion();
-			} else {
-				gmhResetGamepadMotion(gpadMotion[cidx]);
-			}
+	padsCfg[cidx].gyroSensorActive = 1;
 
-			// Configure GamepadMotionHelper settings and calibration
-			if (gpadMotion[cidx]) {
-				inputConfigureGamepadMotionSettings(gpadMotion[cidx]);
-				gmhResetMotion(gpadMotion[cidx]);
-				inputConfigureGyroCalibrationMode(cidx);
-			}
-		}
+	// Create GamepadMotionHelper instance
+	if (!gpadMotion[cidx]) {
+		gpadMotion[cidx] = gmhCreateGamepadMotion();
+	}
+
+	// Configure GamepadMotionHelper settings and calibration
+	if (gpadMotion[cidx]) {
+		inputConfigureGamepadMotionSettings(gpadMotion[cidx]);
+		gmhResetMotion(gpadMotion[cidx]);
+		inputConfigureGyroCalibrationMode(cidx);
 	}
 #endif
 }
@@ -1169,6 +1172,7 @@ void inputUpdateGyro(s32 cidx)
 {
 	// Calculate frame time 
 	float deltaTime = g_Vars.diffframe60f / 60.0f;
+	float frameTime = g_Vars.lvupdate60freal;
 
 	// Process sensor data
 	f32 deltaX = 0.f, deltaY = 0.f, deltaZ = 0.f;
@@ -1178,9 +1182,9 @@ void inputUpdateGyro(s32 cidx)
 	inputApplyGyroProcessing(cidx, &deltaX, &deltaY, &deltaZ);
 
 	// Store processed gyro deltas
-	gyroDeltaYaw[cidx] = deltaX;
-	gyroDeltaPitch[cidx] = deltaY;
-	gyroDeltaRoll[cidx] = deltaZ;
+	gyroDeltaYaw[cidx] = deltaX * frameTime;
+	gyroDeltaPitch[cidx] = deltaY * frameTime;
+	gyroDeltaRoll[cidx] = deltaZ * frameTime;
 }
 
 void inputUpdate(void)
@@ -1533,8 +1537,8 @@ void inputMouseGetScaledDelta(f32* dx, f32* dy)
 {
 	f32 mdx = 0.f, mdy = 0.f;
 	if (mouseLocked) {
-		mdx = mouseDX * (0.022f / 3.5f) * mouseSensX;
-		mdy = mouseDY * (0.022f / 3.5f) * mouseSensY;
+		mdx = mouseDX * 0.022f * mouseSensX;
+		mdy = mouseDY * 0.022f * mouseSensY;
 	}
 	if (dx) *dx = mdx;
 	if (dy) *dy = mdy;
@@ -2068,76 +2072,56 @@ static bool inputIsControllerSensorNoiseThreshold(s32 cidx)
 	static float prevAccel[INPUT_MAX_CONTROLLERS][3] = {{0.f}};
 	static bool firstRun[INPUT_MAX_CONTROLLERS] = {true, true, true, true};
 	
-	if (!gpadMotion[cidx]) {
+	if (!gpadMotion[cidx] || !hasSensorData[cidx]) {
 		return false;
 	}
 	
-	if (!hasSensorData[cidx]) {
-		return false;
-	}
+	// Helper macro
+	#define VEC3_LENGTH_SQ(v) ((v)[0]*(v)[0] + (v)[1]*(v)[1] + (v)[2]*(v)[2])
 	
-	// Check per-axis gyro thresholds
-	for (s32 i = 0; i < 3; ++i) {
-		if (fabsf(gyroData[cidx][i]) > GYRO_NOISE_THRESHOLD) {
-			return false;
-		}
-	}
+	#define UPDATE_PREV_STATE() \
+		for (s32 j = 0; j < 3; ++j) { \
+			prevGyro[cidx][j] = gyroData[cidx][j]; \
+			prevAccel[cidx][j] = accelData[cidx][j]; \
+		} \
+		firstRun[cidx] = false
 	
-	// Check total gyro magnitude
-	float gyroMagnitude = sqrtf(
-		gyroData[cidx][0] * gyroData[cidx][0] + 
-		gyroData[cidx][1] * gyroData[cidx][1] + 
-		gyroData[cidx][2] * gyroData[cidx][2]
-	);
-	if (gyroMagnitude > GYRO_NOISE_THRESHOLD) {
+	if (VEC3_LENGTH_SQ(gyroData[cidx]) > GYRO_NOISE_THRESHOLD) {
+		UPDATE_PREV_STATE();
 		return false;
 	}
 	
 	if (!firstRun[cidx]) {
-		// Check gyro rate of change
-		for (s32 i = 0; i < 3; ++i) {
-			float delta = fabsf(gyroData[cidx][i] - prevGyro[cidx][i]);
-			if (delta > GYRO_RATE_THRESHOLD) {
-				for (s32 j = 0; j < 3; ++j) {
-					prevGyro[cidx][j] = gyroData[cidx][j];
-					prevAccel[cidx][j] = accelData[cidx][j];
-				}
-				return false;
-			}
+		float gyroDelta[3] = {
+			gyroData[cidx][0] - prevGyro[cidx][0],
+			gyroData[cidx][1] - prevGyro[cidx][1],
+			gyroData[cidx][2] - prevGyro[cidx][2]
+		};
+		
+		if (VEC3_LENGTH_SQ(gyroDelta) > GYRO_RATE_THRESHOLD) {
+			UPDATE_PREV_STATE();
+			return false;
 		}
 		
-		// Check accelerometer delta
-		float accelDelta[3];
-		accelDelta[0] = accelData[cidx][0] - prevAccel[cidx][0];
-		accelDelta[1] = accelData[cidx][1] - prevAccel[cidx][1];
-		accelDelta[2] = accelData[cidx][2] - prevAccel[cidx][2];
+		float accelDelta[3] = {
+			accelData[cidx][0] - prevAccel[cidx][0],
+			accelData[cidx][1] - prevAccel[cidx][1],
+			accelData[cidx][2] - prevAccel[cidx][2]
+		};
 		
-		float accelDeltaMagnitude = sqrtf(
-			accelDelta[0] * accelDelta[0] + 
-			accelDelta[1] * accelDelta[1] + 
-			accelDelta[2] * accelDelta[2]
-		);
-		
-		if (accelDeltaMagnitude > ACCEL_DELTA_THRESHOLD) {
-			for (s32 j = 0; j < 3; ++j) {
-				prevGyro[cidx][j] = gyroData[cidx][j];
-				prevAccel[cidx][j] = accelData[cidx][j];
-			}
+		if (VEC3_LENGTH_SQ(accelDelta) > ACCEL_DELTA_THRESHOLD) {
+			UPDATE_PREV_STATE();
 			return false;
 		}
 	}
 	
-	for (s32 i = 0; i < 3; ++i) {
-		prevGyro[cidx][i] = gyroData[cidx][i];
-		prevAccel[cidx][i] = accelData[cidx][i];
-	}
-	firstRun[cidx] = false;
+	UPDATE_PREV_STATE();
 	
-	float accelMagnitude = sqrtf(
-		accelData[cidx][0] * accelData[cidx][0] + 
-		accelData[cidx][1] * accelData[cidx][1] + 
-		accelData[cidx][2] * accelData[cidx][2]
-	);
+	float accelLengthSq = VEC3_LENGTH_SQ(accelData[cidx]);
+	float accelMagnitude = sqrtf(accelLengthSq);
+	
+	#undef VEC3_LENGTH_SQ
+	#undef UPDATE_PREV_STATE
 	
 	return fabsf(accelMagnitude - 1.0f) < ACCEL_GRAVITY_TOLERANCE;
 }
