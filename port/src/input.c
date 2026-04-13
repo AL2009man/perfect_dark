@@ -623,12 +623,13 @@ static int inputEventFilter(void *data, SDL_Event *event)
 			const s32 idx = inputControllerGetIndex(ctrl);
 			if (idx >= 0 && idx < INPUT_MAX_CONTROLLERS) {
 				if (event->csensor.sensor == SDL_SENSOR_GYRO) {
-					gyroFeedGyroData(idx,
-						event->csensor.data[0],
-						event->csensor.data[1],
-						event->csensor.data[2]);
+					const float r2d = 180.f / (float)M_PI;
+					gyroFeedAngVel(idx,
+						event->csensor.data[0] * r2d,
+						event->csensor.data[1] * r2d,
+						event->csensor.data[2] * r2d);
 				} else if (event->csensor.sensor == SDL_SENSOR_ACCEL) {
-					gyroFeedAccelData(idx,
+					gyroFeedAccel(idx,
 						event->csensor.data[0] / SDL_STANDARD_GRAVITY,
 						event->csensor.data[1] / SDL_STANDARD_GRAVITY,
 						event->csensor.data[2] / SDL_STANDARD_GRAVITY);
@@ -1511,7 +1512,7 @@ static inline void applyGyroVHMixer(s32 cidx, f32 *dx, f32 *dy)
 {
 	if (inputGyroGetAdvanced(cidx)) return;
 
-	float mix    = fminf(fmaxf(inputGetGyroVHMixer(cidx), -1.0f), 1.0f);
+	float mix    = inputGetGyroVHMixer(cidx);
 	float hScale = 1.0f - fmaxf(0.0f, mix);
 	float vScale = 1.0f + fminf(0.0f, mix);
 	*dx *= hScale;
@@ -1529,20 +1530,16 @@ void inputGyroGetRawDelta(s32 cidx, s32 *dx, s32 *dy, s32 *dz)
 
 void inputGyroGetScaledDelta(s32 cidx, f32 *dx, f32 *dy, f32 *dz)
 {
-	if (!dx || !dy || !dz) return;
-
 	f32 gdx = 0.f, gdy = 0.f, gdz = 0.f;
 
 	if (inputGyroIsEnabled(cidx)) {
 		f32 yaw, pitch, roll;
 		gyroGetOrientation(cidx, &yaw, &pitch, &roll);
-		if (!isnan(yaw) && !isnan(pitch) && !isnan(roll)) {
-			f32 sensX, sensY;
-			inputGyroGetSpeed(cidx, &sensX, &sensY);
-			gdx = yaw   * sensX;
-			gdy = pitch * sensY;
-			gdz = roll  * sensX;
-		}
+		f32 sensX, sensY;
+		inputGyroGetSpeed(cidx, &sensX, &sensY);
+		gdx = yaw   * sensX;
+		gdy = pitch * sensY;
+		gdz = roll  * sensX;
 	}
 
 	*dx = gdx;
@@ -1555,26 +1552,20 @@ void inputGyroGetScaledDelta(s32 cidx, f32 *dx, f32 *dy, f32 *dz)
 
 void inputGyroGetScaledDeltaCrosshair(s32 cidx, f32 *dx, f32 *dy)
 {
-	f32 gdx = 0.f, gdy = 0.f;
+	*dx = 0.f;
+	*dy = 0.f;
 
 	if (inputGyroIsEnabled(cidx)) {
 		f32 yaw, pitch, roll;
 		gyroGetOrientation(cidx, &yaw, &pitch, &roll);
-		if (!isnan(yaw) && !isnan(pitch)) {
-			f32 aimX, aimY;
-			inputGyroGetAimSpeed(cidx, &aimX, &aimY);
-			gdx = yaw   * (0.022f / 2.0f) * aimX;
-			gdy = pitch * (0.022f / 2.0f) * aimY;
-		}
+		f32 aimX, aimY;
+		inputGyroGetAimSpeed(cidx, &aimX, &aimY);
+		*dx = yaw   * (0.022f / 2.0f) * aimX;
+		*dy = pitch * (0.022f / 2.0f) * aimY;
 	}
 
-	if (dx) *dx = gdx;
-	if (dy) *dy = gdy;
-
-	if (dx && dy) {
-		applyGyroInvert(cidx, dx, dy, true);
-		applyGyroVHMixer(cidx, dx, dy);
-	}
+	applyGyroInvert(cidx, dx, dy, true);
+	applyGyroVHMixer(cidx, dx, dy);
 }
 
 void inputGyroGetSpeed(s32 cidx, f32* sensX, f32* sensY)
@@ -1680,8 +1671,6 @@ void inputGyroSetDeadzone(s32 cidx, f32 deadzone)
 {
     if (deadzone < 0.f) deadzone = 0.f;
     if (deadzone > 1.f) deadzone = 1.f;
-
-    if (deadzone > 0.f && deadzone < 0.01f) deadzone = 0.01f;
     padsCfg[cidx].gyroDeadzone = deadzone;
 }
 
@@ -1699,8 +1688,8 @@ void inputGyroSetAutoCalibration(s32 cidx, s32 enabled)
 	padsCfg[cidx].gyroAutoCalibration = enabled;
 
 	if (wasEnabled != padsCfg[cidx].gyroAutoCalibration) {
-		const char* modeNames[] = {"Disabled", "In Menus Only", "While Stationary", "Always"};
-		const char* modeName = (enabled >= 0 && enabled < 4) ? modeNames[enabled] : "Unknown";
+		const char* modeNames[] = {"Disabled", "In Menus Only", "Always"};
+		const char* modeName = (enabled >= 0 && enabled < (s32)ARRAYCOUNT(modeNames)) ? modeNames[enabled] : "Unknown";
 		sysLogPrintf(LOG_NOTE, "Input: Gyro auto-calibration set to '%s' for controller %d.", modeName, cidx);
 		gyroReconfigureCalibrationMode(cidx);
 	}

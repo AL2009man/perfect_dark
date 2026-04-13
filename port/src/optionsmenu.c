@@ -932,7 +932,6 @@ static MenuItemHandlerResult menuhandlerGyroAutoCalibration(s32 operation, struc
 	static const char* opts[] = {
 		"Disabled",
 		"While In Menus",
-		"While Stationary",
 		"Always"
 	};
 
