@@ -58,10 +58,10 @@ static const struct button_override glyph_standard[] = {
 	{  9, "L1_SHOULDER" },    // Left shoulder (L1)
 	{ 10, "R1_SHOULDER" },    // Right shoulder (R1)
 	{ 15, "M1_BTN" },         // M1 button
-	{ 16, "L4_BTN" },         // Upper left paddle (L4)
-	{ 17, "L5_BTN" },         // Below left paddle (L5)
-	{ 18, "R4_BTN" },         // Upper right paddle (R4)
-	{ 19, "R5_BTN" },         // Below right paddle (R5)
+	{ 16, "R4_BTN" },         // Upper right paddle (R4)
+	{ 17, "L4_BTN" },         // Upper left paddle (L4)
+	{ 18, "R5_BTN" },         // Below right paddle (R5)
+	{ 19, "L5_BTN" },         // Below left paddle (L5)
 	{ 21, "M2_BTN" },         // M2 button
 	{ 22, "M3_BTN" },         // M3 button
 	{ 23, "M4_BTN" },         // M4 button
