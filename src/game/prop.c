@@ -1078,6 +1078,7 @@ bool shotTestLos(struct coord *gunpos2d, struct coord *gundir2d, struct coord *g
 				    surfacetype != SURFACETYPE_GLASS && surfacetype != SURFACETYPE_GLASSXLU) {
 					return false;
 				}
+				shotdata.hits[0].prop = NULL;
 			}
 		}
 		propptr--;
