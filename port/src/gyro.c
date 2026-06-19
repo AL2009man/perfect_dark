@@ -153,9 +153,7 @@ static void applyGyroAxisMapping(s32 cidx, float calibratedGyro[3], f32 *deltaX,
 	case GYRO_LOCAL: {
 		// Local Space code based on 
 		// http://gyrowiki.jibbsmart.com/blog:player-space-gyro-and-alternatives-explained
-		float gx = 0.f, gy = 0.f, gz = 0.f;
-		gmhGetGravity(gpadMotion[cidx], &gx, &gy, &gz);
-		*deltaX = (gy * calibratedGyro[1] + gz * calibratedGyro[2]);
+		*deltaX = -copysignf(hypotf(calibratedGyro[1], calibratedGyro[2]), calibratedGyro[1] - calibratedGyro[2]);
 		*deltaY = -calibratedGyro[0];
 		break;
 	}
